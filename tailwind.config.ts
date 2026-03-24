@@ -9,8 +9,16 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        background: "var(--background)",
-        foreground: "var(--foreground)",
+        rio: {
+          red: "#C8202A",
+          black: "#111111",
+          white: "#FFFFFF",
+          gray: "#F5F5F5",
+          dark: "#1A1A1A",
+        },
+      },
+      fontFamily: {
+        sans: ["DM Sans", "Barlow", "system-ui", "sans-serif"],
       },
     },
   },
