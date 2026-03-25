@@ -21,7 +21,7 @@ export const defaultRates: Rates = {
   conventional: 6.25,
   fha: 5.75,
   va: 5.75,
-  lastUpdated: new Date().toISOString(),
+  lastUpdated: "",
 };
 
 export const defaultSettings: Settings = {

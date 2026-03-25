@@ -8,10 +8,12 @@ export default function ProgramReference() {
   const [expanded, setExpanded] = useState<number | null>(null);
   const [rates, setRates] = useState<Rates>(defaultRates);
   const [settings, setSettings] = useState<Settings>(defaultSettings);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setRates(getRates());
     setSettings(getSettings());
+    setMounted(true);
   }, []);
 
   const updateNote = (programId: number, note: string) => {
@@ -50,7 +52,7 @@ export default function ProgramReference() {
           ))}
         </div>
         <div className="text-xs text-gray-400 mt-2">
-          Last updated: {new Date(rates.lastUpdated).toLocaleString()}
+          Last updated: {mounted ? new Date(rates.lastUpdated).toLocaleString() : "—"}
         </div>
       </div>
 
