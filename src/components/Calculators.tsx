@@ -498,6 +498,19 @@ function NewBuildCalc() {
     equivalentResalePrice = Math.floor(lo);
   }
 
+  // Reverse: what new build price = same payment as resale at builder rate
+  let maxNewBuildForResalePayment = 0;
+  {
+    let lo = 0, hi = 1500000;
+    for (let i = 0; i < 50; i++) {
+      const mid = (lo + hi) / 2;
+      const c = calc(mid, nbRate, nbHoa);
+      if (c.total < rs.total) lo = mid;
+      else hi = mid;
+    }
+    maxNewBuildForResalePayment = Math.floor(lo);
+  }
+
   return (
     <div>
       <h3 className="text-lg font-bold mb-4">New Build vs. Resale Comparison</h3>
@@ -521,20 +534,59 @@ function NewBuildCalc() {
         </div>
       </div>
 
-      {/* Side by side results */}
+      {/* Highlighted total monthly payment comparison */}
+      <div className="grid grid-cols-2 gap-4 mb-4">
+        <div className="bg-blue-50 border-2 border-blue-400 rounded-xl p-4 text-center">
+          <div className="text-xs text-blue-600 font-semibold uppercase tracking-wide">New Build Monthly</div>
+          <div className="text-3xl font-bold text-blue-900 mt-1">{fmt(nb.total)}</div>
+          <div className="text-xs text-blue-500 mt-1">P&I {fmt(nb.pi)} + Tax/Ins + HOA</div>
+        </div>
+        <div className="bg-green-50 border-2 border-green-400 rounded-xl p-4 text-center">
+          <div className="text-xs text-green-600 font-semibold uppercase tracking-wide">Resale Monthly</div>
+          <div className="text-3xl font-bold text-green-900 mt-1">{fmt(rs.total)}</div>
+          <div className="text-xs text-green-500 mt-1">P&I {fmt(rs.pi)} + Tax/Ins{rsHoa > 0 ? " + HOA" : ""}</div>
+        </div>
+      </div>
+
+      {/* Monthly difference */}
+      <div className={`rounded-lg px-4 py-3 text-center text-sm font-semibold mb-4 ${
+        nb.total > rs.total
+          ? "bg-green-50 border border-green-300 text-green-800"
+          : "bg-blue-50 border border-blue-300 text-blue-800"
+      }`}>
+        {nb.total > rs.total
+          ? `Resale saves ${fmt(nb.total - rs.total)}/mo (${fmt((nb.total - rs.total) * 12)}/yr)`
+          : `New Build saves ${fmt(rs.total - nb.total)}/mo (${fmt((rs.total - nb.total) * 12)}/yr)`}
+      </div>
+
+      {/* PITI breakdown */}
       <div className="grid grid-cols-2 gap-4 mb-4">
         <div className="space-y-2">
           <ResultCard label="New Build P&I" value={fmt(nb.pi)} />
           <ResultCard label="New Build PITI" value={fmt(nb.piti)} />
-          <ResultCard label="New Build Total" value={fmt(nb.total)} />
-          <ResultCard label="Lifetime Interest" value={fmt(nb.lifetimeInterest)} />
         </div>
         <div className="space-y-2">
           <ResultCard label="Resale P&I" value={fmt(rs.pi)} />
           <ResultCard label="Resale PITI" value={fmt(rs.piti)} />
-          <ResultCard label="Resale Total" value={fmt(rs.total)} />
-          <ResultCard label="Lifetime Interest" value={fmt(rs.lifetimeInterest)} />
         </div>
+      </div>
+
+      {/* Key insight: max new build price to match resale payment */}
+      <div className="bg-rio-red/5 border-2 border-rio-red rounded-xl px-5 py-4 mb-4">
+        <h4 className="font-bold text-rio-red text-sm mb-2">New Build Price Suggestion</h4>
+        <p className="text-sm text-gray-700">
+          To match the resale payment of <strong>{fmt(rs.total)}/mo</strong>, the client could purchase a new build up to{" "}
+          <strong className="text-rio-red text-lg">{fmt(maxNewBuildForResalePayment)}</strong> at the builder buydown rate of {nbRate}%.
+        </p>
+        {maxNewBuildForResalePayment > nbPrice ? (
+          <p className="text-sm text-green-700 mt-2 font-semibold">
+            That&apos;s {fmt(maxNewBuildForResalePayment - nbPrice)} MORE than the current new build price — there&apos;s room to go higher.
+          </p>
+        ) : maxNewBuildForResalePayment < nbPrice ? (
+          <p className="text-sm text-red-700 mt-2 font-semibold">
+            The current new build price is {fmt(nbPrice - maxNewBuildForResalePayment)} OVER the resale-equivalent payment. Consider a lower-priced new build or increasing the resale budget.
+          </p>
+        ) : null}
       </div>
 
       <div className="bg-rio-gray border border-gray-200 rounded-lg px-4 py-3 text-sm mb-4">

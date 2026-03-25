@@ -113,16 +113,6 @@ export default function Step3Income({ client, update }: Props) {
 
         <div>
           <label className="block text-sm font-semibold text-gray-700">
-            Do you have 2 years of consistent employment history?
-          </label>
-          <YesNoButtons
-            value={client.has2YearsEmployment}
-            onChange={(v) => update({ has2YearsEmployment: v as "yes" | "no" })}
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-semibold text-gray-700">
             Are you self-employed or do you receive 1099 income?
           </label>
           <YesNoButtons
@@ -165,17 +155,7 @@ export default function Step3Income({ client, update }: Props) {
 
         <div>
           <label className="block text-sm font-semibold text-gray-700">
-            Do you have a new W2 job started within the last 6 months?
-          </label>
-          <YesNoButtons
-            value={client.newW2Job}
-            onChange={(v) => update({ newW2Job: v as "yes" | "no" })}
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-semibold text-gray-700">
-            Is any portion of your income commission-based or variable (bonuses, overtime, 1099 side income)?
+            Is any portion of your income commission-based or variable (bonuses, overtime)?
           </label>
           <YesNoButtons
             value={client.hasVariableIncome}
