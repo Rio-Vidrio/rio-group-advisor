@@ -21,6 +21,7 @@ export interface LoanProgram {
   tradelineNote: string;
   citizenshipOptions: string[];
   dacaAllowed: boolean;
+  itinOnly: boolean; // if true, only shown for DACA/Work Permit clients
   homeownershipRestriction: string;
   sellerCreditMax: string;
   notes: string;
@@ -59,6 +60,7 @@ export const loanPrograms: LoanProgram[] = [
     tradelineNote: "1 traditional 12+ months + 2 alternative tradelines + rental history required",
     citizenshipOptions: ["US Citizen", "Permanent Resident"],
     dacaAllowed: false,
+    itinOnly: false,
     homeownershipRestriction: "First-time buyer or not currently owning",
     sellerCreditMax: "4% (cannot be used for additional agent/broker compensation)",
     notes: "Best option for well-qualified buyers. Strict credit but lowest score floor.",
@@ -106,6 +108,7 @@ export const loanPrograms: LoanProgram[] = [
     tradelineNote: "2 traditional OR 1 traditional + 2 alternative. If no rental history → must have 2 traditional",
     citizenshipOptions: ["US Citizen", "Permanent Resident", "DACA/Work Permit"],
     dacaAllowed: true,
+    itinOnly: false,
     homeownershipRestriction: "Cannot have owned a home in the last 3 years",
     sellerCreditMax: "3% minimum required to achieve $1K down (cannot buy down rate)",
     notes: "Good for DACA clients, slightly lower scores, no rental history needed with 2 tradelines.",
@@ -153,6 +156,7 @@ export const loanPrograms: LoanProgram[] = [
     tradelineNote: "None required",
     citizenshipOptions: ["US Citizen", "Permanent Resident"],
     dacaAllowed: false,
+    itinOnly: false,
     homeownershipRestriction: "Can be previous homeowner. Current homeowner allowed only if: 25%+ equity, family size increased, and home is vacated/rented.",
     sellerCreditMax: "6% (FHA standard)",
     notes: "Most flexible on credit history. ~$450/month higher payment than Program 1 equivalent.",
@@ -199,6 +203,7 @@ export const loanPrograms: LoanProgram[] = [
     tradelineNote: "None required",
     citizenshipOptions: ["US Citizen", "Permanent Resident"],
     dacaAllowed: false,
+    itinOnly: false,
     homeownershipRestriction: "Same as FHA DPA — can be previous homeowner with conditions.",
     sellerCreditMax: "6% (FHA standard)",
     notes: "Lowest score threshold. Solar adds ~$35K to mortgage (~+$200/month) but saves on electric.",
@@ -247,6 +252,7 @@ export const loanPrograms: LoanProgram[] = [
     tradelineNote: "None required",
     citizenshipOptions: ["US Citizen", "Permanent Resident", "DACA/Work Permit"],
     dacaAllowed: true,
+    itinOnly: false,
     homeownershipRestriction: "Previous homeowners OK. Current homeowners OK.",
     sellerCreditMax: "3% (conventional standard)",
     notes: "$4,000 grant — free money, no repayment.",
@@ -270,6 +276,54 @@ export const loanPrograms: LoanProgram[] = [
     grantAmount: 4000,
     programMaxPrice: 500000,
     programMaxPriceNote: "Income must be at or below $89,000 to qualify — this is an income-based limit, not a purchase price limit.",
+  },
+  {
+    id: 6,
+    name: "ITIN Loan",
+    shortName: "ITIN Loan",
+    loanType: "Conventional",
+    downPayment: "10% (buyer brings)",
+    rateDescription: "Market rate + 2%",
+    rateOffset: 2,
+    rateBase: "conventional",
+    term: 30,
+    hasPMI: true,
+    maxDTI: 45,
+    housingDTI: 45,
+    minCreditScore: 680,
+    incomeLimit: null,
+    latePaymentsAllowed: false,
+    collectionsAllowed: false,
+    minTraditionalTradelines: 0,
+    minAlternativeTradelines: 0,
+    requiresRentalHistory: false,
+    tradelineNote: "None required",
+    citizenshipOptions: ["DACA/Work Permit"],
+    dacaAllowed: true,
+    itinOnly: true,
+    homeownershipRestriction: "Previous homeowners OK.",
+    sellerCreditMax: "3% conventional standard",
+    notes: "ITIN Loan — for Work Permit / DACA holders with 2 years documented work history or tax returns.",
+    pros: [
+      "Available to DACA and Work Permit holders",
+      "No citizenship requirement",
+      "No income limit",
+      "Flexible homeownership history",
+    ],
+    cons: [
+      "Rate is 2% above market",
+      "10% down payment required",
+      "Requires 2 years documented work history or tax returns",
+      "PMI applies",
+      "Purchase price capped at $850,000",
+    ],
+    bestFor: "DACA / Work Permit holders with solid work history and down payment savings",
+    additionalPaymentImpact: 0,
+    downPaymentPercent: 10,
+    isGrant: false,
+    grantAmount: 0,
+    programMaxPrice: 850000,
+    programMaxPriceNote: "ITIN Loan maximum purchase price is $850,000.",
   },
 ];
 
@@ -297,6 +351,7 @@ export interface ClientData {
   reducesNetIncome: "yes" | "no" | "";
   hasEmploymentGaps: "yes" | "no" | "";
   newW2Job: "yes" | "no" | "";
+  hasITINWorkHistory: "yes" | "no" | "";
   hasVariableIncome: "yes" | "no" | "";
   hasVariableIncomeHistory: "yes" | "no" | "";
   // Step 4
@@ -338,6 +393,7 @@ export const defaultClientData: ClientData = {
   reducesNetIncome: "",
   hasEmploymentGaps: "",
   newW2Job: "",
+  hasITINWorkHistory: "",
   hasVariableIncome: "",
   hasVariableIncomeHistory: "",
   monthlyDebts: 0,
@@ -392,10 +448,24 @@ export function evaluateEligibility(
   const totalIncome = client.annualIncome + (client.hasCosigner === "yes" ? client.cosignerIncome : 0);
   const totalDebts = client.monthlyDebts + (client.hasCosigner === "yes" ? client.cosignerDebts : 0);
 
-  return loanPrograms.map((program) => {
+  const applicablePrograms = loanPrograms.filter(p => !p.itinOnly || client.citizenship === "daca");
+  return applicablePrograms.map((program) => {
     const reasons: string[] = [];
     let eligible = true;
     let conditional = false;
+
+    // ITIN program: skip for DACA clients who haven't confirmed 2yr work history
+    if (program.itinOnly) {
+      if (client.hasITINWorkHistory === "no") {
+        eligible = false;
+        reasons.push("Requires 2 years of documented work history or tax returns");
+      }
+      // Purchase price cap
+      if (client.purchasePrice > 850000) {
+        eligible = false;
+        reasons.push("Purchase price exceeds ITIN Loan maximum of $850,000");
+      }
+    }
 
     // Credit score check
     if (client.creditScore > 0 && client.creditScore < program.minCreditScore) {
@@ -522,6 +592,7 @@ export function evaluateEligibility(
       else if (program.id === 3) loan = price * 0.965;
       else if (program.id === 4) loan = price * 0.965 + 35000; // solar added
       else if (program.id === 5) loan = price * 0.97;
+      else if (program.id === 6) loan = price * 0.90; // 10% down
 
       const pi = calculateMonthlyPayment(loan, rate, program.term);
       const tax = (price * 0.0045) / 12;
@@ -540,6 +611,7 @@ export function evaluateEligibility(
     if (program.id === 1) downPaymentRequired = client.purchasePrice * 0.01;
     else if (program.id === 2) downPaymentRequired = 1000;
     else if (program.id === 5) downPaymentRequired = client.purchasePrice * 0.03;
+    else if (program.id === 6) downPaymentRequired = client.purchasePrice * 0.10;
 
     // DTI check — conventional programs use credit-score-based DTI ceiling
     if (totalIncome > 0 && client.purchasePrice > 0) {

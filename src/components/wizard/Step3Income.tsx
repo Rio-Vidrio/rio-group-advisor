@@ -191,6 +191,31 @@ export default function Step3Income({ client, update }: Props) {
             )}
           </div>
         )}
+
+        {client.citizenship === "daca" && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-4 space-y-3">
+            <p className="text-sm font-semibold text-blue-900">ITIN Loan Eligibility Check</p>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700">
+                Do you have 2 years of documented work history and/or tax returns?
+              </label>
+              <YesNoButtons
+                value={client.hasITINWorkHistory}
+                onChange={(v) => update({ hasITINWorkHistory: v as "yes" | "no" })}
+              />
+              {client.hasITINWorkHistory === "yes" && (
+                <p className="mt-2 text-sm text-green-700">
+                  ✓ Eligible for ITIN Loan — 10% down, 680+ credit score required.
+                </p>
+              )}
+              {client.hasITINWorkHistory === "no" && (
+                <p className="mt-2 text-sm text-amber-700">
+                  ⚠️ 2 years of documented history required to qualify for ITIN Loan.
+                </p>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
