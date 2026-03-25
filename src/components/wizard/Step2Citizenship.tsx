@@ -70,7 +70,7 @@ export default function Step2Citizenship({ client, update }: Props) {
           <div className="bg-amber-50 border border-amber-300 rounded-lg px-4 py-4 space-y-1">
             <p className="text-sm font-bold text-amber-800">⚠️ No DPA options available</p>
             <p className="text-sm text-amber-700">
-              Standard down payment assistance programs require U.S. citizenship or permanent residency.
+              Standard down payment assistance programs require U.S. citizenship, permanent residency, or work permit.
               The <strong>ITIN Loan</strong> may be available — <strong>10% down only</strong>, 680+ credit score,
               and 2 years of documented work history or tax returns required.
             </p>
