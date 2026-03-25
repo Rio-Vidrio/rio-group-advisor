@@ -14,13 +14,20 @@ export async function GET(request: Request) {
   const months = parseInt(searchParams.get("months") || "12", 10);
 
   try {
+    // Use AbortController to enforce a 10-second timeout
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000);
+
     const res = await fetch(
       "https://fred.stlouisfed.org/graph/fredgraph.csv?id=MORTGAGE30US",
       {
-        next: { revalidate: 43200 },
+        signal: controller.signal,
         headers: { "User-Agent": "RioGroupAdvisor/1.0" },
+        cache: "no-store",
       }
     );
+
+    clearTimeout(timeout);
 
     if (!res.ok) throw new Error(`FRED returned ${res.status}`);
 
@@ -37,8 +44,11 @@ export async function GET(request: Request) {
     const points: RateHistoryPoint[] = lines
       .map((line) => {
         const [date, rateStr] = line.split(",");
-        const conventional = parseFloat(rateStr);
-        if (!date || isNaN(conventional) || conventional <= 0) return null;
+        const trimmedRate = rateStr?.trim();
+        // FRED uses "." for missing data points
+        if (!date || !trimmedRate || trimmedRate === ".") return null;
+        const conventional = parseFloat(trimmedRate);
+        if (isNaN(conventional) || conventional <= 0) return null;
         if (new Date(date.trim()) < cutoff) return null;
         return {
           date: date.trim(),
@@ -52,6 +62,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ points, count: points.length });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
+    console.error("Rate history fetch failed:", message);
     return NextResponse.json(
       { error: "Could not fetch rate history", detail: message },
       { status: 500 }

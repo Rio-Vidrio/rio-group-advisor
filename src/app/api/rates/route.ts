@@ -4,22 +4,42 @@ export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
+    // Use AbortController to enforce a 10-second timeout
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000);
+
     // Fetch 30-year conventional from Freddie Mac PMMS via FRED
     const res = await fetch(
       "https://fred.stlouisfed.org/graph/fredgraph.csv?id=MORTGAGE30US",
       {
-        next: { revalidate: 43200 }, // cache server-side for 12 hours
+        signal: controller.signal,
         headers: { "User-Agent": "RioGroupAdvisor/1.0" },
+        cache: "no-store",
       }
     );
+
+    clearTimeout(timeout);
 
     if (!res.ok) throw new Error(`FRED returned ${res.status}`);
 
     const text = await res.text();
     const lines = text.trim().split("\n").filter((l) => l && !l.startsWith("DATE"));
-    const lastLine = lines[lines.length - 1];
-    const [date, rateStr] = lastLine.split(",");
-    const conventional = parseFloat(rateStr);
+
+    // Walk backwards to find the latest valid data point (FRED uses "." for missing)
+    let conventional = NaN;
+    let date = "";
+    for (let i = lines.length - 1; i >= 0; i--) {
+      const [d, rateStr] = lines[i].split(",");
+      const trimmed = rateStr?.trim();
+      if (trimmed && trimmed !== ".") {
+        const parsed = parseFloat(trimmed);
+        if (!isNaN(parsed) && parsed > 0) {
+          conventional = parsed;
+          date = d.trim();
+          break;
+        }
+      }
+    }
 
     if (isNaN(conventional) || conventional <= 0) {
       throw new Error("Invalid rate value from FRED");
@@ -37,7 +57,7 @@ export async function GET() {
       va,
       lastUpdated: new Date().toISOString(),
       source: "Freddie Mac PMMS via FRED",
-      asOf: date.trim(),
+      asOf: date,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";

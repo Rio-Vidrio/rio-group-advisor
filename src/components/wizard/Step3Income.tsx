@@ -192,7 +192,7 @@ export default function Step3Income({ client, update }: Props) {
           </div>
         )}
 
-        {(client.citizenship === "daca" || client.citizenship === "no") && (
+        {client.citizenship === "no" && (
           <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-4 space-y-3">
             <p className="text-sm font-semibold text-blue-900">ITIN Loan Eligibility Check</p>
             <div>

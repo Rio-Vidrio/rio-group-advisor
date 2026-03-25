@@ -448,7 +448,7 @@ export function evaluateEligibility(
   const totalIncome = client.annualIncome + (client.hasCosigner === "yes" ? client.cosignerIncome : 0);
   const totalDebts = client.monthlyDebts + (client.hasCosigner === "yes" ? client.cosignerDebts : 0);
 
-  const applicablePrograms = loanPrograms.filter(p => !p.itinOnly || client.citizenship === "daca" || client.citizenship === "no");
+  const applicablePrograms = loanPrograms.filter(p => !p.itinOnly || client.citizenship === "no");
   return applicablePrograms.map((program) => {
     const reasons: string[] = [];
     let eligible = true;
