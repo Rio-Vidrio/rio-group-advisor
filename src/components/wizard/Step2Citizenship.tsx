@@ -121,7 +121,7 @@ export default function Step2Citizenship({ client, update }: Props) {
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-700">
-                    Has the client's family size increased since purchasing?
+                    Has the client&apos;s family size increased since purchasing?
                   </label>
                   <YesNoButtons
                     value={client.familySizeIncreased}

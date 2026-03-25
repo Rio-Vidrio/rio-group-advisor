@@ -155,7 +155,7 @@ export default function Step3Income({ client, update }: Props) {
 
         <div>
           <label className="block text-sm font-semibold text-gray-700">
-            Is any portion of the client's income commission-based or variable (bonuses, overtime)?
+            Is any portion of the client&apos;s income commission-based or variable (bonuses, overtime)?
           </label>
           <YesNoButtons
             value={client.hasVariableIncome}
