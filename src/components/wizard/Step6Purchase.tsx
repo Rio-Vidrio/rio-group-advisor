@@ -117,7 +117,7 @@ export default function Step6Purchase({ client, update }: Props) {
             ["West Valley Outside the 101", "East Valley Outside the 202"].includes(client.targetArea) && (
             <div className="mt-2 bg-amber-50 border border-amber-300 rounded-lg px-4 py-3 text-sm text-amber-800">
               <strong>⚠️ Advisory:</strong> Most homes in this area carry an HOA. If the client expects no HOA,
-              consider reconsidering the location or confirming the specific property. You may want to update
+              consider reconsidering the location or confirming the specific property. Update
               this to <strong>Yes</strong> and enter the typical HOA amount (~$100–$150/mo).
             </div>
           )}

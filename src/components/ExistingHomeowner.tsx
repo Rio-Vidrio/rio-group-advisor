@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -9,7 +9,7 @@ type TreeState = {
   // FHA branch
   purchaseTiming: "recent" | "longago" | null;
   familySizeIncreased: "yes" | "no" | null;
-  // FHA 10+ years toggles
+  // FHA Before 2021 toggles
   hasEquity25: boolean | null;
   familySizeIncreasedLong: boolean | null;
   vacated: boolean | null;
@@ -86,16 +86,49 @@ const PROGRAMS = {
 
 type ProgramKey = keyof typeof PROGRAMS;
 
+// ─── VacatingTooltip ──────────────────────────────────────────────────────────
+
+const VACATING_TOOLTIP_TEXT =
+  "A vacating residence is a home the owner no longer lives in. They have already changed their mailing address and the home is currently rented or actively being prepared for rental.";
+
+function VacatingTooltip() {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <span className="relative inline-flex items-center">
+      <button
+        type="button"
+        aria-label="What is a vacating residence?"
+        onClick={() => setOpen((v) => !v)}
+        onMouseEnter={() => setOpen(true)}
+        onMouseLeave={() => setOpen(false)}
+        className="ml-1 inline-flex items-center justify-center w-4 h-4 rounded-full bg-gray-200 text-gray-500 hover:bg-gray-300 text-xs font-bold leading-none focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-gray-400"
+        style={{ fontSize: "10px" }}
+      >
+        ⓘ
+      </button>
+      {open && (
+        <span
+          className="absolute z-50 left-6 top-0 w-64 bg-gray-900 text-white text-xs rounded-lg p-3 shadow-lg leading-relaxed"
+          style={{ minWidth: "220px" }}
+        >
+          {VACATING_TOOLTIP_TEXT}
+        </span>
+      )}
+    </span>
+  );
+}
+
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 function SelectionCard({
   title,
-  subtitle,
+  note,
   selected,
   onClick,
 }: {
   title: string;
-  subtitle?: string;
+  note?: string;
   selected: boolean;
   onClick: () => void;
 }) {
@@ -111,10 +144,8 @@ function SelectionCard({
       <div className={`font-bold text-lg ${selected ? "text-[#C8202A]" : "text-gray-900"}`}>
         {title}
       </div>
-      {subtitle && (
-        <div className={`text-sm mt-1 ${selected ? "text-red-700" : "text-gray-500"}`}>
-          {subtitle}
-        </div>
+      {note && (
+        <div className="text-xs italic text-gray-400 mt-1 leading-snug">{note}</div>
       )}
     </button>
   );
@@ -125,7 +156,7 @@ function PillToggle({
   value,
   onChange,
 }: {
-  label: string;
+  label: React.ReactNode;
   value: boolean | null;
   onChange: (v: boolean) => void;
 }) {
@@ -213,7 +244,7 @@ function PathCard({
   title: string;
   badge?: { text: string; color: "red" | "green" | "gray" };
   borderColor: "red" | "green" | "gray";
-  bullets: { icon: string; text: string }[];
+  bullets: { icon: string; text: React.ReactNode }[];
   flagBox?: { color: "amber" | "red"; text: string };
   programs: ProgramKey[];
 }) {
@@ -265,6 +296,17 @@ function PathCard({
   );
 }
 
+// ─── Section Connector ────────────────────────────────────────────────────────
+
+function SectionConnector() {
+  return (
+    <div className="flex items-center gap-2 pl-4 my-1">
+      <div className="w-px h-6 bg-gray-200" />
+      <span className="text-gray-300 text-xs">▼</span>
+    </div>
+  );
+}
+
 // ─── Breadcrumb ───────────────────────────────────────────────────────────────
 
 function buildBreadcrumb(state: TreeState): string[] {
@@ -272,11 +314,11 @@ function buildBreadcrumb(state: TreeState): string[] {
   if (state.currentLoan === "fha") {
     crumbs.push("FHA");
     if (state.purchaseTiming === "recent") {
-      crumbs.push("Within 3 Years");
+      crumbs.push("2021 or Later");
       if (state.familySizeIncreased === "yes") crumbs.push("Family Size Increased");
       if (state.familySizeIncreased === "no") crumbs.push("No Family Size Change");
     } else if (state.purchaseTiming === "longago") {
-      crumbs.push("10+ Years Ago");
+      crumbs.push("Before 2021");
     }
   } else if (state.currentLoan === "conventional") {
     crumbs.push("Conventional");
@@ -296,18 +338,62 @@ function buildBreadcrumb(state: TreeState): string[] {
 export default function ExistingHomeowner() {
   const [state, setState] = useState<TreeState>(initialState);
 
-  // Long-ago toggle screen local state
-  const [showLongAgoResults, setShowLongAgoResults] = useState(false);
+  // selectCard: tapping same value deselects; tapping new value sets + clears downstream
+  function selectCard<K extends keyof TreeState>(key: K, value: TreeState[K]) {
+    setState((prev) => {
+      // If tapping the same value → deselect (set to null) + clear all downstream
+      if (prev[key] === value) {
+        if (key === "currentLoan") return { ...initialState };
+        if (key === "purchaseTiming") {
+          return {
+            ...prev,
+            purchaseTiming: null,
+            familySizeIncreased: null,
+            hasEquity25: null,
+            familySizeIncreasedLong: null,
+            vacated: null,
+          };
+        }
+        if (key === "familySizeIncreased") {
+          return { ...prev, familySizeIncreased: null };
+        }
+        if (key === "nextLoanType") {
+          return { ...prev, nextLoanType: null, convToFHAEquity: null };
+        }
+        if (key === "convToFHAEquity") {
+          return { ...prev, convToFHAEquity: null };
+        }
+        return { ...prev, [key]: null };
+      }
 
-  const set = <K extends keyof TreeState>(key: K, value: TreeState[K]) => {
-    setState((prev) => ({ ...prev, [key]: value }));
-    setShowLongAgoResults(false);
-  };
+      // Tapping a new value → set it + clear downstream
+      if (key === "currentLoan") {
+        return { ...initialState, currentLoan: value as TreeState["currentLoan"] };
+      }
+      if (key === "purchaseTiming") {
+        return {
+          ...prev,
+          purchaseTiming: value as TreeState["purchaseTiming"],
+          familySizeIncreased: null,
+          hasEquity25: null,
+          familySizeIncreasedLong: null,
+          vacated: null,
+        };
+      }
+      if (key === "familySizeIncreased") {
+        return { ...prev, familySizeIncreased: value as TreeState["familySizeIncreased"] };
+      }
+      if (key === "nextLoanType") {
+        return { ...prev, nextLoanType: value as TreeState["nextLoanType"], convToFHAEquity: null };
+      }
+      if (key === "convToFHAEquity") {
+        return { ...prev, convToFHAEquity: value as TreeState["convToFHAEquity"] };
+      }
+      return { ...prev, [key]: value };
+    });
+  }
 
-  const resetAll = () => {
-    setState(initialState);
-    setShowLongAgoResults(false);
-  };
+  const resetAll = () => setState(initialState);
 
   const breadcrumb = buildBreadcrumb(state);
 
@@ -322,7 +408,7 @@ export default function ExistingHomeowner() {
     if (!hasEquity25) return 4;
     if (hasEquity25 && familySizeIncreasedLong && vacated) return 1;
     if (hasEquity25 && familySizeIncreasedLong && !vacated) return 2;
-    return 3; // equity yes, but family no (or other combo)
+    return 3;
   };
 
   // ── Conventional-to-FHA path cards ────────────────────────────────────────
@@ -343,7 +429,7 @@ export default function ExistingHomeowner() {
   const convToFHANoEquityCard = (
     <div className="space-y-4">
       <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-800">
-        You can still proceed but must qualify carrying both mortgage payments. Speak with your agent about debt-to-income impact.
+        The client can still proceed but must qualify carrying both mortgage payments. Review debt-to-income impact carefully.
       </div>
       <ProgramRow programs={["fhaDPA", "fhaSolar"]} />
     </div>
@@ -402,327 +488,373 @@ export default function ExistingHomeowner() {
         )}
       </div>
 
-      <div className="max-w-2xl mx-auto">
+      <div className="max-w-2xl mx-auto space-y-0">
 
-        {/* ── ENTRY SCREEN ────────────────────────────────────────────────── */}
-        {state.currentLoan === null && (
-          <div className="text-center space-y-6">
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900">Existing Homeowner Options</h2>
-              <p className="text-gray-500 mt-2 text-base">
-                Let&apos;s find the best path for your next home purchase.
-              </p>
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-gray-700 mb-4">
-                What type of loan do you currently have on your existing home?
-              </p>
-              <div className="grid grid-cols-2 gap-4">
-                <SelectionCard
-                  title="FHA"
-                  subtitle="FHA-insured mortgage"
-                  selected={state.currentLoan === "fha"}
-                  onClick={() => set("currentLoan", "fha")}
-                />
-                <SelectionCard
-                  title="Conventional"
-                  subtitle="Conventional mortgage"
-                  selected={state.currentLoan === "conventional"}
-                  onClick={() => set("currentLoan", "conventional")}
-                />
-              </div>
-            </div>
+        {/* ── SECTION 1: Always visible ─────────────────────────────────────── */}
+        <div className="space-y-4">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">Existing Homeowner Options</h2>
+            <p className="text-gray-500 mt-1 text-base">
+              Find the best path for the client&apos;s next home purchase.
+            </p>
           </div>
-        )}
-
-        {/* ── BRANCH A — FHA ──────────────────────────────────────────────── */}
-
-        {/* A1 — Purchase timing */}
-        {state.currentLoan === "fha" && state.purchaseTiming === null && (
-          <div className="space-y-5">
-            <p className="text-sm font-semibold text-gray-700">
-              When did you purchase your current home?
+          <div>
+            <p className="text-sm font-semibold text-gray-700 mb-3">
+              What type of loan does the client currently have on their existing home?
             </p>
             <div className="grid grid-cols-2 gap-4">
               <SelectionCard
-                title="Within the last 3 years"
-                selected={state.purchaseTiming === "recent"}
-                onClick={() => set("purchaseTiming", "recent")}
+                title="FHA"
+                note="FHA-insured mortgage"
+                selected={state.currentLoan === "fha"}
+                onClick={() => selectCard("currentLoan", "fha")}
               />
               <SelectionCard
-                title="10+ years ago"
-                selected={state.purchaseTiming === "longago"}
-                onClick={() => set("purchaseTiming", "longago")}
+                title="Conventional"
+                note="Conventional mortgage"
+                selected={state.currentLoan === "conventional"}
+                onClick={() => selectCard("currentLoan", "conventional")}
               />
             </div>
           </div>
+        </div>
+
+        {/* ── SECTION 2: Visible only if currentLoan is set ─────────────────── */}
+        {state.currentLoan !== null && (
+          <>
+            <SectionConnector />
+
+            {/* ── BRANCH A — FHA ──────────────────────────────────────────────── */}
+            {state.currentLoan === "fha" && (
+              <div className="space-y-4">
+                <p className="text-sm font-semibold text-gray-700">
+                  When did the client purchase their current home?
+                </p>
+                <div className="grid grid-cols-2 gap-4">
+                  <SelectionCard
+                    title="2021 or Later"
+                    note="Most homes purchased after 2021 have not yet accumulated 25% equity"
+                    selected={state.purchaseTiming === "recent"}
+                    onClick={() => selectCard("purchaseTiming", "recent")}
+                  />
+                  <SelectionCard
+                    title="Before 2021"
+                    note="Homes purchased before 2021 have likely appreciated — 25% equity is possible"
+                    selected={state.purchaseTiming === "longago"}
+                    onClick={() => selectCard("purchaseTiming", "longago")}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* ── BRANCH B — Conventional ─────────────────────────────────────── */}
+            {state.currentLoan === "conventional" && (
+              <div className="space-y-4">
+                <p className="text-sm font-semibold text-gray-700">
+                  Is the client looking to buy their next home with FHA or Conventional financing?
+                </p>
+                <div className="grid grid-cols-2 gap-4">
+                  <SelectionCard
+                    title="FHA"
+                    selected={state.nextLoanType === "fha"}
+                    onClick={() => selectCard("nextLoanType", "fha")}
+                  />
+                  <SelectionCard
+                    title="Conventional"
+                    selected={state.nextLoanType === "conventional"}
+                    onClick={() => selectCard("nextLoanType", "conventional")}
+                  />
+                </div>
+              </div>
+            )}
+          </>
         )}
 
-        {/* A-Recent — Family size */}
-        {state.currentLoan === "fha" &&
-          state.purchaseTiming === "recent" &&
-          state.familySizeIncreased === null && (
-            <div className="space-y-5">
+        {/* ── SECTION 3: Branch-specific follow-on questions ────────────────── */}
+
+        {/* FHA + 2021 or Later → family size question */}
+        {state.currentLoan === "fha" && state.purchaseTiming === "recent" && (
+          <>
+            <SectionConnector />
+            <div className="space-y-4">
               <p className="text-sm font-semibold text-gray-700">
-                Has your family size increased since purchasing? (marriage or children)
+                Has the client&apos;s family size increased since purchasing? (marriage or children)
               </p>
               <div className="grid grid-cols-2 gap-4">
                 <SelectionCard
                   title="Yes"
                   selected={state.familySizeIncreased === "yes"}
-                  onClick={() => set("familySizeIncreased", "yes")}
+                  onClick={() => selectCard("familySizeIncreased", "yes")}
                 />
                 <SelectionCard
                   title="No"
                   selected={state.familySizeIncreased === "no"}
-                  onClick={() => set("familySizeIncreased", "no")}
+                  onClick={() => selectCard("familySizeIncreased", "no")}
                 />
               </div>
             </div>
-          )}
 
-        {/* A-Recent-No */}
-        {state.currentLoan === "fha" &&
-          state.purchaseTiming === "recent" &&
-          state.familySizeIncreased === "no" && (
-            <div className="space-y-4">
-              <h3 className="text-base font-bold text-gray-900">Your Best Path</h3>
-              {fhaToConvCard}
-            </div>
-          )}
+            {/* FHA + 2021 or Later + No → result */}
+            {state.familySizeIncreased === "no" && (
+              <>
+                <SectionConnector />
+                <div className="space-y-4">
+                  <h3 className="text-base font-bold text-gray-900">Recommended Path</h3>
+                  {fhaToConvCard}
+                </div>
+              </>
+            )}
 
-        {/* A-Recent-Yes */}
-        {state.currentLoan === "fha" &&
-          state.purchaseTiming === "recent" &&
-          state.familySizeIncreased === "yes" && (
-            <div className="space-y-4">
-              <h3 className="text-base font-bold text-gray-900">Your Options</h3>
-              <div className="space-y-4">
-                <PathCard
-                  title="Path 1 — FHA → FHA (Second FHA Loan)"
-                  borderColor="red"
-                  bullets={[
-                    { icon: "✅", text: "Family size increased" },
-                    { icon: "✅", text: "Must currently live in home (not vacation residence)" },
-                    {
-                      icon: "⚠️",
-                      text: "12 months landlord history on tax returns required to offset current mortgage",
-                    },
-                  ]}
-                  flagBox={{
-                    color: "amber",
-                    text: "If 12-month rental history not yet established, consider waiting or using Path 2",
-                  }}
-                  programs={["fhaDPA", "fhaSolar"]}
-                />
-                <PathCard
-                  title="Path 2 — FHA → Conventional"
-                  borderColor="gray"
-                  bullets={[
-                    { icon: "✅", text: "5% down" },
-                    { icon: "✅", text: "No equity needed" },
-                    { icon: "✅", text: "No rental history required" },
-                    { icon: "✅", text: "Can rent current home" },
-                  ]}
-                  programs={["ccConvDPA", "selfConv"]}
-                />
-              </div>
-            </div>
-          )}
+            {/* FHA + 2021 or Later + Yes → result */}
+            {state.familySizeIncreased === "yes" && (
+              <>
+                <SectionConnector />
+                <div className="space-y-4">
+                  <h3 className="text-base font-bold text-gray-900">Available Options</h3>
+                  <div className="space-y-4">
+                    <PathCard
+                      title="Path 1 — FHA → FHA (Second FHA Loan)"
+                      borderColor="red"
+                      bullets={[
+                        { icon: "✅", text: "Family size increased" },
+                        {
+                          icon: "✅",
+                          text: (
+                            <span>
+                              Must currently live in home (not{" "}
+                              <span className="font-medium">vacating residence</span>
+                              <VacatingTooltip />
+                            </span>
+                          ),
+                        },
+                        {
+                          icon: "⚠️",
+                          text: "12 months landlord history on tax returns required to offset current mortgage",
+                        },
+                      ]}
+                      flagBox={{
+                        color: "amber",
+                        text: "If 12-month rental history not yet established, consider waiting or using Path 2",
+                      }}
+                      programs={["fhaDPA", "fhaSolar"]}
+                    />
+                    <PathCard
+                      title="Path 2 — FHA → Conventional"
+                      borderColor="gray"
+                      bullets={[
+                        { icon: "✅", text: "5% down" },
+                        { icon: "✅", text: "No equity needed" },
+                        { icon: "✅", text: "No rental history required" },
+                        { icon: "✅", text: "Can rent current home" },
+                      ]}
+                      programs={["ccConvDPA", "selfConv"]}
+                    />
+                  </div>
+                </div>
+              </>
+            )}
+          </>
+        )}
 
-        {/* A-LongAgo */}
+        {/* FHA + Before 2021 → all 3 toggle questions at once */}
         {state.currentLoan === "fha" && state.purchaseTiming === "longago" && (
-          <div className="space-y-6">
-            <div className="bg-white border border-gray-200 rounded-xl p-5">
-              <h3 className="font-bold text-gray-900 mb-4">Check Your Situation</h3>
-              <div className="space-y-1">
-                <PillToggle
-                  label="Does your current home have 25%+ equity?"
-                  value={state.hasEquity25}
-                  onChange={(v) => set("hasEquity25", v)}
-                />
-                <PillToggle
-                  label="Has your family size increased? (marriage or children)"
-                  value={state.familySizeIncreasedLong}
-                  onChange={(v) => set("familySizeIncreasedLong", v)}
-                />
-                <PillToggle
-                  label="Have you already vacated the home or established a different address?"
-                  value={state.vacated}
-                  onChange={(v) => set("vacated", v)}
-                />
+          <>
+            <SectionConnector />
+            <div className="space-y-4">
+              <div className="bg-white border border-gray-200 rounded-xl p-5">
+                <h3 className="font-bold text-gray-900 mb-4">Client&apos;s Situation</h3>
+                <div className="space-y-1">
+                  <PillToggle
+                    label="Does the client's current home have 25%+ equity?"
+                    value={state.hasEquity25}
+                    onChange={(v) =>
+                      setState((prev) => ({ ...prev, hasEquity25: v }))
+                    }
+                  />
+                  <PillToggle
+                    label="Has the client's family size increased? (marriage or children)"
+                    value={state.familySizeIncreasedLong}
+                    onChange={(v) =>
+                      setState((prev) => ({ ...prev, familySizeIncreasedLong: v }))
+                    }
+                  />
+                  <PillToggle
+                    label={
+                      <span>
+                        Has the client already vacated the home or established a different address?{" "}
+                        <span className="font-normal text-gray-500">
+                          (
+                          <span className="italic">vacating residence</span>
+                          <VacatingTooltip />)
+                        </span>
+                      </span>
+                    }
+                    value={state.vacated}
+                    onChange={(v) =>
+                      setState((prev) => ({ ...prev, vacated: v }))
+                    }
+                  />
+                </div>
               </div>
-              {longAgoAllAnswered && !showLongAgoResults && (
-                <button
-                  onClick={() => setShowLongAgoResults(true)}
-                  className="mt-5 w-full bg-[#C8202A] hover:bg-red-700 text-white font-bold py-2.5 rounded-lg transition-colors text-sm"
-                >
-                  See My Options →
-                </button>
+
+              {/* Show results automatically when all 3 answered */}
+              {longAgoAllAnswered && (
+                <>
+                  <SectionConnector />
+                  <div className="space-y-4">
+                    {(() => {
+                      const c = getLongAgoCase();
+
+                      if (c === 1) {
+                        return (
+                          <>
+                            <h3 className="text-base font-bold text-gray-900">Available Options</h3>
+                            <PathCard
+                              title="FHA → FHA Available ✅"
+                              borderColor="green"
+                              bullets={[
+                                { icon: "✅", text: "Has 25%+ equity — current payment can be offset" },
+                                { icon: "✅", text: "Family size has increased" },
+                                {
+                                  icon: "✅",
+                                  text: (
+                                    <span>
+                                      Home has been vacated /{" "}
+                                      <span className="font-medium">vacating residence</span>
+                                      <VacatingTooltip /> established
+                                    </span>
+                                  ),
+                                },
+                              ]}
+                              programs={["fhaDPA", "fhaSolar"]}
+                            />
+                            <PathCard
+                              title="FHA → Conventional (Always Available)"
+                              badge={{ text: "Always Available", color: "gray" }}
+                              borderColor="red"
+                              bullets={[
+                                { icon: "✅", text: "5% down, no restrictions" },
+                                { icon: "✅", text: "Can rent current home to offset mortgage" },
+                                { icon: "✅", text: "No rental history required" },
+                              ]}
+                              programs={["ccConvDPA", "selfConv"]}
+                            />
+                          </>
+                        );
+                      }
+
+                      if (c === 2) {
+                        return (
+                          <>
+                            <div className="bg-[#C8202A] text-white rounded-xl p-5 space-y-2">
+                              <h3 className="font-bold text-lg">⏱ Timing Opportunity</h3>
+                              <p className="text-sm leading-relaxed text-red-100">
+                                The client qualifies once they vacate. Move into the new home first — the
+                                application address cannot match the current home. Once moved, all three
+                                requirements are met.
+                              </p>
+                            </div>
+                            <h3 className="text-base font-bold text-gray-900">Always Available</h3>
+                            {fhaToConvCard}
+                          </>
+                        );
+                      }
+
+                      if (c === 3) {
+                        return (
+                          <>
+                            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-800">
+                              <strong>FHA to FHA not available</strong> — family size requirement not met.
+                            </div>
+                            {fhaToConvCard}
+                          </>
+                        );
+                      }
+
+                      // c === 4
+                      return (
+                        <>
+                          <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 text-sm text-gray-700">
+                            Without 25% equity, the current FHA payment cannot be offset. Conventional path recommended.
+                          </div>
+                          {fhaToConvCard}
+                        </>
+                      );
+                    })()}
+                  </div>
+                </>
               )}
             </div>
-
-            {/* Long-ago results */}
-            {showLongAgoResults && (
-              <div className="space-y-4">
-                {(() => {
-                  const c = getLongAgoCase();
-
-                  if (c === 1) {
-                    return (
-                      <>
-                        <h3 className="text-base font-bold text-gray-900">Your Options</h3>
-                        <PathCard
-                          title="FHA → FHA Available ✅"
-                          borderColor="green"
-                          bullets={[
-                            { icon: "✅", text: "Has 25%+ equity — current payment can be offset" },
-                            { icon: "✅", text: "Family size has increased" },
-                            { icon: "✅", text: "Home has been vacated / different address established" },
-                          ]}
-                          programs={["fhaDPA", "fhaSolar"]}
-                        />
-                        <PathCard
-                          title="FHA → Conventional (Always Available)"
-                          badge={{ text: "Always Available", color: "gray" }}
-                          borderColor="red"
-                          bullets={[
-                            { icon: "✅", text: "5% down, no restrictions" },
-                            { icon: "✅", text: "Can rent current home to offset mortgage" },
-                            { icon: "✅", text: "No rental history required" },
-                          ]}
-                          programs={["ccConvDPA", "selfConv"]}
-                        />
-                      </>
-                    );
-                  }
-
-                  if (c === 2) {
-                    return (
-                      <>
-                        <div className="bg-[#C8202A] text-white rounded-xl p-5 space-y-2">
-                          <h3 className="font-bold text-lg">⏱ Timing Opportunity</h3>
-                          <p className="text-sm leading-relaxed text-red-100">
-                            You qualify once you vacate. Move into your new home first — your application
-                            address cannot match your current home. Once moved, all three requirements are met.
-                          </p>
-                        </div>
-                        <h3 className="text-base font-bold text-gray-900">Always Available</h3>
-                        {fhaToConvCard}
-                      </>
-                    );
-                  }
-
-                  if (c === 3) {
-                    return (
-                      <>
-                        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-800">
-                          <strong>FHA to FHA not available</strong> — family size requirement not met.
-                        </div>
-                        {fhaToConvCard}
-                      </>
-                    );
-                  }
-
-                  // c === 4
-                  return (
-                    <>
-                      <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 text-sm text-gray-700">
-                        Without 25% equity, the current FHA payment cannot be offset. Conventional path recommended.
-                      </div>
-                      {fhaToConvCard}
-                    </>
-                  );
-                })()}
-              </div>
-            )}
-          </div>
+          </>
         )}
 
-        {/* ── BRANCH B — Conventional ─────────────────────────────────────── */}
-
-        {/* B1 — Next loan type */}
-        {state.currentLoan === "conventional" && state.nextLoanType === null && (
-          <div className="space-y-5">
-            <p className="text-sm font-semibold text-gray-700">
-              Are you looking to buy your next home with FHA or Conventional financing?
-            </p>
-            <div className="grid grid-cols-2 gap-4">
-              <SelectionCard
-                title="FHA"
-                selected={state.nextLoanType === "fha"}
-                onClick={() => set("nextLoanType", "fha")}
-              />
-              <SelectionCard
-                title="Conventional"
-                selected={state.nextLoanType === "conventional"}
-                onClick={() => set("nextLoanType", "conventional")}
-              />
-            </div>
-          </div>
-        )}
-
-        {/* B-FHA — Equity question */}
-        {state.currentLoan === "conventional" &&
-          state.nextLoanType === "fha" &&
-          state.convToFHAEquity === null && (
-            <div className="space-y-5">
+        {/* Conventional + FHA → equity question */}
+        {state.currentLoan === "conventional" && state.nextLoanType === "fha" && (
+          <>
+            <SectionConnector />
+            <div className="space-y-4">
               <p className="text-sm font-semibold text-gray-700">
-                Does your current home have 25%+ equity?
+                Does the client&apos;s current home have 25%+ equity?
               </p>
               <div className="grid grid-cols-2 gap-4">
                 <SelectionCard
                   title="Yes"
                   selected={state.convToFHAEquity === "yes"}
-                  onClick={() => set("convToFHAEquity", "yes")}
+                  onClick={() => selectCard("convToFHAEquity", "yes")}
                 />
                 <SelectionCard
                   title="No"
                   selected={state.convToFHAEquity === "no"}
-                  onClick={() => set("convToFHAEquity", "no")}
+                  onClick={() => selectCard("convToFHAEquity", "no")}
                 />
               </div>
             </div>
-          )}
 
-        {/* B-FHA-Yes */}
-        {state.currentLoan === "conventional" &&
-          state.nextLoanType === "fha" &&
-          state.convToFHAEquity === "yes" && (
-            <div className="space-y-4">
-              <h3 className="text-base font-bold text-gray-900">Your Path</h3>
-              {convToFHAAvailableCard}
-            </div>
-          )}
+            {/* Conventional + FHA + Yes */}
+            {state.convToFHAEquity === "yes" && (
+              <>
+                <SectionConnector />
+                <div className="space-y-4">
+                  <h3 className="text-base font-bold text-gray-900">Client&apos;s Path</h3>
+                  {convToFHAAvailableCard}
+                </div>
+              </>
+            )}
 
-        {/* B-FHA-No */}
-        {state.currentLoan === "conventional" &&
-          state.nextLoanType === "fha" &&
-          state.convToFHAEquity === "no" && (
-            <div className="space-y-4">
-              <h3 className="text-base font-bold text-gray-900">Proceeding Without Full Equity</h3>
-              {convToFHANoEquityCard}
-            </div>
-          )}
+            {/* Conventional + FHA + No */}
+            {state.convToFHAEquity === "no" && (
+              <>
+                <SectionConnector />
+                <div className="space-y-4">
+                  <h3 className="text-base font-bold text-gray-900">Proceeding Without Full Equity</h3>
+                  {convToFHANoEquityCard}
+                </div>
+              </>
+            )}
+          </>
+        )}
 
-        {/* B-Conventional */}
+        {/* Conventional + Conventional → result immediately */}
         {state.currentLoan === "conventional" && state.nextLoanType === "conventional" && (
-          <div className="space-y-4">
-            <h3 className="text-base font-bold text-gray-900">Your Path</h3>
-            <PathCard
-              title="Conventional → Conventional ✅"
-              badge={{ text: "Cleanest Path", color: "green" }}
-              borderColor="green"
-              bullets={[
-                { icon: "✅", text: "Zero restrictions" },
-                { icon: "✅", text: "Simply rent current home to offset mortgage" },
-                { icon: "✅", text: "No equity requirement" },
-                { icon: "✅", text: "No rental history requirement" },
-                { icon: "✅", text: "No family size or vacating rules" },
-              ]}
-              programs={["ccConvDPA", "selfConv"]}
-            />
-          </div>
+          <>
+            <SectionConnector />
+            <div className="space-y-4">
+              <h3 className="text-base font-bold text-gray-900">Client&apos;s Path</h3>
+              <PathCard
+                title="Conventional → Conventional ✅"
+                badge={{ text: "Cleanest Path", color: "green" }}
+                borderColor="green"
+                bullets={[
+                  { icon: "✅", text: "Zero restrictions" },
+                  { icon: "✅", text: "Simply rent current home to offset mortgage" },
+                  { icon: "✅", text: "No equity requirement" },
+                  { icon: "✅", text: "No rental history requirement" },
+                  { icon: "✅", text: "No family size or vacating rules" },
+                ]}
+                programs={["ccConvDPA", "selfConv"]}
+              />
+            </div>
+          </>
         )}
 
       </div>

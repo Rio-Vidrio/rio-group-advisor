@@ -113,7 +113,7 @@ export default function Step3Income({ client, update }: Props) {
 
         <div>
           <label className="block text-sm font-semibold text-gray-700">
-            Are you self-employed or do you receive 1099 income?
+            Is the client self-employed or do they receive 1099 income?
           </label>
           <YesNoButtons
             value={client.isSelfEmployed}
@@ -124,7 +124,7 @@ export default function Step3Income({ client, update }: Props) {
         {client.isSelfEmployed === "yes" && (
           <div className="ml-4 pl-4 border-l-2 border-rio-red/30">
             <label className="block text-sm font-semibold text-gray-700">
-              Do you reduce your net income on taxes to lower your tax liability?
+              Does the client reduce their net income on taxes to lower tax liability?
             </label>
             <YesNoButtons
               value={client.reducesNetIncome}
@@ -140,7 +140,7 @@ export default function Step3Income({ client, update }: Props) {
 
         <div>
           <label className="block text-sm font-semibold text-gray-700">
-            Do you have any gaps in employment in the last 2 years?
+            Does the client have any gaps in employment in the last 2 years?
           </label>
           <YesNoButtons
             value={client.hasEmploymentGaps}
@@ -155,7 +155,7 @@ export default function Step3Income({ client, update }: Props) {
 
         <div>
           <label className="block text-sm font-semibold text-gray-700">
-            Is any portion of your income commission-based or variable (bonuses, overtime)?
+            Is any portion of the client's income commission-based or variable (bonuses, overtime)?
           </label>
           <YesNoButtons
             value={client.hasVariableIncome}
@@ -167,7 +167,7 @@ export default function Step3Income({ client, update }: Props) {
           <div className="ml-4 pl-4 border-l-2 border-rio-red/30 space-y-3">
             <div>
               <label className="block text-sm font-semibold text-gray-700">
-                Do you have 12 or more months of documented history with this income?
+                Does the client have 12 or more months of documented history with this income?
               </label>
               <YesNoButtons
                 value={client.hasVariableIncomeHistory}
@@ -197,7 +197,7 @@ export default function Step3Income({ client, update }: Props) {
             <p className="text-sm font-semibold text-blue-900">ITIN Loan Eligibility Check</p>
             <div>
               <label className="block text-sm font-semibold text-gray-700">
-                Do you have 2 years of documented work history and/or tax returns?
+                Does the client have 2 years of documented work history and/or tax returns?
               </label>
               <YesNoButtons
                 value={client.hasITINWorkHistory}

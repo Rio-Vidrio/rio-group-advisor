@@ -101,7 +101,7 @@ export default function Step4Debts({ client, update }: Props) {
                 This limits home price options significantly.
               </p>
               <p className="mt-2">
-                <strong>Consider:</strong> Adding a co-signer or paying off existing debt to increase buying power.
+                <strong>Consider:</strong> Adding a co-signer or having the client pay off existing debt to increase buying power.
               </p>
               {client.creditScore >= 660 && (
                 <p className="mt-2">

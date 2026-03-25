@@ -93,7 +93,7 @@ export default function Step7Results({ client, results, ccFlags, onRestart }: Pr
             <p className="text-sm text-amber-700 mb-2">
               This client may be a stronger candidate for our lending partner at Cross Country Mortgage.
               They specialize in complex files — including self-employment, new jobs, employment gaps,
-              and credit repair pathways. Your agent will make the introduction.
+              and credit repair pathways. Make the introduction as the agent of record.
             </p>
             <ul className="text-sm text-amber-800 space-y-1">
               {ccFlags.map((flag, i) => (
@@ -335,12 +335,12 @@ export default function Step7Results({ client, results, ccFlags, onRestart }: Pr
           <h3 className="font-bold mb-2">Next Steps</h3>
           {ccFlags.length > 0 ? (
             <p className="text-sm text-gray-700">
-              Your agent will introduce you to our lending partner at Cross Country Mortgage
-              for specialized support with your file.
+              Introduce the client to our lending partner at Cross Country Mortgage
+              for specialized support with their file.
             </p>
           ) : (
             <p className="text-sm text-gray-700">
-              Your agent will guide you through the next steps in the process.
+              Guide the client through the next steps in the process.
             </p>
           )}
         </div>

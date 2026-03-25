@@ -137,7 +137,7 @@ export default function SettingsPanel() {
         )}
 
         <div className="text-xs text-gray-400 mt-3 space-y-0.5">
-          <div>Last updated: {mounted && rates.lastUpdated ? new Date(rates.lastUpdated).toLocaleString() : "—"}</div>
+          <div suppressHydrationWarning>Last updated: {mounted && rates.lastUpdated ? new Date(rates.lastUpdated).toLocaleString() : "—"}</div>
           <div className="text-gray-300">
             Note: FHA = Conventional − 0.25% | VA = Conventional − 0.50% (industry approximations — override manually if needed)
           </div>

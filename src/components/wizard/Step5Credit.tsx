@@ -127,7 +127,7 @@ export default function Step5Credit({ client, update }: Props) {
 
         <div>
           <label className="block text-sm font-semibold text-gray-700">
-            Do you have 12 months of verifiable rental history from a landlord?
+            Does the client have 12 months of verifiable rental history from a landlord?
           </label>
           <YesNoButtons
             value={client.hasRentalHistory}

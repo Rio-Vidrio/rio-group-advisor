@@ -656,7 +656,7 @@ export function evaluateEligibility(
         // Client's income/debt is the binding constraint
         suggestedMaxPrice = dtiMaxPrice;
         suggestedMaxPriceBound = "dti";
-        suggestedMaxPriceNote = `Based on your income and debt load at ${program.maxDTI}% DTI`;
+        suggestedMaxPriceNote = `Based on client's income and debt load at ${program.maxDTI}% DTI`;
       } else {
         // Program's hard cap is the binding constraint
         suggestedMaxPrice = hardCap;

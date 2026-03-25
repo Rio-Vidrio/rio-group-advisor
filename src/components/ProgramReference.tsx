@@ -51,8 +51,8 @@ export default function ProgramReference() {
             </div>
           ))}
         </div>
-        <div className="text-xs text-gray-400 mt-2">
-          Last updated: {mounted ? new Date(rates.lastUpdated).toLocaleString() : "—"}
+        <div className="text-xs text-gray-400 mt-2" suppressHydrationWarning>
+          Last updated: {mounted && rates.lastUpdated ? new Date(rates.lastUpdated).toLocaleString() : "—"}
         </div>
       </div>
 

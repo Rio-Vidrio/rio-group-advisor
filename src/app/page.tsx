@@ -30,7 +30,7 @@ export default function Home() {
 
       <main className="px-4 py-6 md:py-8">
         {/* Keep all tabs mounted so wizard state is never lost when switching tabs */}
-        <div style={{ display: activeTab === "wizard" ? "block" : "none" }}><WizardShell /></div>
+        <div style={{ display: activeTab === "wizard" ? "block" : "none" }}><WizardShell onTabChange={setActiveTab} /></div>
         <div style={{ display: activeTab === "calculators" ? "block" : "none" }}><Calculators /></div>
         <div style={{ display: activeTab === "programs" ? "block" : "none" }}><ProgramReference /></div>
         <div style={{ display: activeTab === "rates" ? "block" : "none" }}><MarketRates /></div>

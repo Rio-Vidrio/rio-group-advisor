@@ -52,7 +52,7 @@ export default function Step2Citizenship({ client, update }: Props) {
       <div className="space-y-5">
         <div>
           <label className="block text-sm font-semibold text-gray-700">
-            Are you a U.S. citizen or permanent resident?
+            Is the client a U.S. citizen or permanent resident?
           </label>
           <YesNoButtons
             value={client.citizenship}
@@ -81,7 +81,7 @@ export default function Step2Citizenship({ client, update }: Props) {
         {(isCitizenPath || isDACAPath) && (
           <div>
             <label className="block text-sm font-semibold text-gray-700">
-              Are you using a VA loan?
+              Is the client using a VA loan?
             </label>
             <YesNoButtons
               value={client.isVeteran}
@@ -89,7 +89,7 @@ export default function Step2Citizenship({ client, update }: Props) {
             />
             {client.isVeteran === "yes" && (
               <p className="mt-2 text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2">
-                VA loan eligibility detected — strong new build candidate if targeting outer West or East Valley areas.
+                VA loan eligibility detected — strong new build candidate if targeting outer West or East Valley areas. Confirm DD-214 or Certificate of Eligibility.
               </p>
             )}
           </div>
@@ -100,7 +100,7 @@ export default function Step2Citizenship({ client, update }: Props) {
           <>
             <div>
               <label className="block text-sm font-semibold text-gray-700">
-                Are you currently a homeowner?
+                Is the client currently a homeowner?
               </label>
               <YesNoButtons
                 value={client.isHomeowner}
@@ -112,7 +112,7 @@ export default function Step2Citizenship({ client, update }: Props) {
               <div className="ml-4 pl-4 border-l-2 border-rio-red/30 space-y-4">
                 <div>
                   <label className="block text-sm font-semibold text-gray-700">
-                    Do you have 25%+ equity?
+                    Does the client have 25%+ equity?
                   </label>
                   <YesNoButtons
                     value={client.hasEquity25}
@@ -121,7 +121,7 @@ export default function Step2Citizenship({ client, update }: Props) {
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-700">
-                    Has your family size increased since purchasing?
+                    Has the client's family size increased since purchasing?
                   </label>
                   <YesNoButtons
                     value={client.familySizeIncreased}
@@ -130,7 +130,7 @@ export default function Step2Citizenship({ client, update }: Props) {
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-700">
-                    Have you vacated the home or is it currently rented?
+                    Has the client vacated the home or is it currently rented?
                   </label>
                   <YesNoButtons
                     value={client.homeVacated}
@@ -142,7 +142,7 @@ export default function Step2Citizenship({ client, update }: Props) {
 
             <div>
               <label className="block text-sm font-semibold text-gray-700">
-                Have you owned a home in the last 3 years?
+                Has the client owned a home in the last 3 years?
               </label>
               <YesNoButtons
                 value={client.ownedLast3Years}
