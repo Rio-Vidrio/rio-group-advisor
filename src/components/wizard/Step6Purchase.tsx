@@ -30,7 +30,7 @@ function YesNoButtons({ value, onChange }: { value: string; onChange: (v: string
 export default function Step6Purchase({ client, update }: Props) {
   const showNewBuildNote =
     client.propertyType === "new-build" ||
-    ["West Valley", "Maricopa", "Santan Valley"].includes(client.targetArea);
+    ["West Valley Outside the 101", "East Valley Outside the 202"].includes(client.targetArea);
 
   return (
     <div>
@@ -91,10 +91,11 @@ export default function Step6Purchase({ client, update }: Props) {
             className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:border-rio-red focus:ring-1 focus:ring-rio-red outline-none bg-white"
           >
             <option value="">Select area</option>
-            <option value="Phoenix Metro">Phoenix Metro</option>
-            <option value="West Valley">West Valley (outside 101)</option>
-            <option value="Maricopa">Maricopa</option>
-            <option value="Santan Valley">Santan Valley</option>
+            <option value="Central Area">Central Area</option>
+            <option value="West Valley Within the 101">West Valley Within the 101</option>
+            <option value="East Valley Within the 202">East Valley Within the 202</option>
+            <option value="West Valley Outside the 101">West Valley Outside the 101</option>
+            <option value="East Valley Outside the 202">East Valley Outside the 202</option>
             <option value="Other">Other</option>
           </select>
         </div>

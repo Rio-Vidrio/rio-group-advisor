@@ -28,11 +28,12 @@ export default function Home() {
       <Navigation activeTab={activeTab} onTabChange={setActiveTab} />
 
       <main className="px-4 py-6 md:py-8">
-        {activeTab === "wizard" && <WizardShell />}
-        {activeTab === "calculators" && <Calculators />}
-        {activeTab === "programs" && <ProgramReference />}
-        {activeTab === "rates" && <MarketRates />}
-        {activeTab === "settings" && <SettingsPanel />}
+        {/* Keep all tabs mounted so wizard state is never lost when switching tabs */}
+        <div style={{ display: activeTab === "wizard" ? "block" : "none" }}><WizardShell /></div>
+        <div style={{ display: activeTab === "calculators" ? "block" : "none" }}><Calculators /></div>
+        <div style={{ display: activeTab === "programs" ? "block" : "none" }}><ProgramReference /></div>
+        <div style={{ display: activeTab === "rates" ? "block" : "none" }}><MarketRates /></div>
+        <div style={{ display: activeTab === "settings" ? "block" : "none" }}><SettingsPanel /></div>
       </main>
 
       <footer className="bg-rio-dark text-gray-500 text-center text-xs py-4 mt-8 no-print">

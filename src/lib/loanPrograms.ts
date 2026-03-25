@@ -269,7 +269,7 @@ export const loanPrograms: LoanProgram[] = [
     isGrant: true,
     grantAmount: 4000,
     programMaxPrice: 500000,
-    programMaxPriceNote: "Max ~$500K — based on $89K income limit at 57% DTI with no debt",
+    programMaxPriceNote: "Income must be at or below $89,000 to qualify — this is an income-based limit, not a purchase price limit.",
   },
 ];
 
@@ -541,13 +541,18 @@ export function evaluateEligibility(
     else if (program.id === 2) downPaymentRequired = 1000;
     else if (program.id === 5) downPaymentRequired = client.purchasePrice * 0.03;
 
-    // DTI check
+    // DTI check — conventional programs use credit-score-based DTI ceiling
     if (totalIncome > 0 && client.purchasePrice > 0) {
       const monthlyIncome = totalIncome / 12;
       const totalDTI = ((totalMonthly + totalDebts) / monthlyIncome) * 100;
-      if (totalDTI > program.maxDTI) {
+      // Conventional: 700+ score allows 50% DTI, 640–699 capped at 45%
+      let effectiveMaxDTI = program.maxDTI;
+      if (program.loanType === "Conventional" && client.creditScore > 0) {
+        effectiveMaxDTI = client.creditScore >= 700 ? 50 : 45;
+      }
+      if (totalDTI > effectiveMaxDTI) {
         conditional = true;
-        reasons.push(`Total DTI ${totalDTI.toFixed(1)}% exceeds program max of ${program.maxDTI}%`);
+        reasons.push(`Total DTI ${totalDTI.toFixed(1)}% exceeds max of ${effectiveMaxDTI}% (${program.loanType} — score ${client.creditScore >= 700 ? "700+" : "640–699"})`);
       }
     }
 
