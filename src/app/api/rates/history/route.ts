@@ -14,8 +14,13 @@ export async function GET(request: Request) {
   const months = parseInt(searchParams.get("months") || "12", 10);
 
   try {
+    // Calculate start date and pad by 1 month for safety
+    const startDate = new Date();
+    startDate.setMonth(startDate.getMonth() - months - 1);
+    const cosd = startDate.toISOString().split("T")[0];
+
     const res = await fetch(
-      "https://fred.stlouisfed.org/graph/fredgraph.csv?id=MORTGAGE30US",
+      `https://fred.stlouisfed.org/graph/fredgraph.csv?id=MORTGAGE30US&cosd=${cosd}`,
       {
         headers: { "User-Agent": "RioGroupAdvisor/1.0" },
       }
@@ -29,7 +34,7 @@ export async function GET(request: Request) {
       .split("\n")
       .filter((l) => l && !l.startsWith("DATE"));
 
-    // Cut to requested window
+    // Cut to exact requested window
     const cutoff = new Date();
     cutoff.setMonth(cutoff.getMonth() - months);
 

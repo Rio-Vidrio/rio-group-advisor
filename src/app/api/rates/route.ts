@@ -4,9 +4,13 @@ export const runtime = "edge";
 
 export async function GET() {
   try {
-    // Fetch 30-year conventional from Freddie Mac PMMS via FRED
+    // Only fetch last 3 months — we just need the latest rate
+    const startDate = new Date();
+    startDate.setMonth(startDate.getMonth() - 3);
+    const cosd = startDate.toISOString().split("T")[0];
+
     const res = await fetch(
-      "https://fred.stlouisfed.org/graph/fredgraph.csv?id=MORTGAGE30US",
+      `https://fred.stlouisfed.org/graph/fredgraph.csv?id=MORTGAGE30US&cosd=${cosd}`,
       {
         headers: { "User-Agent": "RioGroupAdvisor/1.0" },
       }
