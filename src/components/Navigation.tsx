@@ -10,6 +10,7 @@ const tabs = [
   { id: "calculators", label: "Calculators", icon: "🧮" },
   { id: "programs", label: "Program Reference", icon: "📊" },
   { id: "rates", label: "Market Rates", icon: "📈" },
+  { id: "homeowner", label: "Existing Homeowner", icon: "🏠" },
   { id: "settings", label: "Settings", icon: "⚙️" },
 ];
 

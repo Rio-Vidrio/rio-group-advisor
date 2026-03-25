@@ -8,6 +8,7 @@ import Calculators from "@/components/Calculators";
 import ProgramReference from "@/components/ProgramReference";
 import MarketRates from "@/components/MarketRates";
 import SettingsPanel from "@/components/SettingsPanel";
+import ExistingHomeowner from "@/components/ExistingHomeowner";
 import { fetchLiveRates, saveRates } from "@/lib/rateStore";
 
 export default function Home() {
@@ -33,6 +34,7 @@ export default function Home() {
         <div style={{ display: activeTab === "calculators" ? "block" : "none" }}><Calculators /></div>
         <div style={{ display: activeTab === "programs" ? "block" : "none" }}><ProgramReference /></div>
         <div style={{ display: activeTab === "rates" ? "block" : "none" }}><MarketRates /></div>
+        <div style={{ display: activeTab === "homeowner" ? "block" : "none" }}><ExistingHomeowner /></div>
         <div style={{ display: activeTab === "settings" ? "block" : "none" }}><SettingsPanel /></div>
       </main>
 
