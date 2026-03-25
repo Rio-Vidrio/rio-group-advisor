@@ -1,24 +1,16 @@
 import { NextResponse } from "next/server";
 
-export const dynamic = "force-dynamic";
+export const runtime = "edge";
 
 export async function GET() {
   try {
-    // Use AbortController to enforce a 10-second timeout
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 10000);
-
     // Fetch 30-year conventional from Freddie Mac PMMS via FRED
     const res = await fetch(
       "https://fred.stlouisfed.org/graph/fredgraph.csv?id=MORTGAGE30US",
       {
-        signal: controller.signal,
         headers: { "User-Agent": "RioGroupAdvisor/1.0" },
-        cache: "no-store",
       }
     );
-
-    clearTimeout(timeout);
 
     if (!res.ok) throw new Error(`FRED returned ${res.status}`);
 
@@ -47,7 +39,6 @@ export async function GET() {
 
     // FHA typically runs ~0.25% below conventional (MIP offsets rate difference)
     // VA typically runs ~0.50% below conventional
-    // These are standard industry approximations — agent can override in Settings
     const fha = parseFloat((conventional - 0.25).toFixed(3));
     const va = parseFloat((conventional - 0.5).toFixed(3));
 
@@ -61,7 +52,6 @@ export async function GET() {
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
-    console.error("Rate fetch failed:", message);
     return NextResponse.json(
       { error: "Could not fetch live rates", detail: message },
       { status: 500 }
