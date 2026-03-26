@@ -1,5 +1,5 @@
 // Bump this version every deploy to bust all cached assets
-const CACHE_NAME = 'rio-advisor-v3';
+const CACHE_NAME = 'rio-advisor-v4';
 
 // Install — take control immediately
 self.addEventListener('install', event => {
