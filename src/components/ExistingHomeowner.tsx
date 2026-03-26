@@ -327,6 +327,37 @@ function DisqualifierCard({ reason }: { reason: string }) {
   );
 }
 
+// ─── BankruptcyWarningBanner — shown inline when BK=yes, flow continues ───────
+
+function BankruptcyWarningBanner({ years, loanType }: { years: 2 | 4; loanType: string }) {
+  return (
+    <div className="bg-amber-50 border-2 border-amber-400 rounded-xl p-4 flex gap-3 items-start">
+      <span className="text-amber-500 text-base font-bold shrink-0 mt-0.5">⚠</span>
+      <div>
+        <div className="font-bold text-amber-800 text-sm mb-1">Currently Ineligible — Planning View</div>
+        <p className="text-sm text-amber-900 leading-snug">
+          {loanType} requires <strong>{years} years post-bankruptcy discharge</strong>. This client does not yet meet
+          the minimum time requirement. Options shown below are for planning purposes only — the client must
+          reach the {years}-year mark before submitting an application.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ─── PlanningDisclaimer — compact banner shown on every result card when BK=yes
+
+function PlanningDisclaimer({ years, loanType }: { years: 2 | 4; loanType: string }) {
+  return (
+    <div className="bg-amber-50 border border-amber-300 rounded-lg px-3 py-2 text-xs text-amber-800 flex gap-2 items-start">
+      <span className="shrink-0 font-bold">⚠</span>
+      <span>
+        <strong>Planning only</strong> — {loanType} {years}-year post-bankruptcy requirement must be met before applying.
+      </span>
+    </div>
+  );
+}
+
 // ─── NoPrograms card ──────────────────────────────────────────────────────────
 
 function NoProgramsCard() {
@@ -495,18 +526,22 @@ export default function ExistingHomeowner() {
   // ── Visibility flags ───────────────────────────────────────────────────────
 
   // FHA branch
-  const showBankruptcyFHA     = state.currentLoan === "fha";
-  const showCitizenshipFHA    = state.currentLoan === "fha" && state.bankruptcyFHA !== null;
-  const fhaBankruptcyBlocked  = state.currentLoan === "fha" && state.bankruptcyFHA === "yes" && state.citizenship !== null;
-  const fhaDacaBlocked        = state.currentLoan === "fha" && state.bankruptcyFHA === "no" && state.citizenship === "daca";
-  const showFHAMainFlow       = state.currentLoan === "fha" && state.bankruptcyFHA === "no" && state.citizenship === "citizen";
+  const showBankruptcyFHA        = state.currentLoan === "fha";
+  const fhaHasBankruptcy         = state.currentLoan === "fha" && state.bankruptcyFHA === "yes";
+  const showCitizenshipFHA       = state.currentLoan === "fha" && state.bankruptcyFHA !== null;
+  // DACA block: FHA + bankruptcy answered + DACA selected
+  const fhaDacaBlocked           = state.currentLoan === "fha" && state.bankruptcyFHA !== null && state.citizenship === "daca";
+  // Main flow: FHA + bankruptcy answered + citizen (continues regardless of BK=yes)
+  const showFHAMainFlow          = state.currentLoan === "fha" && state.bankruptcyFHA !== null && state.citizenship === "citizen";
 
   // Conventional branch
-  const showBankruptcyConv    = state.currentLoan === "conventional";
-  const showCitizenshipConv   = state.currentLoan === "conventional" && state.bankruptcyConv !== null;
-  const convBankruptcyBlocked = state.currentLoan === "conventional" && state.bankruptcyConv === "yes" && state.citizenship !== null;
-  const convDacaBlocked       = state.currentLoan === "conventional" && state.bankruptcyConv === "no" && state.citizenship === "daca";
-  const showConvMainFlow      = state.currentLoan === "conventional" && state.bankruptcyConv === "no" && state.citizenship === "citizen";
+  const showBankruptcyConv       = state.currentLoan === "conventional";
+  const convHasBankruptcy        = state.currentLoan === "conventional" && state.bankruptcyConv === "yes";
+  const showCitizenshipConv      = state.currentLoan === "conventional" && state.bankruptcyConv !== null;
+  // DACA block: conv + bankruptcy answered + DACA selected
+  const convDacaBlocked          = state.currentLoan === "conventional" && state.bankruptcyConv !== null && state.citizenship === "daca";
+  // Main flow: conv + bankruptcy answered + citizen (continues regardless of BK=yes)
+  const showConvMainFlow         = state.currentLoan === "conventional" && state.bankruptcyConv !== null && state.citizenship === "citizen";
 
   // ─── Render ────────────────────────────────────────────────────────────────
   return (
@@ -602,6 +637,14 @@ export default function ExistingHomeowner() {
           </>
         )}
 
+        {/* FHA: Bankruptcy = Yes → inline warning banner (flow continues below) */}
+        {fhaHasBankruptcy && (
+          <>
+            <SectionConnector />
+            <BankruptcyWarningBanner years={2} loanType="FHA" />
+          </>
+        )}
+
         {/* FHA: Citizenship question (shown after bankruptcy is answered) */}
         {showCitizenshipFHA && (
           <>
@@ -626,40 +669,33 @@ export default function ExistingHomeowner() {
           </>
         )}
 
-        {/* FHA: Bankruptcy = Yes → disqualifier + route to conventional (or no programs for DACA) */}
-        {fhaBankruptcyBlocked && (
+        {/* FHA: DACA → FHA disqualifier + conventional only (with BK planning note if applicable) */}
+        {fhaDacaBlocked && (
           <>
             <SectionConnector />
             <div className="space-y-4">
-              <DisqualifierCard reason="FHA requires 2 years post-bankruptcy discharge. No FHA programs are available at this time." />
-              {state.citizenship === "citizen" ? (
+              <DisqualifierCard reason="FHA financing is not available for DACA or work permit holders. All FHA programs are ineligible." />
+              {fhaHasBankruptcy ? (
                 <>
-                  <h3 className="text-base font-bold text-gray-900">Alternative Path — Conventional</h3>
-                  {fhaToConvCard}
+                  <NoProgramsCard />
+                  <div className="bg-amber-50 border border-amber-300 rounded-lg px-3 py-2 text-xs text-amber-800">
+                    ⚠ Conventional financing is also affected by the bankruptcy discharge timeline — recommend consulting once the 2-year FHA requirement is met.
+                  </div>
                 </>
               ) : (
                 <>
-                  <DisqualifierCard reason="FHA financing is not available for DACA or work permit holders. All FHA programs are ineligible." />
-                  <NoProgramsCard />
+                  <h3 className="text-base font-bold text-gray-900">Available Path — Conventional</h3>
+                  {fhaToConvCard}
                 </>
               )}
             </div>
           </>
         )}
 
-        {/* FHA: Bankruptcy = No + DACA → FHA disqualifier + conventional only */}
-        {fhaDacaBlocked && (
-          <>
-            <SectionConnector />
-            <div className="space-y-4">
-              <DisqualifierCard reason="FHA financing is not available for DACA or work permit holders. All FHA programs are ineligible." />
-              <h3 className="text-base font-bold text-gray-900">Available Path — Conventional</h3>
-              {fhaToConvCard}
-            </div>
-          </>
+        {/* FHA: Citizen → main FHA flow (with planning disclaimer if BK=yes) ── */}
+        {showFHAMainFlow && fhaHasBankruptcy && (
+          <SectionConnector />
         )}
-
-        {/* FHA: Bankruptcy = No + Citizen → main FHA flow ─────────────────── */}
         {showFHAMainFlow && (
           <>
             <SectionConnector />
@@ -713,6 +749,7 @@ export default function ExistingHomeowner() {
                 <SectionConnector />
                 <div className="space-y-4">
                   <DisqualifierCard reason="FHA to FHA not available — the client's new home is within 100 miles and there has been no family size increase." />
+                  {fhaHasBankruptcy && <PlanningDisclaimer years={2} loanType="FHA" />}
                   <h3 className="text-base font-bold text-gray-900">Recommended Path</h3>
                   {fhaToConvCard}
                 </div>
@@ -724,6 +761,7 @@ export default function ExistingHomeowner() {
               <>
                 <SectionConnector />
                 <div className="space-y-4">
+                  {fhaHasBankruptcy && <PlanningDisclaimer years={2} loanType="FHA" />}
                   <h3 className="text-base font-bold text-gray-900">Available Options</h3>
                   <div className="space-y-4">
                     <PathCard
@@ -809,6 +847,7 @@ export default function ExistingHomeowner() {
                 <>
                   <SectionConnector />
                   <div className="space-y-4">
+                    {fhaHasBankruptcy && <PlanningDisclaimer years={2} loanType="FHA" />}
                     {(() => {
                       const c = getLongAgoCase();
 
@@ -920,6 +959,14 @@ export default function ExistingHomeowner() {
           </>
         )}
 
+        {/* Conventional: Bankruptcy = Yes → inline warning banner (flow continues) */}
+        {convHasBankruptcy && (
+          <>
+            <SectionConnector />
+            <BankruptcyWarningBanner years={4} loanType="Conventional" />
+          </>
+        )}
+
         {/* Conventional: Citizenship question (shown after bankruptcy is answered) */}
         {showCitizenshipConv && (
           <>
@@ -944,52 +991,42 @@ export default function ExistingHomeowner() {
           </>
         )}
 
-        {/* Conventional: Bankruptcy = Yes → disqualifier + route to FHA (or no programs for DACA) */}
-        {convBankruptcyBlocked && (
+        {/* Conventional: DACA → FHA disqualifier + conventional only (or no programs if BK=yes) */}
+        {convDacaBlocked && (
           <>
             <SectionConnector />
             <div className="space-y-4">
-              <DisqualifierCard reason="Conventional financing requires 4 years post-bankruptcy discharge. Routing to FHA options if applicable." />
-              {state.citizenship === "citizen" ? (
+              <DisqualifierCard reason="FHA financing is not available for DACA or work permit holders. All FHA programs are ineligible." />
+              {convHasBankruptcy ? (
                 <>
-                  <h3 className="text-base font-bold text-gray-900">Available FHA Paths</h3>
-                  {convToFHAAvailableCard}
+                  <NoProgramsCard />
+                  <div className="bg-amber-50 border border-amber-300 rounded-lg px-3 py-2 text-xs text-amber-800">
+                    ⚠ Conventional financing is also in the 4-year post-bankruptcy waiting period — recommend consulting once the requirement is met.
+                  </div>
                 </>
               ) : (
                 <>
-                  <DisqualifierCard reason="FHA financing is not available for DACA or work permit holders. All FHA programs are ineligible." />
-                  <NoProgramsCard />
+                  <h3 className="text-base font-bold text-gray-900">Available Path — Conventional Only</h3>
+                  <PathCard
+                    title="Conventional → Conventional ✅"
+                    badge={{ text: "Only Available Path", color: "red" }}
+                    borderColor="red"
+                    bullets={[
+                      { icon: "✅", text: "Zero FHA restrictions" },
+                      { icon: "✅", text: "Simply rent current home to offset mortgage" },
+                      { icon: "✅", text: "No equity requirement" },
+                      { icon: "✅", text: "No rental history requirement" },
+                      { icon: "✅", text: "No family size or vacating rules" },
+                    ]}
+                    programs={["ccConvDPA", "selfConv"]}
+                  />
                 </>
               )}
             </div>
           </>
         )}
 
-        {/* Conventional: Bankruptcy = No + DACA → FHA disqualifier + conventional only */}
-        {convDacaBlocked && (
-          <>
-            <SectionConnector />
-            <div className="space-y-4">
-              <DisqualifierCard reason="FHA financing is not available for DACA or work permit holders. All FHA programs are ineligible." />
-              <h3 className="text-base font-bold text-gray-900">Available Path — Conventional Only</h3>
-              <PathCard
-                title="Conventional → Conventional ✅"
-                badge={{ text: "Only Available Path", color: "red" }}
-                borderColor="red"
-                bullets={[
-                  { icon: "✅", text: "Zero FHA restrictions" },
-                  { icon: "✅", text: "Simply rent current home to offset mortgage" },
-                  { icon: "✅", text: "No equity requirement" },
-                  { icon: "✅", text: "No rental history requirement" },
-                  { icon: "✅", text: "No family size or vacating rules" },
-                ]}
-                programs={["ccConvDPA", "selfConv"]}
-              />
-            </div>
-          </>
-        )}
-
-        {/* Conventional: Bankruptcy = No + Citizen → main conventional flow ── */}
+        {/* Conventional: Citizen → main conventional flow (with planning note if BK=yes) ── */}
         {showConvMainFlow && (
           <>
             <SectionConnector />
@@ -1039,6 +1076,7 @@ export default function ExistingHomeowner() {
               <>
                 <SectionConnector />
                 <div className="space-y-4">
+                  {convHasBankruptcy && <PlanningDisclaimer years={4} loanType="Conventional" />}
                   <h3 className="text-base font-bold text-gray-900">Client&apos;s Path</h3>
                   {convToFHAAvailableCard}
                 </div>
@@ -1049,6 +1087,7 @@ export default function ExistingHomeowner() {
               <>
                 <SectionConnector />
                 <div className="space-y-4">
+                  {convHasBankruptcy && <PlanningDisclaimer years={4} loanType="Conventional" />}
                   <h3 className="text-base font-bold text-gray-900">Proceeding Without Full Equity</h3>
                   {convToFHANoEquityCard}
                 </div>
@@ -1062,6 +1101,7 @@ export default function ExistingHomeowner() {
           <>
             <SectionConnector />
             <div className="space-y-4">
+              {convHasBankruptcy && <PlanningDisclaimer years={4} loanType="Conventional" />}
               <h3 className="text-base font-bold text-gray-900">Client&apos;s Path</h3>
               <PathCard
                 title="Conventional → Conventional ✅"
