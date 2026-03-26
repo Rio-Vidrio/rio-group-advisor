@@ -97,15 +97,40 @@ export default function MarketRates() {
   }, []);
 
   // Fetch history whenever range changes
+  // Primary: static JSON bundled at deploy. Fallback: live API (works locally, may timeout on Vercel).
   const fetchHistory = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch(`/api/rates/history?months=${range}`);
-      if (!res.ok) throw new Error("Failed to load rate history");
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
-      setHistory(data.points || []);
+      // 1. Try static bundled data first (always available)
+      const staticRes = await fetch("/rate-history.json");
+      let points: HistoryPoint[] = [];
+
+      if (staticRes.ok) {
+        const staticData = await staticRes.json();
+        points = staticData.points || [];
+      }
+
+      // 2. Try live API as a bonus refresh (works locally, may fail on Vercel)
+      try {
+        const liveRes = await fetch(`/api/rates/history?months=${range}`);
+        if (liveRes.ok) {
+          const liveData = await liveRes.json();
+          if (!liveData.error && liveData.points?.length) {
+            points = liveData.points;
+          }
+        }
+      } catch {
+        // Live API failed — use static data (this is expected on Vercel)
+      }
+
+      if (!points.length) throw new Error("No rate data available");
+
+      // Filter to requested range
+      const cutoff = new Date();
+      cutoff.setMonth(cutoff.getMonth() - parseInt(range));
+      const filtered = points.filter(p => new Date(p.date) >= cutoff);
+      setHistory(filtered.length ? filtered : points.slice(-12));
     } catch (e) {
       setError(e instanceof Error ? e.message : "Unknown error");
     } finally {
