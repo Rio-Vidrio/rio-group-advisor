@@ -140,23 +140,56 @@ export default function MarketRates() {
     setTimeout(() => setSaveMsg(""), 3000);
   }
 
-  // ── Pull from FRED (for rate cards only — chart uses static file) ────────────
+  // ── Pull from FRED — updates rate cards AND refreshes chart history ──────────
   async function handlePullFromFRED() {
     setSaveMsg("Fetching from FRED…");
+
+    // 1. Fetch current rate (updates the 3 rate cards)
     const live = await fetchLiveRates();
-    if (!live) {
-      setSaveMsg("⚠️ Could not reach FRED. Enter rates manually above.");
-      setTimeout(() => setSaveMsg(""), 5000);
-      return;
+    if (live) {
+      saveRates(live);
+      setRates(live);
+      setOverrideConv(live.conventional.toFixed(3));
+      setOverrideFHA(live.fha.toFixed(3));
+      setOverrideVA(live.va.toFixed(3));
+      setLastUpdated(live.lastUpdated);
     }
-    saveRates(live);
-    setRates(live);
-    setOverrideConv(live.conventional.toFixed(3));
-    setOverrideFHA(live.fha.toFixed(3));
-    setOverrideVA(live.va.toFixed(3));
-    setLastUpdated(live.lastUpdated);
-    setSaveMsg("✓ Live rates pulled from Freddie Mac PMMS.");
-    setTimeout(() => setSaveMsg(""), 4000);
+
+    // 2. Fetch full 2-year history to refresh the chart
+    try {
+      const histRes = await fetch("/api/rates/history?months=24");
+      if (histRes.ok) {
+        const histData = await histRes.json();
+        if (histData.points?.length) {
+          // Slice all 4 ranges from the fresh data
+          const all: HistoryPoint[] = histData.points;
+          const now = Date.now();
+          const slice = (days: number) =>
+            all.filter((p) => new Date(p.date).getTime() >= now - days * 86400000);
+
+          setAllData({
+            updated: new Date().toISOString().split("T")[0],
+            "3months": slice(91),
+            "6months": slice(182),
+            "1year":   slice(365),
+            "2years":  all,
+          });
+          setDataUpdated(new Date().toISOString().split("T")[0]);
+          setSaveMsg("✓ Rates and chart updated from Freddie Mac PMMS.");
+          setTimeout(() => setSaveMsg(""), 4000);
+          return;
+        }
+      }
+    } catch {
+      // History fetch failed — still update rate cards if we got them
+    }
+
+    if (live) {
+      setSaveMsg("✓ Rate cards updated. Chart refresh requires FRED_API_KEY in Vercel.");
+    } else {
+      setSaveMsg("⚠️ Could not reach FRED. Enter rates manually above.");
+    }
+    setTimeout(() => setSaveMsg(""), 5000);
   }
 
   // ── Render ───────────────────────────────────────────────────────────────────

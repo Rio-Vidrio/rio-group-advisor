@@ -3,59 +3,62 @@ import { NextResponse } from "next/server";
 export const runtime = "edge";
 
 export async function GET() {
+  const apiKey = process.env.FRED_API_KEY;
+  if (!apiKey) {
+    return NextResponse.json(
+      { error: "FRED_API_KEY not configured", detail: "Add FRED_API_KEY to Vercel environment variables" },
+      { status: 500 }
+    );
+  }
+
   try {
-    // Only fetch last 3 months — we just need the latest rate
     const startDate = new Date();
     startDate.setMonth(startDate.getMonth() - 3);
     const cosd = startDate.toISOString().split("T")[0];
 
-    // Use browser-like headers — FRED blocks non-browser User-Agents from cloud IPs
-    const res = await fetch(
-      `https://fred.stlouisfed.org/graph/fredgraph.csv?id=MORTGAGE30US&cosd=${cosd}`,
-      {
-        headers: {
-          "Accept": "text/csv,text/plain,*/*",
-          "Accept-Language": "en-US,en;q=0.9",
-        },
-      }
-    );
+    const url =
+      `https://api.stlouisfed.org/fred/series/observations` +
+      `?series_id=MORTGAGE30US` +
+      `&api_key=${apiKey}` +
+      `&file_type=json` +
+      `&observation_start=${cosd}` +
+      `&sort_order=desc` +
+      `&limit=20`;
 
-    if (!res.ok) throw new Error(`FRED returned ${res.status}`);
+    const res = await fetch(url, {
+      headers: { "User-Agent": "RioGroupAdvisor/1.0" },
+    });
 
-    const text = await res.text();
-    const lines = text.trim().split("\n").filter((l) => l && !l.startsWith("DATE"));
+    if (!res.ok) throw new Error(`FRED API returned ${res.status}`);
 
-    // Walk backwards to find the latest valid data point (FRED uses "." for missing)
+    const data = await res.json();
+    const observations: Array<{ date: string; value: string }> = data.observations ?? [];
+
+    // Walk forward through desc-sorted results to find latest valid value
     let conventional = NaN;
     let date = "";
-    for (let i = lines.length - 1; i >= 0; i--) {
-      const [d, rateStr] = lines[i].split(",");
-      const trimmed = rateStr?.trim();
-      if (trimmed && trimmed !== ".") {
-        const parsed = parseFloat(trimmed);
+    for (const obs of observations) {
+      if (obs.value && obs.value !== ".") {
+        const parsed = parseFloat(obs.value);
         if (!isNaN(parsed) && parsed > 0) {
           conventional = parsed;
-          date = d.trim();
+          date = obs.date;
           break;
         }
       }
     }
 
-    if (isNaN(conventional) || conventional <= 0) {
-      throw new Error("Invalid rate value from FRED");
-    }
+    if (isNaN(conventional)) throw new Error("No valid rate found in FRED response");
 
-    // FHA typically runs ~0.25% below conventional (MIP offsets rate difference)
-    // VA typically runs ~0.50% below conventional
     const fha = parseFloat((conventional - 0.25).toFixed(3));
-    const va = parseFloat((conventional - 0.5).toFixed(3));
+    const va  = parseFloat((conventional - 0.50).toFixed(3));
 
     return NextResponse.json({
       conventional,
       fha,
       va,
       lastUpdated: new Date().toISOString(),
-      source: "Freddie Mac PMMS via FRED",
+      source: "Freddie Mac PMMS via FRED API",
       asOf: date,
     });
   } catch (err) {
