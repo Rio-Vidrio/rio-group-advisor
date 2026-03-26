@@ -19,10 +19,14 @@ export async function GET(request: Request) {
     startDate.setMonth(startDate.getMonth() - months - 1);
     const cosd = startDate.toISOString().split("T")[0];
 
+    // Use browser-like headers — FRED blocks non-browser User-Agents from cloud IPs
     const res = await fetch(
       `https://fred.stlouisfed.org/graph/fredgraph.csv?id=MORTGAGE30US&cosd=${cosd}`,
       {
-        headers: { "User-Agent": "RioGroupAdvisor/1.0" },
+        headers: {
+          "Accept": "text/csv,text/plain,*/*",
+          "Accept-Language": "en-US,en;q=0.9",
+        },
       }
     );
 
