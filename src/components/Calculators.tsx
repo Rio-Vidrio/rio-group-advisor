@@ -460,30 +460,34 @@ function NewBuildCalc() {
   const [nbPrice, setNbPrice] = useState(470000);
   const [nbRate, setNbRate] = useState(3.75);
   const [nbHoa, setNbHoa] = useState(100);
+  const [nbDownPct, setNbDownPct] = useState(3.5);
+  const [nbTaxRate, setNbTaxRate] = useState(0.8); // First-year new build tax rate
 
   const [rsPrice, setRsPrice] = useState(380000);
   const [rsRate, setRsRate] = useState(0);
   const [rsHoa, setRsHoa] = useState(0);
+  const [rsDownPct, setRsDownPct] = useState(3.5);
+  const [rsTaxRate, setRsTaxRate] = useState(0.45);
 
   useEffect(() => { setRsRate(rates.fha); }, [rates]);
 
   const insurance = 1350;
-  const taxRate = 0.45;
 
-  const calc = (price: number, rate: number, hoa: number) => {
-    const loan = price * 0.965;
+  const calc = (price: number, rate: number, hoa: number, downPct: number, taxRate: number) => {
+    const down = price * (downPct / 100);
+    const loan = price - down;
     const pi = calculateMonthlyPayment(loan, rate, 30);
     const tax = (price * (taxRate / 100)) / 12;
     const ins = insurance / 12;
-    const pmi = loan * 0.007 / 12;
+    const pmi = downPct < 20 ? (loan * 0.007) / 12 : 0;
     const piti = pi + tax + ins + pmi;
     const total = piti + hoa;
     const lifetimeInterest = pi * 360 - loan;
-    return { pi, piti, total, lifetimeInterest };
+    return { pi, piti, total, lifetimeInterest, down, loan };
   };
 
-  const nb = calc(nbPrice, nbRate, nbHoa);
-  const rs = calc(rsPrice, rsRate, rsHoa);
+  const nb = calc(nbPrice, nbRate, nbHoa, nbDownPct, nbTaxRate);
+  const rs = calc(rsPrice, rsRate, rsHoa, rsDownPct, rsTaxRate);
 
   // Payment-equivalent: what resale price = same payment as new build at market rate
   let equivalentResalePrice = 0;
@@ -491,7 +495,7 @@ function NewBuildCalc() {
     let lo = 0, hi = 1500000;
     for (let i = 0; i < 50; i++) {
       const mid = (lo + hi) / 2;
-      const c = calc(mid, rsRate, rsHoa);
+      const c = calc(mid, rsRate, rsHoa, rsDownPct, rsTaxRate);
       if (c.total < nb.total) lo = mid;
       else hi = mid;
     }
@@ -504,7 +508,7 @@ function NewBuildCalc() {
     let lo = 0, hi = 1500000;
     for (let i = 0; i < 50; i++) {
       const mid = (lo + hi) / 2;
-      const c = calc(mid, nbRate, nbHoa);
+      const c = calc(mid, nbRate, nbHoa, nbDownPct, nbTaxRate);
       if (c.total < rs.total) lo = mid;
       else hi = mid;
     }
@@ -516,19 +520,43 @@ function NewBuildCalc() {
       <h3 className="text-lg font-bold mb-4">New Build vs. Resale Comparison</h3>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        {/* New Build inputs */}
         <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
           <h4 className="font-bold text-blue-800 mb-3">New Build</h4>
           <div className="space-y-3">
             <MoneyInput label="Purchase Price" value={nbPrice} onChange={setNbPrice} />
+            {/* Down payment */}
+            <div>
+              <NumberInput label="Down Payment %" value={nbDownPct} onChange={setNbDownPct} suffix="%" step="0.5" placeholder="3.5" />
+              <div className="mt-1 text-xs text-blue-600 font-medium pl-1">
+                = {fmt(nb.down)} down · Loan {fmt(nb.loan)}
+              </div>
+            </div>
             <NumberInput label="Rate (builder buydown)" value={nbRate} onChange={setNbRate} suffix="%" step="0.125" />
+            {/* Tax rate with first-year note */}
+            <div>
+              <NumberInput label="Tax Rate %" value={nbTaxRate} onChange={setNbTaxRate} suffix="%" step="0.05" placeholder="0.80" />
+              <div className="mt-1 text-xs text-amber-700 font-medium pl-1">
+                ⚠ First year tax rate always higher on new builds
+              </div>
+            </div>
             <MoneyInput label="Monthly HOA" value={nbHoa} onChange={setNbHoa} />
           </div>
         </div>
+        {/* Resale inputs */}
         <div className="bg-green-50 border border-green-200 rounded-xl p-4">
           <h4 className="font-bold text-green-800 mb-3">Resale</h4>
           <div className="space-y-3">
             <MoneyInput label="Purchase Price" value={rsPrice} onChange={setRsPrice} />
+            {/* Down payment */}
+            <div>
+              <NumberInput label="Down Payment %" value={rsDownPct} onChange={setRsDownPct} suffix="%" step="0.5" placeholder="3.5" />
+              <div className="mt-1 text-xs text-green-700 font-medium pl-1">
+                = {fmt(rs.down)} down · Loan {fmt(rs.loan)}
+              </div>
+            </div>
             <NumberInput label="Rate (market)" value={rsRate} onChange={setRsRate} suffix="%" step="0.125" />
+            <NumberInput label="Tax Rate %" value={rsTaxRate} onChange={setRsTaxRate} suffix="%" step="0.05" placeholder="0.45" />
             <MoneyInput label="Monthly HOA" value={rsHoa} onChange={setRsHoa} />
           </div>
         </div>
