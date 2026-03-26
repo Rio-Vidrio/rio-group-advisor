@@ -5,9 +5,11 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid,
   Tooltip, Legend, ResponsiveContainer,
 } from "recharts";
-import { getRates, saveRates, fetchLiveRates, Rates, defaultRates } from "@/lib/rateStore";
+import { getRates, saveRates, Rates, defaultRates } from "@/lib/rateStore";
 
-// All FRED data flows through our own Vercel API routes (/api/rates, /api/rates/history).
+// All FRED data flows through our own Vercel API routes:
+//   /api/fred-rates   → chart history (104 weekly observations, ≈ 2 years)
+//   /api/fred-current → latest single rate (used by Refresh Rates button)
 // The browser never calls FRED directly — no CORS or IP-block issues possible.
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -19,14 +21,6 @@ interface HistoryPoint {
   va: number;
 }
 
-interface RateHistoryFile {
-  updated?: string;
-  "3months": HistoryPoint[];
-  "6months": HistoryPoint[];
-  "1year":   HistoryPoint[];
-  "2years":  HistoryPoint[];
-}
-
 type Range = "3months" | "6months" | "1year" | "2years";
 
 const RANGE_LABELS: Record<Range, string> = {
@@ -36,8 +30,11 @@ const RANGE_LABELS: Record<Range, string> = {
   "2years":  "2 Years",
 };
 
-const EMPTY_FILE: RateHistoryFile = {
-  "3months": [], "6months": [], "1year": [], "2years": [],
+const RANGE_DAYS: Record<Range, number> = {
+  "3months": 91,
+  "6months": 182,
+  "1year":   365,
+  "2years":  730,
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -52,6 +49,30 @@ function formatDateShort(dateStr: string) {
   return new Date(dateStr + "T12:00:00").toLocaleDateString("en-US", {
     month: "short", year: "2-digit",
   });
+}
+
+/** Convert raw FRED observations → typed HistoryPoint array with FHA/VA derived */
+function toHistoryPoints(
+  observations: Array<{ date: string; value: string }>
+): HistoryPoint[] {
+  return observations
+    .filter((o) => o.value && o.value !== ".")
+    .map((o) => {
+      const conventional = parseFloat(o.value);
+      return {
+        date: o.date,
+        conventional,
+        fha: parseFloat((conventional - 0.25).toFixed(2)),
+        va:  parseFloat((conventional - 0.50).toFixed(2)),
+      };
+    })
+    .filter((p) => !isNaN(p.conventional) && p.conventional > 0);
+}
+
+/** Filter a full HistoryPoint array down to the last N days */
+function sliceByDays(all: HistoryPoint[], days: number): HistoryPoint[] {
+  const cutoff = Date.now() - days * 86_400_000;
+  return all.filter((p) => new Date(p.date).getTime() >= cutoff);
 }
 
 // ─── Custom Tooltip ───────────────────────────────────────────────────────────
@@ -80,81 +101,103 @@ function CustomTooltip({ active, payload, label }: {
 
 export default function MarketRates() {
   const [range, setRange]           = useState<Range>("1year");
-  const [allData, setAllData]       = useState<RateHistoryFile>(EMPTY_FILE);
+  const [allPoints, setAllPoints]   = useState<HistoryPoint[]>([]);   // full 2-yr dataset
   const [dataLoaded, setDataLoaded] = useState(false);
   const [dataUpdated, setDataUpdated] = useState("");
+  const [chartError, setChartError]   = useState("");
 
   // Rate card state
-  const [rates, setRates]           = useState<Rates>(defaultRates);
+  const [rates, setRates]             = useState<Rates>(defaultRates);
   const [lastUpdated, setLastUpdated] = useState("");
   const [overrideConv, setOverrideConv] = useState("");
   const [overrideFHA, setOverrideFHA]   = useState("");
   const [overrideVA, setOverrideVA]     = useState("");
   const [saveMsg, setSaveMsg]           = useState("");
-  const [ratesRefreshing, setRatesRefreshing] = useState(false);
+  const [refreshing, setRefreshing]     = useState(false);
+  const [refreshMsg, setRefreshMsg]     = useState("");
 
-  // ── On mount: seed from localStorage, then auto-refresh from our API route ──
+  // ── On mount: seed rate cards from localStorage ──────────────────────────────
   useEffect(() => {
-    // 1. Immediately show whatever is cached in localStorage
     const saved = getRates();
     setRates(saved);
     setOverrideConv(saved.conventional.toFixed(3));
     setOverrideFHA(saved.fha.toFixed(3));
     setOverrideVA(saved.va.toFixed(3));
     if (saved.lastUpdated) setLastUpdated(saved.lastUpdated);
+  }, []);
 
-    // 2. Silently refresh rate cards from /api/rates (Vercel → FRED, no blocking)
-    setRatesRefreshing(true);
-    fetchLiveRates()
-      .then((live) => {
-        if (live) {
-          saveRates(live);
-          setRates(live);
-          setOverrideConv(live.conventional.toFixed(3));
-          setOverrideFHA(live.fha.toFixed(3));
-          setOverrideVA(live.va.toFixed(3));
-          setLastUpdated(live.lastUpdated);
+  // ── On mount: load chart history from /api/fred-rates ────────────────────────
+  useEffect(() => {
+    // Step 1: Try the pre-built static JSON first (instant, served from CDN)
+    fetch("/rate-history.json")
+      .then((r) => r.ok ? r.json() : null)
+      .then((file) => {
+        if (file?.["2years"]?.length) {
+          // Static file has pre-sliced ranges — flatten 2years as the full dataset
+          setAllPoints(file["2years"]);
+          setDataUpdated(file.updated || "");
+          setDataLoaded(true);
         }
       })
-      .finally(() => setRatesRefreshing(false));
-  }, []);
+      .catch(() => {});
 
-  // ── On mount: load chart — static JSON first, then refresh from /api/rates/history ──
-  useEffect(() => {
-    // Step 1: Load the pre-built static JSON instantly (served from CDN)
-    fetch("/rate-history.json")
-      .then((r) => r.json())
-      .then((data: RateHistoryFile) => {
-        setAllData(data);
-        setDataUpdated(data.updated || "");
-        setDataLoaded(true);
-      })
-      .catch(() => setDataLoaded(true));
-
-    // Step 2: Fetch fresh history from our API route (Vercel → FRED, server-side)
-    fetch("/api/rates/history?months=24", { cache: "no-store" })
-      .then((r) => r.ok ? r.json() : null)
-      .then((histData) => {
-        if (!histData?.points?.length) return;
-        const all: HistoryPoint[] = histData.points;
-        const now = Date.now();
-        const slice = (days: number) =>
-          all.filter((p) => new Date(p.date).getTime() >= now - days * 86400000);
-        setAllData({
-          updated: new Date().toISOString().split("T")[0],
-          "3months": slice(91),
-          "6months": slice(182),
-          "1year":   slice(365),
-          "2years":  all,
-        });
+    // Step 2: Fetch fresh data from our own proxy route (Vercel → FRED server-side)
+    fetch("/api/fred-rates", { cache: "no-store" })
+      .then((r) => r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`)))
+      .then((data) => {
+        if (!data.observations?.length) throw new Error("Empty response");
+        const points = toHistoryPoints(data.observations);
+        if (points.length === 0) throw new Error("No valid data points");
+        setAllPoints(points);
         setDataUpdated(new Date().toISOString().split("T")[0]);
         setDataLoaded(true);
+        setChartError("");
       })
-      .catch(() => { /* static JSON already loaded above — silent fail is fine */ });
+      .catch((err) => {
+        // Static JSON may already be showing — only surface error if we have nothing
+        setDataLoaded(true);
+        if (allPoints.length === 0) {
+          setChartError(err.message || "Could not load rate history");
+        }
+      });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ── Current range data — instant switch, no fetch ───────────────────────────
-  const history: HistoryPoint[] = allData[range] ?? [];
+  // ── Refresh Rates button — calls /api/fred-current ───────────────────────────
+  async function handleRefreshRates() {
+    setRefreshing(true);
+    setRefreshMsg("");
+    try {
+      const res = await fetch("/api/fred-current", { cache: "no-store" });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      if (data.error || !data.conventional) throw new Error(data.detail || data.error || "No rate returned");
+
+      const updated: Rates = {
+        conventional: data.conventional,
+        fha: data.fha,
+        va:  data.va,
+        lastUpdated: data.lastUpdated,
+      };
+      saveRates(updated);
+      setRates(updated);
+      setOverrideConv(updated.conventional.toFixed(3));
+      setOverrideFHA(updated.fha.toFixed(3));
+      setOverrideVA(updated.va.toFixed(3));
+      setLastUpdated(updated.lastUpdated);
+      setRefreshMsg(`✓ Rates updated — as of ${data.asOf}`);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      setRefreshMsg(`⚠️ ${msg}`);
+    } finally {
+      setRefreshing(false);
+      setTimeout(() => setRefreshMsg(""), 5000);
+    }
+  }
+
+  // ── Slice current range from full dataset — instant, no fetch ────────────────
+  const history: HistoryPoint[] =
+    range === "2years" ? allPoints : sliceByDays(allPoints, RANGE_DAYS[range]);
 
   // ── Chart axis helpers ───────────────────────────────────────────────────────
   const isShortRange  = range === "3months" || range === "6months";
@@ -202,7 +245,7 @@ export default function MarketRates() {
       {/* ── Chart Card ────────────────────────────────────────────────────── */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
 
-        {/* Range toggles */}
+        {/* Range toggles + updated badge */}
         <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
           <div className="flex items-center gap-1">
             {(Object.entries(RANGE_LABELS) as [Range, string][]).map(([key, label]) => (
@@ -228,7 +271,7 @@ export default function MarketRates() {
           )}
         </div>
 
-        {/* Chart or empty state */}
+        {/* Loading state */}
         {!dataLoaded && (
           <div className="flex items-center justify-center h-64 text-gray-400">
             <div className="text-center">
@@ -238,15 +281,27 @@ export default function MarketRates() {
           </div>
         )}
 
-        {dataLoaded && history.length === 0 && (
+        {/* Error state */}
+        {dataLoaded && chartError && history.length === 0 && (
+          <div className="flex items-center justify-center h-64">
+            <div className="bg-amber-50 border border-amber-200 rounded-lg px-5 py-4 text-sm text-amber-800 text-center">
+              <div className="font-semibold mb-1">Could not load rate history</div>
+              <div className="text-xs text-amber-600">{chartError}</div>
+            </div>
+          </div>
+        )}
+
+        {/* Empty state (no error, just no data for this range) */}
+        {dataLoaded && !chartError && history.length === 0 && (
           <div className="flex items-center justify-center h-64">
             <div className="bg-gray-50 border border-gray-200 rounded-lg px-5 py-4 text-sm text-gray-500 text-center">
-              <div className="font-semibold mb-1">No chart data available</div>
+              <div className="font-semibold mb-1">No data for this range yet</div>
               <div className="text-xs">Rate history will refresh automatically on the next scheduled run.</div>
             </div>
           </div>
         )}
 
+        {/* Chart */}
         {dataLoaded && history.length > 0 && (
           <ResponsiveContainer width="100%" height={320}>
             <LineChart data={history} margin={{ top: 4, right: 16, left: 0, bottom: 4 }}>
@@ -305,7 +360,7 @@ export default function MarketRates() {
               <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
                 {card.label}
               </div>
-              {ratesRefreshing && (
+              {refreshing && (
                 <span className="text-xs text-gray-300 animate-pulse">updating…</span>
               )}
             </div>
@@ -341,20 +396,29 @@ export default function MarketRates() {
         ))}
       </div>
 
-      {/* ── Save Controls ──────────────────────────────────────────────────── */}
+      {/* ── Save / Refresh Controls ─────────────────────────────────────────── */}
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm px-6 py-4 flex flex-wrap items-center justify-between gap-4">
         <div className="text-sm text-gray-600">
           <span className="font-semibold">Manual override</span> — edit the rates above and save to update all calculators instantly.
           <span className="block text-xs text-gray-400 mt-0.5">
-            Live rates auto-refresh from Freddie Mac PMMS each time this page loads.
+            Rates auto-refresh on page load. Use <strong>Refresh Rates</strong> to pull the latest from Freddie Mac PMMS on demand.
           </span>
         </div>
         <div className="flex items-center gap-3 flex-wrap">
-          {saveMsg && (
-            <span className={`text-sm font-medium ${saveMsg.startsWith("⚠️") ? "text-amber-600" : "text-green-600"}`}>
-              {saveMsg}
+          {(saveMsg || refreshMsg) && (
+            <span className={`text-sm font-medium ${
+              (saveMsg || refreshMsg).startsWith("⚠️") ? "text-amber-600" : "text-green-600"
+            }`}>
+              {saveMsg || refreshMsg}
             </span>
           )}
+          <button
+            onClick={handleRefreshRates}
+            disabled={refreshing}
+            className="px-5 py-2 rounded-lg text-sm font-semibold border border-gray-300 text-gray-700 hover:border-gray-500 hover:text-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {refreshing ? "Refreshing…" : "Refresh Rates"}
+          </button>
           <button
             onClick={handleSaveRates}
             className="px-6 py-2 rounded-lg text-sm font-semibold bg-rio-red text-white hover:bg-red-700 transition-colors"
