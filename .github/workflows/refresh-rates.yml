@@ -19,61 +19,63 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Fetch FRED mortgage rate data
-        run: |
-          # Fetch last 2 years of 30-year fixed mortgage rate data from FRED
-          # MORTGAGE30US = Freddie Mac Primary Mortgage Market Survey
-          TWO_YEARS_AGO=$(date -d "2 years ago" +%Y-%m-%d 2>/dev/null || date -v-2y +%Y-%m-%d)
-          TODAY=$(date +%Y-%m-%d)
-
-          echo "Fetching FRED data from $TWO_YEARS_AGO to $TODAY..."
-
-          curl -s --max-time 30 \
-            "https://fred.stlouisfed.org/graph/fredgraph.csv?id=MORTGAGE30US&cosd=${TWO_YEARS_AGO}&coed=${TODAY}" \
-            -o /tmp/fred_raw.csv
-
-          # Verify we got valid data
-          if [ ! -s /tmp/fred_raw.csv ]; then
-            echo "ERROR: Empty response from FRED"
-            exit 1
-          fi
-
-          head -5 /tmp/fred_raw.csv
-          echo "Lines fetched: $(wc -l < /tmp/fred_raw.csv)"
-
-      - name: Parse CSV and write JSON
+      - name: Fetch and parse FRED mortgage rate data
         run: |
           python3 << 'EOF'
-          import csv, json, sys
+          import urllib.request, csv, json, sys
+          from datetime import date, timedelta
+          from io import StringIO
+
+          # Date range: last 2 years
+          today = date.today()
+          two_years_ago = today - timedelta(days=730)
+
+          url = (
+            f"https://fred.stlouisfed.org/graph/fredgraph.csv"
+            f"?id=MORTGAGE30US"
+            f"&cosd={two_years_ago.isoformat()}"
+            f"&coed={today.isoformat()}"
+          )
+
+          print(f"Fetching: {url}")
+
+          req = urllib.request.Request(url, headers={
+            "User-Agent": "Mozilla/5.0 (compatible; RioGroupAdvisor/1.0)"
+          })
+
+          with urllib.request.urlopen(req, timeout=30) as response:
+            raw = response.read().decode("utf-8")
+
+          print(f"Received {len(raw)} bytes")
+          print("First 200 chars:", raw[:200])
 
           data = []
-          with open('/tmp/fred_raw.csv', 'r') as f:
-              reader = csv.DictReader(f)
-              for row in reader:
-                  date = row.get('DATE', '').strip()
-                  value = row.get('MORTGAGE30US', '').strip()
-                  # Skip rows with missing data (FRED uses "." for missing)
-                  if date and value and value != '.':
-                      try:
-                          data.append({"date": date, "rate": float(value)})
-                      except ValueError:
-                          pass
+          reader = csv.DictReader(StringIO(raw))
+          for row in reader:
+            date_val = row.get("DATE", "").strip()
+            rate_val = row.get("MORTGAGE30US", "").strip()
+            # Skip rows with missing data (FRED uses "." for missing values)
+            if date_val and rate_val and rate_val != ".":
+              try:
+                data.append({"date": date_val, "rate": float(rate_val)})
+              except ValueError:
+                pass
 
           if len(data) == 0:
-              print("ERROR: No valid data rows parsed")
-              sys.exit(1)
+            print("ERROR: No valid data rows parsed — aborting")
+            sys.exit(1)
 
-          # Sort by date ascending
-          data.sort(key=lambda x: x['date'])
+          # Sort ascending by date
+          data.sort(key=lambda x: x["date"])
 
           print(f"Parsed {len(data)} data points")
-          print(f"Latest: {data[-1]}")
           print(f"Oldest: {data[0]}")
+          print(f"Latest: {data[-1]}")
 
-          with open('public/rate-history.json', 'w') as f:
-              json.dump(data, f, indent=2)
+          with open("public/rate-history.json", "w") as f:
+            json.dump(data, f, indent=2)
 
-          print("Written to public/rate-history.json")
+          print("Successfully wrote public/rate-history.json")
           EOF
 
       - name: Commit updated rates if changed
@@ -81,7 +83,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          git diff --quiet public/rate-history.json && echo "No changes to commit" || (
+          git diff --quiet public/rate-history.json && echo "No changes — rates already current" || (
             git add public/rate-history.json
             git commit -m "chore: auto-refresh mortgage rate data $(date +%Y-%m-%d)"
             git push
