@@ -1,17 +1,13 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
+  LineChart, Line, XAxis, YAxis, CartesianGrid,
+  Tooltip, Legend, ResponsiveContainer,
 } from "recharts";
 import { getRates, saveRates, fetchLiveRates, Rates, defaultRates } from "@/lib/rateStore";
+
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface HistoryPoint {
   date: string;
@@ -20,26 +16,43 @@ interface HistoryPoint {
   va: number;
 }
 
-type Range = "3" | "6" | "12" | "24";
+interface RateHistoryFile {
+  updated?: string;
+  "3months": HistoryPoint[];
+  "6months": HistoryPoint[];
+  "1year":   HistoryPoint[];
+  "2years":  HistoryPoint[];
+}
+
+type Range = "3months" | "6months" | "1year" | "2years";
 
 const RANGE_LABELS: Record<Range, string> = {
-  "3": "3 Months",
-  "6": "6 Months",
-  "12": "1 Year",
-  "24": "2 Years",
+  "3months": "3 Months",
+  "6months": "6 Months",
+  "1year":   "1 Year",
+  "2years":  "2 Years",
 };
 
+const EMPTY_FILE: RateHistoryFile = {
+  "3months": [], "6months": [], "1year": [], "2years": [],
+};
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
 function formatDate(dateStr: string) {
-  const d = new Date(dateStr + "T12:00:00");
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  return new Date(dateStr + "T12:00:00").toLocaleDateString("en-US", {
+    month: "short", day: "numeric",
+  });
 }
 
 function formatDateShort(dateStr: string) {
-  const d = new Date(dateStr + "T12:00:00");
-  return d.toLocaleDateString("en-US", { month: "short", year: "2-digit" });
+  return new Date(dateStr + "T12:00:00").toLocaleDateString("en-US", {
+    month: "short", year: "2-digit",
+  });
 }
 
-// Custom tooltip
+// ─── Custom Tooltip ───────────────────────────────────────────────────────────
+
 function CustomTooltip({ active, payload, label }: {
   active?: boolean;
   payload?: Array<{ name: string; value: number; color: string }>;
@@ -60,87 +73,57 @@ function CustomTooltip({ active, payload, label }: {
   );
 }
 
+// ─── Main Component ───────────────────────────────────────────────────────────
+
 export default function MarketRates() {
-  const [range, setRange] = useState<Range>("12");
-  const [history, setHistory] = useState<HistoryPoint[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [rates, setRates] = useState<Rates>(defaultRates);
+  const [range, setRange]           = useState<Range>("1year");
+  const [allData, setAllData]       = useState<RateHistoryFile>(EMPTY_FILE);
+  const [dataLoaded, setDataLoaded] = useState(false);
+  const [dataUpdated, setDataUpdated] = useState("");
+
+  // Rate card state
+  const [rates, setRates]           = useState<Rates>(defaultRates);
   const [lastUpdated, setLastUpdated] = useState("");
-  const [asOf, setAsOf] = useState("");
-
-  // Manual override state
   const [overrideConv, setOverrideConv] = useState("");
-  const [overrideFHA, setOverrideFHA] = useState("");
-  const [overrideVA, setOverrideVA] = useState("");
-  const [saveMsg, setSaveMsg] = useState("");
+  const [overrideFHA, setOverrideFHA]   = useState("");
+  const [overrideVA, setOverrideVA]     = useState("");
+  const [saveMsg, setSaveMsg]           = useState("");
 
-  // Load saved rates on mount
+  // ── Load static JSON once on mount ──────────────────────────────────────────
+  useEffect(() => {
+    fetch("/rate-history.json")
+      .then((r) => r.json())
+      .then((data: RateHistoryFile) => {
+        setAllData(data);
+        setDataUpdated(data.updated || "");
+        setDataLoaded(true);
+      })
+      .catch(() => setDataLoaded(true)); // still mark loaded even if file missing
+  }, []);
+
+  // ── Load saved rates on mount ────────────────────────────────────────────────
   useEffect(() => {
     const saved = getRates();
     setRates(saved);
     setOverrideConv(saved.conventional.toFixed(3));
     setOverrideFHA(saved.fha.toFixed(3));
     setOverrideVA(saved.va.toFixed(3));
-    if (saved.lastUpdated) {
-      setLastUpdated(saved.lastUpdated);
-    }
+    if (saved.lastUpdated) setLastUpdated(saved.lastUpdated);
   }, []);
 
-  // Fetch live rate (for asOf date display)
-  useEffect(() => {
-    fetchLiveRates().then((live) => {
-      if (live) {
-        setAsOf((live as { asOf?: string }).asOf || "");
-      }
-    });
-  }, []);
+  // ── Current range data — instant switch, no fetch ───────────────────────────
+  const history: HistoryPoint[] = allData[range] ?? [];
 
-  // Fetch history whenever range changes
-  // Primary: static JSON bundled at deploy. Fallback: live API (works locally, may timeout on Vercel).
-  const fetchHistory = useCallback(async () => {
-    setLoading(true);
-    setError("");
-    try {
-      // 1. Try static bundled data first (always available)
-      const staticRes = await fetch("/rate-history.json");
-      let points: HistoryPoint[] = [];
+  // ── Chart axis helpers ───────────────────────────────────────────────────────
+  const isShortRange  = range === "3months" || range === "6months";
+  const tickFormatter = (v: string) => isShortRange ? formatDate(v) : formatDateShort(v);
+  const tickCount     = range === "3months" ? 6 : range === "6months" ? 8 : 10;
+  const tickInterval  = Math.max(1, Math.floor((history.length - 1) / tickCount));
+  const allVals       = history.flatMap((p) => [p.conventional, p.fha, p.va]).filter(Boolean);
+  const yMin          = allVals.length ? Math.floor(Math.min(...allVals) * 4) / 4 - 0.25 : 4;
+  const yMax          = allVals.length ? Math.ceil(Math.max(...allVals)  * 4) / 4 + 0.25 : 8;
 
-      if (staticRes.ok) {
-        const staticData = await staticRes.json();
-        points = staticData.points || [];
-      }
-
-      // 2. Try live API as a bonus refresh (works locally, may fail on Vercel)
-      try {
-        const liveRes = await fetch(`/api/rates/history?months=${range}`);
-        if (liveRes.ok) {
-          const liveData = await liveRes.json();
-          if (!liveData.error && liveData.points?.length) {
-            points = liveData.points;
-          }
-        }
-      } catch {
-        // Live API failed — use static data (this is expected on Vercel)
-      }
-
-      if (!points.length) throw new Error("No rate data available");
-
-      // Filter to requested range
-      const cutoff = new Date();
-      cutoff.setMonth(cutoff.getMonth() - parseInt(range));
-      const filtered = points.filter(p => new Date(p.date) >= cutoff);
-      setHistory(filtered.length ? filtered : points.slice(-12));
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Unknown error");
-    } finally {
-      setLoading(false);
-    }
-  }, [range]);
-
-  useEffect(() => { fetchHistory(); }, [fetchHistory]);
-
-  // Save manual overrides
+  // ── Save manual overrides ────────────────────────────────────────────────────
   function handleSaveRates() {
     const conv = parseFloat(overrideConv);
     const fha  = parseFloat(overrideFHA);
@@ -149,12 +132,7 @@ export default function MarketRates() {
       setSaveMsg("⚠️ Enter valid numbers for all three rates.");
       return;
     }
-    const updated: Rates = {
-      conventional: conv,
-      fha,
-      va,
-      lastUpdated: new Date().toISOString(),
-    };
+    const updated: Rates = { conventional: conv, fha, va, lastUpdated: new Date().toISOString() };
     saveRates(updated);
     setRates(updated);
     setLastUpdated(updated.lastUpdated);
@@ -162,12 +140,13 @@ export default function MarketRates() {
     setTimeout(() => setSaveMsg(""), 3000);
   }
 
-  // Pull fresh from FRED and save
-  async function handleRefreshFromFRED() {
+  // ── Pull from FRED (for rate cards only — chart uses static file) ────────────
+  async function handlePullFromFRED() {
     setSaveMsg("Fetching from FRED…");
     const live = await fetchLiveRates();
     if (!live) {
-      setSaveMsg("⚠️ Could not reach FRED. Check connection or enter manually.");
+      setSaveMsg("⚠️ Could not reach FRED. Enter rates manually above.");
+      setTimeout(() => setSaveMsg(""), 5000);
       return;
     }
     saveRates(live);
@@ -176,36 +155,28 @@ export default function MarketRates() {
     setOverrideFHA(live.fha.toFixed(3));
     setOverrideVA(live.va.toFixed(3));
     setLastUpdated(live.lastUpdated);
-    setAsOf((live as { asOf?: string }).asOf || "");
     setSaveMsg("✓ Live rates pulled from Freddie Mac PMMS.");
     setTimeout(() => setSaveMsg(""), 4000);
-    fetchHistory();
   }
 
-  // Format x-axis ticks based on range
-  const tickFormatter = (value: string) =>
-    parseInt(range) <= 6 ? formatDate(value) : formatDateShort(value);
-
-  // Thin out x-axis ticks so they don't crowd
-  const tickCount = parseInt(range) <= 3 ? 6 : parseInt(range) <= 6 ? 8 : 10;
-  const tickInterval = Math.max(1, Math.floor((history.length - 1) / tickCount));
-
-  // Y-axis domain with some padding
-  const allVals = history.flatMap((p) => [p.conventional, p.fha, p.va]).filter(Boolean);
-  const yMin = allVals.length ? Math.floor(Math.min(...allVals) * 4) / 4 - 0.25 : 4;
-  const yMax = allVals.length ? Math.ceil(Math.max(...allVals) * 4) / 4 + 0.25 : 8;
-
+  // ── Render ───────────────────────────────────────────────────────────────────
   return (
     <div className="max-w-5xl mx-auto">
       <div className="mb-6">
         <h2 className="text-2xl font-bold mb-1">Market Rates</h2>
         <p className="text-gray-500 text-sm">
-          30-year mortgage rate trends — sourced from Freddie Mac PMMS via Federal Reserve (FRED).
-          {asOf && <span className="ml-1 text-gray-400">Survey data through {formatDate(asOf)}.</span>}
+          30-year mortgage rate trends — Freddie Mac PMMS via Federal Reserve (FRED).
+          {dataUpdated && (
+            <span className="ml-1 text-gray-400">
+              Chart data as of {new Date(dataUpdated + "T12:00:00").toLocaleDateString("en-US", {
+                month: "long", day: "numeric", year: "numeric",
+              })}.
+            </span>
+          )}
         </p>
       </div>
 
-      {/* ── Chart Card ── */}
+      {/* ── Chart Card ────────────────────────────────────────────────────── */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
 
         {/* Range toggles */}
@@ -225,15 +196,17 @@ export default function MarketRates() {
               </button>
             ))}
           </div>
-          <button
-            onClick={handleRefreshFromFRED}
-            className="text-xs text-gray-500 border border-gray-200 rounded-lg px-3 py-1.5 hover:bg-gray-50 transition-colors"
-          >
-            ↻ Refresh from FRED
-          </button>
+          {dataUpdated && (
+            <span className="text-xs text-gray-400">
+              Updated {new Date(dataUpdated + "T12:00:00").toLocaleDateString("en-US", {
+                month: "short", day: "numeric", year: "numeric",
+              })}
+            </span>
+          )}
         </div>
 
-        {loading && (
+        {/* Chart or empty state */}
+        {!dataLoaded && (
           <div className="flex items-center justify-center h-64 text-gray-400">
             <div className="text-center">
               <div className="text-2xl mb-2 animate-pulse">📈</div>
@@ -242,19 +215,16 @@ export default function MarketRates() {
           </div>
         )}
 
-        {error && !loading && (
+        {dataLoaded && history.length === 0 && (
           <div className="flex items-center justify-center h-64">
-            <div className="bg-amber-50 border border-amber-200 rounded-lg px-5 py-4 text-sm text-amber-800 text-center">
-              <div className="font-semibold mb-1">⚠️ Could not load rate history</div>
-              <div className="text-xs">{error}</div>
-              <button onClick={fetchHistory} className="mt-3 px-4 py-1.5 bg-amber-100 rounded-lg text-xs font-semibold hover:bg-amber-200 transition-colors">
-                Try Again
-              </button>
+            <div className="bg-gray-50 border border-gray-200 rounded-lg px-5 py-4 text-sm text-gray-500 text-center">
+              <div className="font-semibold mb-1">No chart data available</div>
+              <div className="text-xs">Rate history will refresh automatically on the next scheduled run.</div>
             </div>
           </div>
         )}
 
-        {!loading && !error && history.length > 0 && (
+        {dataLoaded && history.length > 0 && (
           <ResponsiveContainer width="100%" height={320}>
             <LineChart data={history} margin={{ top: 4, right: 16, left: 0, bottom: 4 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
@@ -282,73 +252,26 @@ export default function MarketRates() {
                   value === "fha" ? "FHA 30yr" : "VA 30yr"
                 }
               />
-              <Line
-                type="monotone"
-                dataKey="conventional"
-                stroke="#C8202A"
-                strokeWidth={2.5}
-                dot={false}
-                activeDot={{ r: 4, fill: "#C8202A" }}
-              />
-              <Line
-                type="monotone"
-                dataKey="fha"
-                stroke="#333333"
-                strokeWidth={2}
-                dot={false}
-                activeDot={{ r: 4, fill: "#333333" }}
-              />
-              <Line
-                type="monotone"
-                dataKey="va"
-                stroke="#888888"
-                strokeWidth={2}
-                strokeDasharray="5 3"
-                dot={false}
-                activeDot={{ r: 4, fill: "#888888" }}
-              />
+              <Line type="monotone" dataKey="conventional" stroke="#C8202A" strokeWidth={2.5} dot={false} activeDot={{ r: 4, fill: "#C8202A" }} />
+              <Line type="monotone" dataKey="fha"          stroke="#333333" strokeWidth={2}   dot={false} activeDot={{ r: 4, fill: "#333333" }} />
+              <Line type="monotone" dataKey="va"           stroke="#888888" strokeWidth={2}   dot={false} activeDot={{ r: 4, fill: "#888888" }} strokeDasharray="5 3" />
             </LineChart>
           </ResponsiveContainer>
         )}
 
-        {/* Legend note */}
-        {!loading && !error && (
+        {dataLoaded && (
           <p className="text-xs text-gray-400 mt-3 text-center">
-            FHA and VA rates derived from Freddie Mac conventional PMMS (−0.25% / −0.50%). Agents can override below.
+            FHA and VA derived from Freddie Mac conventional PMMS (−0.25% / −0.50%). Override below if needed.
           </p>
         )}
       </div>
 
-      {/* ── Today's Rate Cards ── */}
+      {/* ── Today's Rate Cards ─────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
         {[
-          {
-            label: "Conventional 30yr",
-            key: "conventional" as keyof Rates,
-            color: "#C8202A",
-            override: overrideConv,
-            setOverride: setOverrideConv,
-            current: rates.conventional,
-            note: "Source: Freddie Mac PMMS",
-          },
-          {
-            label: "FHA 30yr",
-            key: "fha" as keyof Rates,
-            color: "#333333",
-            override: overrideFHA,
-            setOverride: setOverrideFHA,
-            current: rates.fha,
-            note: "Derived: Conv − 0.25%",
-          },
-          {
-            label: "VA 30yr",
-            key: "va" as keyof Rates,
-            color: "#888888",
-            override: overrideVA,
-            setOverride: setOverrideVA,
-            current: rates.va,
-            note: "Derived: Conv − 0.50%",
-          },
+          { label: "Conventional 30yr", key: "conventional" as keyof Rates, color: "#C8202A", override: overrideConv, setOverride: setOverrideConv, current: rates.conventional, note: "Source: Freddie Mac PMMS" },
+          { label: "FHA 30yr",          key: "fha"          as keyof Rates, color: "#333333", override: overrideFHA,  setOverride: setOverrideFHA,  current: rates.fha,          note: "Derived: Conv − 0.25%" },
+          { label: "VA 30yr",           key: "va"           as keyof Rates, color: "#888888", override: overrideVA,   setOverride: setOverrideVA,   current: rates.va,           note: "Derived: Conv − 0.50%" },
         ].map((card) => (
           <div
             key={card.key}
@@ -358,10 +281,7 @@ export default function MarketRates() {
             <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">
               {card.label}
             </div>
-            <div
-              className="text-5xl font-bold mb-1 tabular-nums"
-              style={{ color: card.color }}
-            >
+            <div className="text-5xl font-bold mb-1 tabular-nums" style={{ color: card.color }}>
               {card.current.toFixed(2)}
               <span className="text-xl font-semibold text-gray-400">%</span>
             </div>
@@ -369,51 +289,43 @@ export default function MarketRates() {
               {card.note}
               {lastUpdated && (
                 <span className="block mt-0.5">
-                  Updated {new Date(lastUpdated).toLocaleDateString("en-US", {
-                    month: "short", day: "numeric", year: "numeric"
-                  })}
+                  Updated {new Date(lastUpdated).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                 </span>
               )}
             </div>
-
-            {/* Manual override */}
             <div className="border-t border-gray-100 pt-3">
-              <label className="block text-xs font-semibold text-gray-500 mb-1">
-                Manual Override
-              </label>
-              <div className="flex gap-2">
-                <div className="relative flex-1">
-                  <input
-                    type="number"
-                    step="0.125"
-                    min="0"
-                    max="20"
-                    value={card.override}
-                    onChange={(e) => card.setOverride(e.target.value)}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm font-semibold focus:border-rio-red focus:ring-1 focus:ring-rio-red outline-none"
-                    placeholder={card.current.toFixed(3)}
-                  />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">%</span>
-                </div>
+              <label className="block text-xs font-semibold text-gray-500 mb-1">Manual Override</label>
+              <div className="relative">
+                <input
+                  type="number"
+                  step="0.125"
+                  min="0"
+                  max="20"
+                  value={card.override}
+                  onChange={(e) => card.setOverride(e.target.value)}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm font-semibold focus:border-rio-red focus:ring-1 focus:ring-rio-red outline-none"
+                  placeholder={card.current.toFixed(3)}
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">%</span>
               </div>
             </div>
           </div>
         ))}
       </div>
 
-      {/* Save controls */}
+      {/* ── Save Controls ──────────────────────────────────────────────────── */}
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm px-6 py-4 flex flex-wrap items-center justify-between gap-4">
         <div className="text-sm text-gray-600">
           <span className="font-semibold">Save rates</span> — updates all calculators and program recommendations instantly.
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           {saveMsg && (
             <span className={`text-sm font-medium ${saveMsg.startsWith("⚠️") ? "text-amber-600" : "text-green-600"}`}>
               {saveMsg}
             </span>
           )}
           <button
-            onClick={handleRefreshFromFRED}
+            onClick={handlePullFromFRED}
             className="px-4 py-2 rounded-lg text-sm font-semibold border border-gray-300 text-gray-600 hover:bg-gray-50 transition-colors"
           >
             Pull from FRED
