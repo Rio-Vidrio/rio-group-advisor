@@ -53,7 +53,7 @@ export default function SettingsPanel() {
       setLiveData(live);
       setManuallyEdited(false);
     } else {
-      setFetchError("Could not reach FRED API. Check your internet connection or enter rates manually.");
+      setFetchError("Live rate fetch unavailable from this server. Rates update automatically each week via the scheduled refresh — enter rates manually to override.");
     }
     setFetching(false);
   };
