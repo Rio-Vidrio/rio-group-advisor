@@ -7,6 +7,9 @@ import {
 } from "recharts";
 import { getRates, saveRates, fetchLiveRates, Rates, defaultRates } from "@/lib/rateStore";
 
+// All FRED data flows through our own Vercel API routes (/api/rates, /api/rates/history).
+// The browser never calls FRED directly — no CORS or IP-block issues possible.
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface HistoryPoint {
@@ -88,9 +91,37 @@ export default function MarketRates() {
   const [overrideFHA, setOverrideFHA]   = useState("");
   const [overrideVA, setOverrideVA]     = useState("");
   const [saveMsg, setSaveMsg]           = useState("");
+  const [ratesRefreshing, setRatesRefreshing] = useState(false);
 
-  // ── Load static JSON once on mount ──────────────────────────────────────────
+  // ── On mount: seed from localStorage, then auto-refresh from our API route ──
   useEffect(() => {
+    // 1. Immediately show whatever is cached in localStorage
+    const saved = getRates();
+    setRates(saved);
+    setOverrideConv(saved.conventional.toFixed(3));
+    setOverrideFHA(saved.fha.toFixed(3));
+    setOverrideVA(saved.va.toFixed(3));
+    if (saved.lastUpdated) setLastUpdated(saved.lastUpdated);
+
+    // 2. Silently refresh rate cards from /api/rates (Vercel → FRED, no blocking)
+    setRatesRefreshing(true);
+    fetchLiveRates()
+      .then((live) => {
+        if (live) {
+          saveRates(live);
+          setRates(live);
+          setOverrideConv(live.conventional.toFixed(3));
+          setOverrideFHA(live.fha.toFixed(3));
+          setOverrideVA(live.va.toFixed(3));
+          setLastUpdated(live.lastUpdated);
+        }
+      })
+      .finally(() => setRatesRefreshing(false));
+  }, []);
+
+  // ── On mount: load chart — static JSON first, then refresh from /api/rates/history ──
+  useEffect(() => {
+    // Step 1: Load the pre-built static JSON instantly (served from CDN)
     fetch("/rate-history.json")
       .then((r) => r.json())
       .then((data: RateHistoryFile) => {
@@ -98,17 +129,28 @@ export default function MarketRates() {
         setDataUpdated(data.updated || "");
         setDataLoaded(true);
       })
-      .catch(() => setDataLoaded(true)); // still mark loaded even if file missing
-  }, []);
+      .catch(() => setDataLoaded(true));
 
-  // ── Load saved rates on mount ────────────────────────────────────────────────
-  useEffect(() => {
-    const saved = getRates();
-    setRates(saved);
-    setOverrideConv(saved.conventional.toFixed(3));
-    setOverrideFHA(saved.fha.toFixed(3));
-    setOverrideVA(saved.va.toFixed(3));
-    if (saved.lastUpdated) setLastUpdated(saved.lastUpdated);
+    // Step 2: Fetch fresh history from our API route (Vercel → FRED, server-side)
+    fetch("/api/rates/history?months=24", { cache: "no-store" })
+      .then((r) => r.ok ? r.json() : null)
+      .then((histData) => {
+        if (!histData?.points?.length) return;
+        const all: HistoryPoint[] = histData.points;
+        const now = Date.now();
+        const slice = (days: number) =>
+          all.filter((p) => new Date(p.date).getTime() >= now - days * 86400000);
+        setAllData({
+          updated: new Date().toISOString().split("T")[0],
+          "3months": slice(91),
+          "6months": slice(182),
+          "1year":   slice(365),
+          "2years":  all,
+        });
+        setDataUpdated(new Date().toISOString().split("T")[0]);
+        setDataLoaded(true);
+      })
+      .catch(() => { /* static JSON already loaded above — silent fail is fine */ });
   }, []);
 
   // ── Current range data — instant switch, no fetch ───────────────────────────
@@ -138,58 +180,6 @@ export default function MarketRates() {
     setLastUpdated(updated.lastUpdated);
     setSaveMsg("✓ Rates saved — all calculators updated.");
     setTimeout(() => setSaveMsg(""), 3000);
-  }
-
-  // ── Pull from FRED — updates rate cards AND refreshes chart history ──────────
-  async function handlePullFromFRED() {
-    setSaveMsg("Fetching from FRED…");
-
-    // 1. Fetch current rate (updates the 3 rate cards)
-    const live = await fetchLiveRates();
-    if (live) {
-      saveRates(live);
-      setRates(live);
-      setOverrideConv(live.conventional.toFixed(3));
-      setOverrideFHA(live.fha.toFixed(3));
-      setOverrideVA(live.va.toFixed(3));
-      setLastUpdated(live.lastUpdated);
-    }
-
-    // 2. Fetch full 2-year history to refresh the chart
-    try {
-      const histRes = await fetch("/api/rates/history?months=24");
-      if (histRes.ok) {
-        const histData = await histRes.json();
-        if (histData.points?.length) {
-          // Slice all 4 ranges from the fresh data
-          const all: HistoryPoint[] = histData.points;
-          const now = Date.now();
-          const slice = (days: number) =>
-            all.filter((p) => new Date(p.date).getTime() >= now - days * 86400000);
-
-          setAllData({
-            updated: new Date().toISOString().split("T")[0],
-            "3months": slice(91),
-            "6months": slice(182),
-            "1year":   slice(365),
-            "2years":  all,
-          });
-          setDataUpdated(new Date().toISOString().split("T")[0]);
-          setSaveMsg("✓ Rates and chart updated from Freddie Mac PMMS.");
-          setTimeout(() => setSaveMsg(""), 4000);
-          return;
-        }
-      }
-    } catch {
-      // History fetch failed — still update rate cards if we got them
-    }
-
-    if (live) {
-      setSaveMsg("✓ Rate cards updated. Chart refresh requires FRED_API_KEY in Vercel.");
-    } else {
-      setSaveMsg("⚠️ Could not reach FRED. Enter rates manually above.");
-    }
-    setTimeout(() => setSaveMsg(""), 5000);
   }
 
   // ── Render ───────────────────────────────────────────────────────────────────
@@ -311,8 +301,13 @@ export default function MarketRates() {
             className="bg-white rounded-xl shadow-sm border border-gray-100 p-6"
             style={{ borderTopWidth: "3px", borderTopColor: card.color }}
           >
-            <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">
-              {card.label}
+            <div className="flex items-center justify-between mb-1">
+              <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                {card.label}
+              </div>
+              {ratesRefreshing && (
+                <span className="text-xs text-gray-300 animate-pulse">updating…</span>
+              )}
             </div>
             <div className="text-5xl font-bold mb-1 tabular-nums" style={{ color: card.color }}>
               {card.current.toFixed(2)}
@@ -322,7 +317,7 @@ export default function MarketRates() {
               {card.note}
               {lastUpdated && (
                 <span className="block mt-0.5">
-                  Updated {new Date(lastUpdated).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                  As of {new Date(lastUpdated).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                 </span>
               )}
             </div>
@@ -349,7 +344,10 @@ export default function MarketRates() {
       {/* ── Save Controls ──────────────────────────────────────────────────── */}
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm px-6 py-4 flex flex-wrap items-center justify-between gap-4">
         <div className="text-sm text-gray-600">
-          <span className="font-semibold">Save rates</span> — updates all calculators and program recommendations instantly.
+          <span className="font-semibold">Manual override</span> — edit the rates above and save to update all calculators instantly.
+          <span className="block text-xs text-gray-400 mt-0.5">
+            Live rates auto-refresh from Freddie Mac PMMS each time this page loads.
+          </span>
         </div>
         <div className="flex items-center gap-3 flex-wrap">
           {saveMsg && (
@@ -357,12 +355,6 @@ export default function MarketRates() {
               {saveMsg}
             </span>
           )}
-          <button
-            onClick={handlePullFromFRED}
-            className="px-4 py-2 rounded-lg text-sm font-semibold border border-gray-300 text-gray-600 hover:bg-gray-50 transition-colors"
-          >
-            Pull from FRED
-          </button>
           <button
             onClick={handleSaveRates}
             className="px-6 py-2 rounded-lg text-sm font-semibold bg-rio-red text-white hover:bg-red-700 transition-colors"
