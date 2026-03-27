@@ -650,11 +650,310 @@ function NewBuildCalc() {
   );
 }
 
+/* ── Calculator 6: Loan Payoff Estimator ── */
+function LoanPayoffCalc({ onPayoffCalculated }: { onPayoffCalculated: (amount: number) => void }) {
+  const [originalLoan, setOriginalLoan] = useState(350000);
+  const [interestRate, setInterestRate] = useState(6.5);
+  const [firstPaymentDate, setFirstPaymentDate] = useState("");
+
+  const parseLocalDate = (s: string) => {
+    const [y, m, d] = s.split("-").map(Number);
+    return new Date(y, m - 1, d);
+  };
+
+  const today = new Date();
+  const todayStr = today.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+
+  let paymentsMade = 0;
+  let remainingBalance = 0;
+  let totalInterestPaid = 0;
+  let monthlyPayment = 0;
+
+  const hasResult = firstPaymentDate && originalLoan > 0 && interestRate > 0;
+
+  if (hasResult) {
+    const firstDate = parseLocalDate(firstPaymentDate);
+    const r = interestRate / 100 / 12;
+    const n = 360;
+
+    monthlyPayment = (originalLoan * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
+
+    const yr = today.getFullYear() - firstDate.getFullYear();
+    const mo = today.getMonth() - firstDate.getMonth();
+    paymentsMade = Math.min(Math.max(yr * 12 + mo, 0), n);
+
+    remainingBalance = paymentsMade === 0
+      ? originalLoan
+      : originalLoan * Math.pow(1 + r, paymentsMade) -
+        monthlyPayment * (Math.pow(1 + r, paymentsMade) - 1) / r;
+
+    remainingBalance = Math.max(0, remainingBalance);
+    const principalPaid = originalLoan - remainingBalance;
+    totalInterestPaid = Math.max(0, monthlyPayment * paymentsMade - principalPaid);
+  }
+
+  const paymentsRemaining = 360 - paymentsMade;
+
+  return (
+    <div>
+      <h3 className="text-lg font-bold mb-4">Loan Payoff Estimator</h3>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <MoneyInput label="Original Loan Amount" value={originalLoan} onChange={setOriginalLoan} placeholder="350000" />
+        <NumberInput label="Original Interest Rate %" value={interestRate} onChange={setInterestRate} suffix="%" step="0.125" placeholder="6.5" />
+        <div className="md:col-span-2">
+          <label className="block text-sm font-semibold text-gray-700 mb-1">Date of First Payment</label>
+          <input
+            type="date"
+            value={firstPaymentDate}
+            onChange={(e) => setFirstPaymentDate(e.target.value)}
+            className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:border-rio-red focus:ring-1 focus:ring-rio-red outline-none"
+          />
+        </div>
+      </div>
+
+      {hasResult && (
+        <>
+          {/* Primary result */}
+          <div className="bg-rio-red/5 border-2 border-rio-red rounded-xl px-6 py-5 mb-5 text-center">
+            <div className="text-sm font-semibold text-gray-600 mb-1">Estimated Current Payoff</div>
+            <div className="text-4xl font-bold text-rio-red mb-1">{fmt(remainingBalance)}</div>
+            <div className="text-xs text-gray-500 mb-3">
+              Snapshot as of {todayStr}. Contact lender for official payoff amount.
+            </div>
+            <button
+              onClick={() => onPayoffCalculated(Math.round(remainingBalance))}
+              className="px-5 py-2 bg-rio-red text-white text-sm font-semibold rounded-lg hover:bg-rio-red/90 transition-colors"
+            >
+              Send to Net Proceeds Calculator →
+            </button>
+          </div>
+
+          {/* Supporting stats */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <ResultCard label="Original Loan" value={fmt(originalLoan)} />
+            <ResultCard label="Payments Made" value={String(paymentsMade)} sub={`${fmt(monthlyPayment)}/mo`} />
+            <ResultCard label="Payments Remaining" value={String(paymentsRemaining)} />
+            <ResultCard label="Total Interest Paid" value={fmt(totalInterestPaid)} />
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+/* ── Calculator 7: Seller Net Proceeds ── */
+function SellerNetCalc({ importedPayoff }: { importedPayoff: number | null }) {
+  const [offerPrice, setOfferPrice] = useState(400000);
+  const [payoff, setPayoff] = useState(0);
+  const [annualTaxes, setAnnualTaxes] = useState(2000);
+  const [hoaDues, setHoaDues] = useState(0);
+  const [closingDate, setClosingDate] = useState("");
+  const [concessionsPct, setConcessionsPct] = useState(0);
+  const [buyerAgentPct, setBuyerAgentPct] = useState(2.5);
+  const [listingAgentPct, setListingAgentPct] = useState(3);
+
+  const parseLocalDate = (s: string) => {
+    const [y, m, d] = s.split("-").map(Number);
+    return new Date(y, m - 1, d);
+  };
+
+  // Prorate: seller credits buyer for days owned Jan 1 → closing
+  let proratedTaxes = 0;
+  let daysFromJan1 = 0;
+  if (closingDate && annualTaxes > 0) {
+    const closing = parseLocalDate(closingDate);
+    const jan1 = new Date(closing.getFullYear(), 0, 1);
+    daysFromJan1 = Math.floor((closing.getTime() - jan1.getTime()) / 86400000);
+    proratedTaxes = (annualTaxes / 365) * daysFromJan1;
+  }
+
+  const concessionsAmt  = offerPrice * (concessionsPct / 100);
+  const buyerAgentAmt   = offerPrice * (buyerAgentPct  / 100);
+  const listingAgentAmt = offerPrice * (listingAgentPct / 100);
+  const titleFees       = offerPrice * 0.01;
+
+  const netProceeds = offerPrice - payoff - proratedTaxes - hoaDues
+    - concessionsAmt - buyerAgentAmt - listingAgentAmt - titleFees;
+  const isNegative = netProceeds < 0;
+
+  const DeductionRow = ({ label, value }: { label: string; value: number }) => (
+    <div className="flex justify-between items-center py-2 border-b border-gray-100">
+      <span className="text-sm text-gray-600">{label}</span>
+      <span className="text-sm font-semibold text-red-600">− {fmt(value)}</span>
+    </div>
+  );
+
+  return (
+    <div>
+      <h3 className="text-lg font-bold mb-4">Seller Net Proceeds Estimator</h3>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <MoneyInput label="Purchase / Offer Price" value={offerPrice} onChange={setOfferPrice} placeholder="400000" />
+
+        {/* Payoff with import button */}
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-1">Payoff Amount</label>
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">$</span>
+              <input
+                type="number"
+                value={payoff || ""}
+                onChange={(e) => setPayoff(Number(e.target.value))}
+                className="w-full border border-gray-300 rounded-lg pl-7 pr-4 py-2.5 text-sm focus:border-rio-red focus:ring-1 focus:ring-rio-red outline-none"
+                placeholder="0"
+              />
+            </div>
+            {importedPayoff !== null && (
+              <button
+                onClick={() => setPayoff(importedPayoff)}
+                className="px-3 py-2 bg-rio-red/10 text-rio-red text-xs font-semibold rounded-lg border border-rio-red/30 hover:bg-rio-red/20 whitespace-nowrap transition-colors"
+              >
+                Import from Payoff Calc
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Annual taxes with assessor link */}
+        <div>
+          <div className="flex items-center justify-between mb-1">
+            <label className="text-sm font-semibold text-gray-700">Annual Property Taxes</label>
+            <a
+              href="https://mcassessor.maricopa.gov"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-rio-red underline font-medium hover:text-rio-red/80"
+            >
+              Look up on Maricopa County Assessor ↗
+            </a>
+          </div>
+          <div className="relative">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">$</span>
+            <input
+              type="number"
+              value={annualTaxes || ""}
+              onChange={(e) => setAnnualTaxes(Number(e.target.value))}
+              className="w-full border border-gray-300 rounded-lg pl-7 pr-4 py-2.5 text-sm focus:border-rio-red focus:ring-1 focus:ring-rio-red outline-none"
+              placeholder="0"
+            />
+          </div>
+        </div>
+
+        <MoneyInput label="HOA Amount Owed at Closing (optional)" value={hoaDues} onChange={setHoaDues} placeholder="0" />
+
+        {/* Closing date */}
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-1">Closing Date</label>
+          <input
+            type="date"
+            value={closingDate}
+            onChange={(e) => setClosingDate(e.target.value)}
+            className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:border-rio-red focus:ring-1 focus:ring-rio-red outline-none"
+          />
+        </div>
+
+        {/* Seller concessions */}
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-1">
+            Seller Concessions: {concessionsPct.toFixed(1)}%
+            <span className="ml-2 text-rio-red font-bold">{fmt(concessionsAmt)}</span>
+          </label>
+          <input
+            type="range" min="0" max="6" step="0.5" value={concessionsPct}
+            onChange={(e) => setConcessionsPct(Number(e.target.value))}
+            className="w-full accent-rio-red"
+          />
+          <div className="flex justify-between text-xs text-gray-400 mt-0.5"><span>0%</span><span>6%</span></div>
+        </div>
+
+        {/* Buyer agent commission */}
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-1">
+            Buyer&apos;s Agent Commission: {buyerAgentPct.toFixed(2)}%
+            <span className="ml-2 text-rio-red font-bold">{fmt(buyerAgentAmt)}</span>
+          </label>
+          <input
+            type="range" min="2" max="4" step="0.25" value={buyerAgentPct}
+            onChange={(e) => setBuyerAgentPct(Number(e.target.value))}
+            className="w-full accent-rio-red"
+          />
+          <div className="flex justify-between text-xs text-gray-400 mt-0.5"><span>2%</span><span>4%</span></div>
+        </div>
+
+        {/* Listing agent commission */}
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-1">
+            Listing Agent Commission: {listingAgentPct.toFixed(2)}%
+            <span className="ml-2 text-rio-red font-bold">{fmt(listingAgentAmt)}</span>
+          </label>
+          <input
+            type="range" min="1" max="6" step="0.25" value={listingAgentPct}
+            onChange={(e) => setListingAgentPct(Number(e.target.value))}
+            className="w-full accent-rio-red"
+          />
+          <div className="flex justify-between text-xs text-gray-400 mt-0.5">
+            <span>1%</span>
+            <span className="text-gray-500">default 3%</span>
+            <span>6%</span>
+          </div>
+        </div>
+
+        {/* Title fees — read only */}
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-1">Title Fees (1% — fixed)</label>
+          <div className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-2.5 text-sm text-gray-600 flex justify-between items-center">
+            <span>1% of purchase price</span>
+            <span className="font-bold text-gray-800">{fmt(titleFees)}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Line-by-line breakdown */}
+      <div className="bg-white border border-gray-200 rounded-xl p-5">
+        <h4 className="font-bold text-gray-800 mb-3 text-sm uppercase tracking-wide">Net Proceeds Breakdown</h4>
+
+        <div className="flex justify-between items-center py-2 border-b border-gray-100">
+          <span className="text-sm font-semibold text-gray-900">Purchase Price</span>
+          <span className="text-sm font-bold text-gray-900">{fmt(offerPrice)}</span>
+        </div>
+        <DeductionRow label="Payoff Amount" value={payoff} />
+        {closingDate && annualTaxes > 0 && (
+          <DeductionRow
+            label={`Prorated Property Taxes (${fmt(annualTaxes)}/yr ÷ 365 × ${daysFromJan1} days)`}
+            value={proratedTaxes}
+          />
+        )}
+        {hoaDues > 0 && <DeductionRow label="HOA Dues at Closing" value={hoaDues} />}
+        <DeductionRow label={`Seller Concessions (${concessionsPct.toFixed(1)}% = ${fmt(concessionsAmt)})`} value={concessionsAmt} />
+        <DeductionRow label={`Buyer's Agent Commission (${buyerAgentPct.toFixed(2)}% = ${fmt(buyerAgentAmt)})`} value={buyerAgentAmt} />
+        <DeductionRow label={`Listing Agent Commission (${listingAgentPct.toFixed(2)}% = ${fmt(listingAgentAmt)})`} value={listingAgentAmt} />
+        <DeductionRow label={`Title Fees (1% = ${fmt(titleFees)})`} value={titleFees} />
+
+        {/* Net result */}
+        <div className={`flex justify-between items-center py-3 px-4 mt-3 rounded-xl ${isNegative ? "bg-red-50 border border-red-200" : "bg-rio-red/5 border border-rio-red/20"}`}>
+          <span className="font-bold text-gray-900 text-sm">Estimated Net Proceeds</span>
+          <span className={`text-2xl font-bold ${isNegative ? "text-red-600" : "text-rio-red"}`}>
+            {isNegative ? "−" : ""}{fmt(Math.abs(netProceeds))}
+          </span>
+        </div>
+
+        {isNegative && (
+          <div className="mt-3 bg-red-50 border border-red-300 rounded-lg px-4 py-3 text-sm text-red-700 font-semibold">
+            ⚠ Estimated proceeds are negative — review payoff, concessions, and commission structure.
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 /* ── Main Calculators Tab ── */
 export default function Calculators() {
   const [active, setActive] = useState("payment");
+  const [payoffAmount, setPayoffAmount] = useState<number | null>(null);
 
-  const tabs = [
+  const buyerTabs = [
     { id: "payment", label: "Monthly Payment" },
     { id: "dti", label: "DTI" },
     { id: "maxprice", label: "Max Price" },
@@ -662,10 +961,16 @@ export default function Calculators() {
     { id: "newbuild", label: "New Build vs Resale" },
   ];
 
+  const sellerTabs = [
+    { id: "payoff", label: "Loan Payoff" },
+    { id: "sellernet", label: "Net Proceeds" },
+  ];
+
   return (
     <div className="max-w-4xl mx-auto">
-      <div className="flex flex-wrap gap-2 mb-6">
-        {tabs.map((tab) => (
+      {/* Buyer tool tabs */}
+      <div className="flex flex-wrap gap-2 mb-3">
+        {buyerTabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActive(tab.id)}
@@ -679,12 +984,39 @@ export default function Calculators() {
           </button>
         ))}
       </div>
+
+      {/* Seller Tools divider */}
+      <div className="flex items-center gap-3 my-3">
+        <div className="h-px flex-1 bg-gray-200" />
+        <span className="text-xs font-bold text-gray-400 uppercase tracking-widest px-1">Seller Tools</span>
+        <div className="h-px flex-1 bg-gray-200" />
+      </div>
+
+      {/* Seller tool tabs */}
+      <div className="flex flex-wrap gap-2 mb-6">
+        {sellerTabs.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActive(tab.id)}
+            className={`px-4 py-2 rounded-lg text-sm font-semibold border transition-colors ${
+              active === tab.id
+                ? "bg-rio-red text-white border-rio-red"
+                : "bg-white text-gray-600 border-gray-300 hover:border-gray-400"
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 md:p-8">
-        {active === "payment" && <PaymentCalc />}
-        {active === "dti" && <DTICalc />}
-        {active === "maxprice" && <MaxPriceCalc />}
-        {active === "solar" && <SolarCalc />}
-        {active === "newbuild" && <NewBuildCalc />}
+        {active === "payment"    && <PaymentCalc />}
+        {active === "dti"        && <DTICalc />}
+        {active === "maxprice"   && <MaxPriceCalc />}
+        {active === "solar"      && <SolarCalc />}
+        {active === "newbuild"   && <NewBuildCalc />}
+        {active === "payoff"     && <LoanPayoffCalc onPayoffCalculated={(amt) => { setPayoffAmount(amt); }} />}
+        {active === "sellernet"  && <SellerNetCalc importedPayoff={payoffAmount} />}
       </div>
     </div>
   );
