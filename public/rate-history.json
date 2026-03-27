@@ -1,12 +1,6 @@
 {
-  "updated": "2026-03-25",
+  "updated": "2026-03-27",
   "3months": [
-    {
-      "date": "2025-12-24",
-      "conventional": 6.18,
-      "fha": 5.93,
-      "va": 5.68
-    },
     {
       "date": "2025-12-31",
       "conventional": 6.15,
@@ -78,15 +72,15 @@
       "conventional": 6.22,
       "fha": 5.97,
       "va": 5.72
+    },
+    {
+      "date": "2026-03-26",
+      "conventional": 6.38,
+      "fha": 6.13,
+      "va": 5.88
     }
   ],
   "6months": [
-    {
-      "date": "2025-09-25",
-      "conventional": 6.3,
-      "fha": 6.05,
-      "va": 5.8
-    },
     {
       "date": "2025-10-02",
       "conventional": 6.34,
@@ -236,6 +230,12 @@
       "conventional": 6.22,
       "fha": 5.97,
       "va": 5.72
+    },
+    {
+      "date": "2026-03-26",
+      "conventional": 6.38,
+      "fha": 6.13,
+      "va": 5.88
     }
   ],
   "1year": [
@@ -550,6 +550,12 @@
       "conventional": 6.22,
       "fha": 5.97,
       "va": 5.72
+    },
+    {
+      "date": "2026-03-26",
+      "conventional": 6.38,
+      "fha": 6.13,
+      "va": 5.88
     }
   ],
   "2years": [
@@ -1176,6 +1182,12 @@
       "conventional": 6.22,
       "fha": 5.97,
       "va": 5.72
+    },
+    {
+      "date": "2026-03-26",
+      "conventional": 6.38,
+      "fha": 6.13,
+      "va": 5.88
     }
   ]
 }
