@@ -1,6 +1,6 @@
 {
   "name": "Rio Group Advisor",
-  "short_name": "Rio Advisor",
+  "short_name": "Rio Grp Advisor",
   "description": "Internal agent-facing loan products advisor for client consultations",
   "start_url": "/",
   "display": "standalone",
