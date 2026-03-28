@@ -309,14 +309,18 @@ function PaymentCalc() {
       <div ref={printRef} className="print-root">
 
         {/* ── PRINT-ONLY HEADER ── (hidden on screen) */}
-        <div className="print-only mb-6">
-          <div className="flex justify-between items-center pb-4 mb-4 border-b-2 border-[#C8202A]">
+        <div className="print-only mb-4">
+          <div className="flex justify-between items-center pb-3 mb-3 border-b-2 border-[#C8202A]">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/rio-square.png" alt="Rio Group" loading="eager" style={{width:52,height:52}} className="rounded" />
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/az-logo-white.png" alt="AZ & Associates" loading="eager" style={{width:120,height:36,filter:"brightness(0)"}} />
+            <img src="/rio-square.png" alt="The Rio Group" loading="eager"
+              style={{width:48,height:48,display:"block",printColorAdjust:"exact",WebkitPrintColorAdjust:"exact"} as React.CSSProperties}
+              className="rounded" />
+            <div style={{textAlign:"right"}}>
+              <div style={{fontWeight:700,fontSize:13,color:"#000"}}>AZ &amp; Associates</div>
+              <div style={{fontSize:11,color:"#555"}}>Powered by</div>
+            </div>
           </div>
-          <h1 className="text-2xl font-bold mb-1 text-rio-black">Monthly Payment Summary</h1>
+          <h1 className="text-xl font-bold mb-0.5 text-rio-black">Monthly Payment Summary</h1>
           <p className="text-sm text-gray-500 mb-1">{todayStr}</p>
           {clientName      && <p className="text-sm text-gray-700">Client: <strong>{clientName}</strong></p>}
           {propertyAddress && <p className="text-sm text-gray-700">Property: <strong>{propertyAddress}</strong></p>}
@@ -350,7 +354,7 @@ function PaymentCalc() {
           ] as ({ label: string; value: string } | null)[])
             .filter((r): r is { label: string; value: string } => r !== null)
             .map((row, i) => (
-              <div key={i} className={`flex justify-between px-4 py-2.5 border-b border-gray-100 ${i % 2 === 0 ? "bg-gray-50" : "bg-white"}`}>
+              <div key={i} className={`flex justify-between px-4 py-1.5 border-b border-gray-100 ${i % 2 === 0 ? "bg-gray-50" : "bg-white"}`}>
                 <span className="text-sm text-gray-600">{row.label}</span>
                 <span className="text-sm font-semibold text-rio-black">{row.value}</span>
               </div>
@@ -813,15 +817,19 @@ function NewBuildCalc() {
       <div ref={printRef} className="print-root">
 
         {/* ── PRINT-ONLY HEADER ── */}
-        <div className="print-only mb-6">
-          <div className="flex justify-between items-center pb-4 mb-4 border-b-2 border-[#C8202A]">
+        <div className="print-only mb-4">
+          <div className="flex justify-between items-center pb-3 mb-3 border-b-2 border-[#C8202A]">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/rio-square.png" alt="Rio Group" loading="eager" style={{width:52,height:52}} className="rounded" />
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/az-logo-white.png" alt="AZ & Associates" loading="eager" style={{width:120,height:36,filter:"brightness(0)"}} />
+            <img src="/rio-square.png" alt="The Rio Group" loading="eager"
+              style={{width:48,height:48,display:"block",printColorAdjust:"exact",WebkitPrintColorAdjust:"exact"} as React.CSSProperties}
+              className="rounded" />
+            <div style={{textAlign:"right"}}>
+              <div style={{fontWeight:700,fontSize:13,color:"#000"}}>AZ &amp; Associates</div>
+              <div style={{fontSize:11,color:"#555"}}>Powered by</div>
+            </div>
           </div>
-          <h1 className="text-2xl font-bold mb-1 text-rio-black">New Build vs. Resale Comparison</h1>
-          <p className="text-sm text-gray-500">{todayStr}</p>
+          <h1 className="text-xl font-bold mb-0.5 text-rio-black">New Build vs. Resale Comparison</h1>
+          <p className="text-xs text-gray-500">{todayStr}</p>
         </div>
 
         {/* ── PRINT-ONLY side-by-side summary ── */}
@@ -1201,16 +1209,20 @@ function SellerNetCalc({ importedPayoff }: { importedPayoff: number | null }) {
       <div ref={printRef} className="print-root">
 
         {/* ── PRINT-ONLY HEADER ── */}
-        <div className="print-only mb-6">
-          <div className="flex justify-between items-center pb-4 mb-4 border-b-2 border-[#C8202A]">
+        <div className="print-only mb-4">
+          <div className="flex justify-between items-center pb-3 mb-3 border-b-2 border-[#C8202A]">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/rio-square.png" alt="Rio Group" loading="eager" style={{width:52,height:52}} className="rounded" />
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/az-logo-white.png" alt="AZ & Associates" loading="eager" style={{width:120,height:36,filter:"brightness(0)"}} />
+            <img src="/rio-square.png" alt="The Rio Group" loading="eager"
+              style={{width:48,height:48,display:"block",printColorAdjust:"exact",WebkitPrintColorAdjust:"exact"} as React.CSSProperties}
+              className="rounded" />
+            <div style={{textAlign:"right"}}>
+              <div style={{fontWeight:700,fontSize:13,color:"#000"}}>AZ &amp; Associates</div>
+              <div style={{fontSize:11,color:"#555"}}>Powered by</div>
+            </div>
           </div>
-          <h1 className="text-2xl font-bold mb-1 text-rio-black">Seller Net Proceeds Estimate</h1>
-          <p className="text-sm text-gray-500 mb-1">{todayStr}</p>
-          {clientName && <p className="text-sm text-gray-700">Client: <strong>{clientName}</strong></p>}
+          <h1 className="text-xl font-bold mb-0.5 text-rio-black">Seller Net Proceeds Estimate</h1>
+          <p className="text-xs text-gray-500 mb-1">{todayStr}</p>
+          {clientName && <p className="text-xs text-gray-700">Client: <strong>{clientName}</strong></p>}
         </div>
 
         <h3 className="text-lg font-bold mb-4 no-print">Seller Net Proceeds Estimator</h3>
