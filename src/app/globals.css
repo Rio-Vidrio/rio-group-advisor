@@ -34,11 +34,26 @@ body {
   animation: ticker 20s linear infinite;
 }
 
-/* Print styles */
+/* Print styles — @page must be top-level, not inside @media print */
+@page {
+  margin: 0.75in;
+}
+
 @media print {
   .no-print { display: none !important; }
   .print-only { display: block !important; }
-  body { background: white; }
+  body { background: white; padding: 0; margin: 0; }
+
+  /* Breathing room inside print containers */
+  .print-root {
+    padding: 1.25rem 1.5rem;
+  }
+
+  /* Row spacing in print breakdown tables */
+  .print-row {
+    padding-top: 0.375rem !important;
+    padding-bottom: 0.375rem !important;
+  }
 }
 
 .print-only { display: none; }

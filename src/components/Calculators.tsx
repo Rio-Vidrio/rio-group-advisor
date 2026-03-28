@@ -75,6 +75,140 @@ function NumberInput({
   );
 }
 
+/**
+ * TaxInput — toggle between dollar amount and tax rate %
+ * mode "dollar": user enters annual tax dollars, component derives rate from price
+ * mode "rate": user enters rate %, component derives dollar amount from price
+ */
+function TaxInput({
+  price,
+  taxDollars,
+  onTaxDollarsChange,
+  taxRate,
+  onTaxRateChange,
+  label,
+  assessorLink,
+  note,
+}: {
+  price: number;
+  taxDollars: number;
+  onTaxDollarsChange: (v: number) => void;
+  taxRate: number;
+  onTaxRateChange: (v: number) => void;
+  label?: string;
+  assessorLink?: boolean;
+  note?: React.ReactNode;
+}) {
+  const [mode, setMode] = useState<"dollar" | "rate">("rate");
+
+  const handleModeSwitch = (newMode: "dollar" | "rate") => {
+    if (newMode === mode) return;
+    if (newMode === "dollar") {
+      // Derive dollar from current rate
+      onTaxDollarsChange(Math.round(price * (taxRate / 100)));
+    } else {
+      // Derive rate from current dollar
+      if (price > 0) {
+        onTaxRateChange(Number(((taxDollars / price) * 100).toFixed(4)));
+      }
+    }
+    setMode(newMode);
+  };
+
+  // When price changes and mode is rate, keep dollars in sync
+  const derivedDollars = mode === "rate" ? Math.round(price * (taxRate / 100)) : taxDollars;
+  const derivedRate = mode === "dollar" && price > 0 ? Number(((taxDollars / price) * 100).toFixed(4)) : taxRate;
+
+  // Sync derived values upstream
+  useEffect(() => {
+    if (mode === "rate") {
+      onTaxDollarsChange(Math.round(price * (taxRate / 100)));
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [price, taxRate, mode]);
+
+  useEffect(() => {
+    if (mode === "dollar" && price > 0) {
+      onTaxRateChange(Number(((taxDollars / price) * 100).toFixed(4)));
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [price, taxDollars, mode]);
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-1">
+        <label className="text-sm font-semibold text-gray-700">{label || "Property Taxes"}</label>
+        {assessorLink && (
+          <a
+            href="https://mcassessor.maricopa.gov"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs text-rio-red underline font-medium hover:text-rio-red/80"
+          >
+            Look up on Maricopa County Assessor ↗
+          </a>
+        )}
+      </div>
+      {/* Toggle */}
+      <div className="flex gap-1 mb-2">
+        <button
+          type="button"
+          onClick={() => handleModeSwitch("dollar")}
+          className={`flex-1 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${
+            mode === "dollar"
+              ? "bg-rio-red text-white border-rio-red"
+              : "bg-white text-gray-500 border-gray-300 hover:border-gray-400"
+          }`}
+        >
+          $ Amount
+        </button>
+        <button
+          type="button"
+          onClick={() => handleModeSwitch("rate")}
+          className={`flex-1 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${
+            mode === "rate"
+              ? "bg-rio-red text-white border-rio-red"
+              : "bg-white text-gray-500 border-gray-300 hover:border-gray-400"
+          }`}
+        >
+          Tax Rate %
+        </button>
+      </div>
+      {mode === "dollar" ? (
+        <>
+          <div className="relative">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">$</span>
+            <input
+              type="number"
+              value={taxDollars || ""}
+              onChange={(e) => onTaxDollarsChange(Number(e.target.value))}
+              className="w-full border border-gray-300 rounded-lg pl-7 pr-4 py-2.5 text-sm focus:border-rio-red focus:ring-1 focus:ring-rio-red outline-none"
+              placeholder="1800"
+            />
+          </div>
+          <div className="text-xs text-gray-400 mt-1 pl-1">= {derivedRate}% of {fmt(price)}</div>
+        </>
+      ) : (
+        <>
+          <div className="relative">
+            <input
+              type="number"
+              value={taxRate || ""}
+              onChange={(e) => onTaxRateChange(Number(e.target.value))}
+              step="0.01"
+              className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:border-rio-red focus:ring-1 focus:ring-rio-red outline-none"
+              placeholder="0.45"
+            />
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">%</span>
+          </div>
+          <div className="text-xs text-gray-400 mt-1 pl-1">= {fmt(derivedDollars)}/yr</div>
+        </>
+      )}
+      {note && <div className="mt-1">{note}</div>}
+    </div>
+  );
+}
+
 function ResultCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
     <div className="bg-rio-gray rounded-lg p-4 border border-gray-200">
@@ -96,6 +230,7 @@ function PaymentCalc() {
   const [rate, setRate] = useState(0);
   const [term, setTerm] = useState(30);
   const [tax, setTax] = useState(0.45);
+  const [taxDollars, setTaxDollars] = useState(Math.round(350000 * 0.0045));
   const [insurance, setInsurance] = useState(1350);
   const [hoa, setHoa] = useState(0);
   const [pmiRate, setPmiRate] = useState(0.55); // Conventional PMI — adjustable, default 0.55%
@@ -156,7 +291,7 @@ function PaymentCalc() {
 
   return (
     <div>
-      <div ref={printRef}>
+      <div ref={printRef} className="print-root">
 
         {/* ── PRINT-ONLY HEADER ── (hidden on screen) */}
         <div className="print-only mb-6">
@@ -293,7 +428,14 @@ function PaymentCalc() {
         </div>
 
         <NumberInput label="Loan Term (years)" value={term} onChange={setTerm} placeholder="30" />
-        <NumberInput label="Tax Rate %" value={tax} onChange={setTax} suffix="%" step="0.01" placeholder="0.45" />
+        <TaxInput
+          price={price}
+          taxDollars={taxDollars}
+          onTaxDollarsChange={setTaxDollars}
+          taxRate={tax}
+          onTaxRateChange={setTax}
+          label="Property Taxes"
+        />
         <MoneyInput label="Annual Insurance" value={insurance} onChange={setInsurance} placeholder="1350" />
         <MoneyInput label="Monthly HOA" value={hoa} onChange={setHoa} placeholder="0" />
 
@@ -476,6 +618,7 @@ function MaxPriceCalc() {
   const [targetDTI, setTargetDTI] = useState(45);
   const [rate, setRate] = useState(6.25);
   const [tax, setTax] = useState(0.45);
+  const [taxDollars, setTaxDollars] = useState(0);
   const [insurance, setInsurance] = useState(1350);
   const [hoa, setHoa] = useState(0);
 
@@ -510,7 +653,14 @@ function MaxPriceCalc() {
         <MoneyInput label="Monthly Debts" value={debts} onChange={setDebts} />
         <NumberInput label="Target DTI %" value={targetDTI} onChange={setTargetDTI} suffix="%" />
         <NumberInput label="Interest Rate %" value={rate} onChange={setRate} suffix="%" step="0.125" />
-        <NumberInput label="Tax Rate %" value={tax} onChange={setTax} suffix="%" step="0.01" />
+        <TaxInput
+          price={maxPrice || 350000}
+          taxDollars={taxDollars}
+          onTaxDollarsChange={setTaxDollars}
+          taxRate={tax}
+          onTaxRateChange={setTax}
+          label="Property Taxes"
+        />
         <MoneyInput label="Annual Insurance" value={insurance} onChange={setInsurance} />
         <MoneyInput label="Monthly HOA" value={hoa} onChange={setHoa} />
       </div>
@@ -567,12 +717,14 @@ function NewBuildCalc() {
   const [nbHoa, setNbHoa] = useState(100);
   const [nbDownPct, setNbDownPct] = useState(3.5);
   const [nbTaxRate, setNbTaxRate] = useState(0.8); // First-year new build tax rate
+  const [nbTaxDollars, setNbTaxDollars] = useState(Math.round(470000 * 0.008));
 
   const [rsPrice, setRsPrice] = useState(380000);
   const [rsRate, setRsRate] = useState(0);
   const [rsHoa, setRsHoa] = useState(0);
   const [rsDownPct, setRsDownPct] = useState(3.5);
   const [rsTaxRate, setRsTaxRate] = useState(0.45);
+  const [rsTaxDollars, setRsTaxDollars] = useState(Math.round(380000 * 0.0045));
 
   useEffect(() => { setRsRate(rates.fha); }, [rates]);
 
@@ -626,7 +778,7 @@ function NewBuildCalc() {
 
   return (
     <div>
-      <div ref={printRef}>
+      <div ref={printRef} className="print-root">
 
         {/* ── PRINT-ONLY HEADER ── */}
         <div className="print-only mb-6">
@@ -711,12 +863,19 @@ function NewBuildCalc() {
             </div>
             <NumberInput label="Rate (builder buydown)" value={nbRate} onChange={setNbRate} suffix="%" step="0.125" />
             {/* Tax rate with first-year note */}
-            <div>
-              <NumberInput label="Tax Rate %" value={nbTaxRate} onChange={setNbTaxRate} suffix="%" step="0.05" placeholder="0.80" />
-              <div className="mt-1 text-xs text-amber-700 font-medium pl-1">
-                ⚠ First year tax rate always higher on new builds
-              </div>
-            </div>
+            <TaxInput
+              price={nbPrice}
+              taxDollars={nbTaxDollars}
+              onTaxDollarsChange={setNbTaxDollars}
+              taxRate={nbTaxRate}
+              onTaxRateChange={setNbTaxRate}
+              label="Property Taxes"
+              note={
+                <div className="text-xs text-amber-700 font-medium pl-1">
+                  ⚠ First year tax rate always higher on new builds
+                </div>
+              }
+            />
             <MoneyInput label="Monthly HOA" value={nbHoa} onChange={setNbHoa} />
           </div>
         </div>
@@ -733,7 +892,14 @@ function NewBuildCalc() {
               </div>
             </div>
             <NumberInput label="Rate (market)" value={rsRate} onChange={setRsRate} suffix="%" step="0.125" />
-            <NumberInput label="Tax Rate %" value={rsTaxRate} onChange={setRsTaxRate} suffix="%" step="0.05" placeholder="0.45" />
+            <TaxInput
+              price={rsPrice}
+              taxDollars={rsTaxDollars}
+              onTaxDollarsChange={setRsTaxDollars}
+              taxRate={rsTaxRate}
+              onTaxRateChange={setRsTaxRate}
+              label="Property Taxes"
+            />
             <MoneyInput label="Monthly HOA" value={rsHoa} onChange={setRsHoa} />
           </div>
         </div>
@@ -938,6 +1104,7 @@ function SellerNetCalc({ importedPayoff }: { importedPayoff: number | null }) {
   const [offerPrice, setOfferPrice] = useState(400000);
   const [payoff, setPayoff] = useState(0);
   const [annualTaxes, setAnnualTaxes] = useState(2000);
+  const [taxRate, setTaxRate] = useState(Number(((2000 / 400000) * 100).toFixed(4)));
   const [hoaDues, setHoaDues] = useState(0);
   const [closingDate, setClosingDate] = useState("");
   const [concessionsPct, setConcessionsPct] = useState(0);
@@ -982,7 +1149,7 @@ function SellerNetCalc({ importedPayoff }: { importedPayoff: number | null }) {
 
   return (
     <div>
-      <div ref={printRef}>
+      <div ref={printRef} className="print-root">
 
         {/* ── PRINT-ONLY HEADER ── */}
         <div className="print-only mb-6">
@@ -1040,29 +1207,15 @@ function SellerNetCalc({ importedPayoff }: { importedPayoff: number | null }) {
         </div>
 
         {/* Annual taxes with assessor link */}
-        <div>
-          <div className="flex items-center justify-between mb-1">
-            <label className="text-sm font-semibold text-gray-700">Annual Property Taxes</label>
-            <a
-              href="https://mcassessor.maricopa.gov"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xs text-rio-red underline font-medium hover:text-rio-red/80"
-            >
-              Look up on Maricopa County Assessor ↗
-            </a>
-          </div>
-          <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">$</span>
-            <input
-              type="number"
-              value={annualTaxes || ""}
-              onChange={(e) => setAnnualTaxes(Number(e.target.value))}
-              className="w-full border border-gray-300 rounded-lg pl-7 pr-4 py-2.5 text-sm focus:border-rio-red focus:ring-1 focus:ring-rio-red outline-none"
-              placeholder="0"
-            />
-          </div>
-        </div>
+        <TaxInput
+          price={offerPrice}
+          taxDollars={annualTaxes}
+          onTaxDollarsChange={setAnnualTaxes}
+          taxRate={taxRate}
+          onTaxRateChange={setTaxRate}
+          label="Property Taxes"
+          assessorLink
+        />
 
         <MoneyInput label="HOA Amount Owed at Closing (optional)" value={hoaDues} onChange={setHoaDues} placeholder="0" />
 
