@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import Image from "next/image";
+import { useReactToPrint } from "react-to-print";
 import { calculateMonthlyPayment } from "@/lib/loanPrograms";
 import { getRates, Rates, defaultRates } from "@/lib/rateStore";
 
@@ -101,6 +103,8 @@ function PaymentCalc() {
   const [clientName, setClientName] = useState("");
   const [propertyAddress, setPropertyAddress] = useState("");
   const todayStr = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+  const printRef = useRef<HTMLDivElement>(null);
+  const handlePrint = useReactToPrint({ contentRef: printRef });
 
   useEffect(() => {
     const r = getRates();
@@ -152,38 +156,92 @@ function PaymentCalc() {
 
   return (
     <div>
-      <h3 className="text-lg font-bold mb-4">Monthly Payment Calculator</h3>
+      <div ref={printRef}>
 
-      {/* Client info for print (optional) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5 pb-5 border-b border-gray-100">
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-1">
-            Client Name <span className="text-xs text-gray-400 font-normal">(optional — for print)</span>
-          </label>
-          <input
-            type="text"
-            value={clientName}
-            onChange={(e) => setClientName(e.target.value)}
-            placeholder="e.g. John & Jane Smith"
-            className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:border-rio-red focus:ring-1 focus:ring-rio-red outline-none"
-          />
+        {/* ── PRINT-ONLY HEADER ── (hidden on screen) */}
+        <div className="print-only mb-6">
+          <div className="flex justify-between items-center pb-4 mb-4 border-b-2 border-[#C8202A]">
+            <Image src="/rio-square.png" alt="Rio Group" width={52} height={52} className="rounded" />
+            <Image src="/az-logo-white.png" alt="AZ & Associates" width={120} height={36} className="brightness-0" />
+          </div>
+          <h1 className="text-2xl font-bold mb-1 text-rio-black">Monthly Payment Summary</h1>
+          <p className="text-sm text-gray-500 mb-1">{todayStr}</p>
+          {clientName      && <p className="text-sm text-gray-700">Client: <strong>{clientName}</strong></p>}
+          {propertyAddress && <p className="text-sm text-gray-700">Property: <strong>{propertyAddress}</strong></p>}
+          <p className="text-sm text-gray-700 mt-1">
+            Loan Type: <strong>{loanMode === "conventional" ? "Conventional" : loanMode === "fha" ? "FHA" : "VA"}</strong>
+          </p>
         </div>
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-1">
-            Property Address <span className="text-xs text-gray-400 font-normal">(optional — for print)</span>
-          </label>
-          <input
-            type="text"
-            value={propertyAddress}
-            onChange={(e) => setPropertyAddress(e.target.value)}
-            placeholder="e.g. 1234 W Main St, Chandler AZ"
-            className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:border-rio-red focus:ring-1 focus:ring-rio-red outline-none"
-          />
+
+        {/* ── PRINT-ONLY breakdown detail table ── */}
+        <div className="print-only mb-6 border border-gray-200 rounded-lg overflow-hidden">
+          {([
+            { label: "Purchase Price",               value: fmt(price)                                              },
+            loanMode !== "va"
+              ? { label: `Down Payment (${downPct}%)`, value: `${fmt(downPayment)}`                                }
+              : { label: "Down Payment",               value: "$0 — VA No Down Payment Required"                   },
+            { label: "Loan Amount",                  value: fmt(baseLoan)                                          },
+            { label: "Interest Rate",                value: `${rate.toFixed(2)}%`                                  },
+            { label: "Loan Term",                    value: `${term} years`                                        },
+            { label: "Monthly Principal & Interest", value: fmt(monthlyPI)                                         },
+            { label: "Monthly Property Tax",         value: fmt(monthlyTax)                                        },
+            { label: "Monthly Insurance",            value: fmt(monthlyIns)                                        },
+            hoa > 0
+              ? { label: "Monthly HOA",              value: fmt(hoa) }
+              : null,
+            loanMode === "conventional" && downPct < 20
+              ? { label: `Monthly PMI (${pmiRate}%/yr)`, value: fmt(monthlyMI) }
+              : null,
+            loanMode === "fha"
+              ? { label: "Monthly MIP (0.55%/yr)", value: fmt(monthlyMI) }
+              : null,
+          ] as ({ label: string; value: string } | null)[])
+            .filter((r): r is { label: string; value: string } => r !== null)
+            .map((row, i) => (
+              <div key={i} className={`flex justify-between px-4 py-2.5 border-b border-gray-100 ${i % 2 === 0 ? "bg-gray-50" : "bg-white"}`}>
+                <span className="text-sm text-gray-600">{row.label}</span>
+                <span className="text-sm font-semibold text-rio-black">{row.value}</span>
+              </div>
+            ))}
+          <div className="flex justify-between items-center px-4 py-4 bg-red-50 border-t-2 border-[#C8202A]">
+            <span className="font-bold text-base text-rio-black">Total Monthly Payment</span>
+            <span className="text-3xl font-extrabold text-rio-red">{fmt(total)}</span>
+          </div>
         </div>
-      </div>
+
+        {/* ── SCREEN-ONLY title & inputs ── */}
+        <h3 className="text-lg font-bold mb-4 no-print">Monthly Payment Calculator</h3>
+
+        {/* Client info for print */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5 pb-5 border-b border-gray-100 no-print">
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-1">
+              Client Name <span className="text-xs text-gray-400 font-normal">(optional — for print)</span>
+            </label>
+            <input
+              type="text"
+              value={clientName}
+              onChange={(e) => setClientName(e.target.value)}
+              placeholder="e.g. John & Jane Smith"
+              className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:border-rio-red focus:ring-1 focus:ring-rio-red outline-none"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-1">
+              Property Address <span className="text-xs text-gray-400 font-normal">(optional — for print)</span>
+            </label>
+            <input
+              type="text"
+              value={propertyAddress}
+              onChange={(e) => setPropertyAddress(e.target.value)}
+              placeholder="e.g. 1234 W Main St, Chandler AZ"
+              className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:border-rio-red focus:ring-1 focus:ring-rio-red outline-none"
+            />
+          </div>
+        </div>
 
       {/* Loan type sub-tabs */}
-      <div className="flex gap-2 mb-6">
+      <div className="flex gap-2 mb-6 no-print">
         {(["conventional", "fha", "va"] as LoanMode[]).map((m) => (
           <button
             key={m}
@@ -199,7 +257,7 @@ function PaymentCalc() {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 no-print">
         <MoneyInput label="Purchase Price" value={price} onChange={setPrice} placeholder="350000" />
 
         {/* Down payment — hidden for VA */}
@@ -333,115 +391,20 @@ function PaymentCalc() {
         {loanMode === "fha" && <span className="ml-2 text-blue-700">· Annual MIP {fmt(monthlyMI * 12)}/yr</span>}
       </div>
 
-      {/* Print button */}
-      <div className="mt-5 pt-4 border-t border-gray-100">
-        <button
-          onClick={() => window.print()}
-          className="flex items-center gap-2 px-6 py-2.5 bg-rio-red text-white text-sm font-semibold rounded-lg hover:bg-rio-red/90 transition-colors"
-        >
-          🖨&nbsp; Print Summary
-        </button>
-      </div>
-
-      {/* ── PRINT-ONLY SUMMARY ── never visible on screen */}
-      <div id="payment-print-summary" style={{ display: "none" }}>
-        <style>{`
-          @media print {
-            body * { visibility: hidden; }
-            #payment-print-summary { visibility: visible !important; display: block !important;
-              position: fixed; left: 0; top: 0; width: 100%; padding: 40px 56px;
-              background: white; font-family: system-ui, -apple-system, sans-serif; box-sizing: border-box; }
-            #payment-print-summary * { visibility: visible; }
-            @page { margin: 1cm; }
-          }
-        `}</style>
-
-        {/* Header with logos */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px", paddingBottom: "14px", borderBottom: "2px solid #C8202A" }}>
-          <img src="/rio-square.png" alt="Rio Group" style={{ height: "52px", borderRadius: "6px" }} />
-          <img src="/az-logo-white.png" alt="AZ & Associates" style={{ height: "36px", filter: "brightness(0)" }} />
-        </div>
-
-        {/* Title block */}
-        <div style={{ marginBottom: "20px" }}>
-          <h1 style={{ fontSize: "22px", fontWeight: 700, margin: "0 0 6px 0", color: "#1A1A1A" }}>Monthly Payment Summary</h1>
-          <div style={{ fontSize: "13px", color: "#555" }}>Date: {todayStr}</div>
-          {clientName      && <div style={{ fontSize: "13px", color: "#333", marginTop: "3px" }}>Client: <strong>{clientName}</strong></div>}
-          {propertyAddress && <div style={{ fontSize: "13px", color: "#333", marginTop: "3px" }}>Property: <strong>{propertyAddress}</strong></div>}
-          <div style={{ fontSize: "13px", color: "#333", marginTop: "3px" }}>
-            Loan Type: <strong>{loanMode === "conventional" ? "Conventional" : loanMode === "fha" ? "FHA" : "VA"}</strong>
-          </div>
-        </div>
-
-        {/* Line-by-line breakdown */}
-        <div style={{ border: "1px solid #e5e7eb", borderRadius: "8px", overflow: "hidden", marginBottom: "8px" }}>
-          {([
-            { label: "Purchase Price",                               value: fmt(price)                              },
-            loanMode !== "va"
-              ? { label: `Down Payment (${downPct}%)`,              value: fmt(downPayment)                        }
-              : { label: "Down Payment",                             value: "$0 — VA No Down Payment Required"     },
-            { label: "Loan Amount",                                  value: fmt(baseLoan)                          },
-            { label: "Interest Rate",                                value: `${rate.toFixed(2)}%`                  },
-            { label: "Loan Term",                                    value: `${term} years`                        },
-            { label: "Monthly Principal & Interest",                 value: fmt(monthlyPI)                         },
-            { label: "Monthly Property Tax",                         value: fmt(monthlyTax)                        },
-            { label: "Monthly Insurance",                            value: fmt(monthlyIns)                        },
-            hoa > 0
-              ? { label: "Monthly HOA",                             value: fmt(hoa)                               }
-              : null,
-            loanMode === "conventional" && downPct < 20
-              ? { label: `Monthly PMI (${pmiRate}%/yr)`,            value: fmt(monthlyMI)                         }
-              : null,
-            loanMode === "fha"
-              ? { label: "Monthly MIP (0.55%/yr annual)",           value: fmt(monthlyMI)                         }
-              : null,
-          ] as ({ label: string; value: string } | null)[])
-            .filter((r): r is { label: string; value: string } => r !== null)
-            .map((row, i) => (
-              <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "9px 16px", borderBottom: "1px solid #f3f4f6", backgroundColor: i % 2 === 0 ? "#fafafa" : "white" }}>
-                <span style={{ fontSize: "13px", color: "#555" }}>{row.label}</span>
-                <span style={{ fontSize: "13px", fontWeight: 600, color: "#1A1A1A" }}>{row.value}</span>
-              </div>
-            ))}
-        </div>
-
-        {/* Total monthly payment */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 20px", backgroundColor: "#fff5f5", border: "2px solid #C8202A", borderRadius: "10px", marginBottom: "16px" }}>
-          <span style={{ fontSize: "16px", fontWeight: 700, color: "#1A1A1A" }}>Total Monthly Payment</span>
-          <span style={{ fontSize: "28px", fontWeight: 800, color: "#C8202A" }}>{fmt(total)}</span>
-        </div>
-
-        {/* VA funding fee details */}
-        {loanMode === "va" && (
-          <div style={{ padding: "12px 16px", backgroundColor: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "8px", marginBottom: "12px", fontSize: "13px", color: "#166534" }}>
-            <strong>VA Funding Fee:</strong>{" "}
-            {vaDisabilityWaiver
-              ? "Waived — 10%+ service-related disability · $0 additional cost"
-              : `2.15% = ${fmt(vaFundingFee)} rolled into loan · Total financed: ${fmt(totalLoan)}`}
-            {" · No PMI required"}
-          </div>
-        )}
-
-        {/* FHA MIP details */}
-        {loanMode === "fha" && (
-          <div style={{ padding: "12px 16px", backgroundColor: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: "8px", marginBottom: "12px", fontSize: "13px", color: "#1e40af" }}>
-            <strong>FHA Mortgage Insurance:</strong>{" "}
-            Upfront MIP 1.75% = {fmt(fhaUpfrontMIP)} rolled into loan · Annual MIP 0.55% = {fmt(monthlyMI)}/mo
-          </div>
-        )}
-
-        {/* Loan summary line */}
-        <div style={{ padding: "10px 16px", backgroundColor: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: "8px", marginBottom: "24px", fontSize: "12px", color: "#555" }}>
-          <strong>Loan Summary:</strong> Base loan {fmt(baseLoan)}
-          {fhaUpfrontMIP > 0 && ` + Upfront MIP ${fmt(fhaUpfrontMIP)}`}
-          {vaFundingFee  > 0 && ` + VA Funding Fee ${fmt(vaFundingFee)}`}
-          {" = "}<strong>Total Financed {fmt(totalLoan)}</strong>
-        </div>
-
-        {/* Footer */}
-        <div style={{ borderTop: "1px solid #e5e7eb", paddingTop: "12px", fontSize: "10px", color: "#9ca3af", textAlign: "center", lineHeight: "1.6" }}>
+        {/* Print-only footer */}
+        <div className="print-only mt-8 pt-4 border-t border-gray-200 text-center text-xs text-gray-400">
           The Rio Group — Powered by AZ &amp; Associates. All figures are estimates for informational purposes only. Subject to lender approval and qualification.
         </div>
+      </div>{/* end printRef */}
+
+      {/* Print button — outside printRef, won't appear on print */}
+      <div className="flex flex-wrap gap-3 mt-6 pt-6 border-t border-gray-100 no-print">
+        <button
+          onClick={() => handlePrint()}
+          className="px-6 py-2.5 rounded-lg text-sm font-semibold bg-rio-red text-white hover:bg-red-700 transition-colors"
+        >
+          Print / Save PDF
+        </button>
       </div>
     </div>
   );
