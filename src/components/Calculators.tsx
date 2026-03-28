@@ -239,7 +239,22 @@ function PaymentCalc() {
   const [propertyAddress, setPropertyAddress] = useState("");
   const todayStr = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
   const printRef = useRef<HTMLDivElement>(null);
-  const handlePrint = useReactToPrint({ contentRef: printRef });
+  const handlePrint = useReactToPrint({
+    contentRef: printRef,
+    pageStyle: `
+      @page { margin: 0.5in; size: letter portrait; }
+      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    `,
+    onBeforePrint: () => new Promise<void>((resolve) => {
+      const imgs = printRef.current?.querySelectorAll("img") ?? [];
+      if (!imgs.length) { resolve(); return; }
+      let pending = imgs.length;
+      imgs.forEach((img) => {
+        if (img.complete && img.naturalHeight !== 0) { if (--pending === 0) resolve(); }
+        else { img.onload = img.onerror = () => { if (--pending === 0) resolve(); }; const s = img.src; img.src = ""; img.src = s; }
+      });
+    }),
+  });
 
   useEffect(() => {
     const r = getRates();
@@ -297,9 +312,9 @@ function PaymentCalc() {
         <div className="print-only mb-6">
           <div className="flex justify-between items-center pb-4 mb-4 border-b-2 border-[#C8202A]">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/rio-square.png" alt="Rio Group" style={{width:52,height:52}} className="rounded" />
+            <img src="/rio-square.png" alt="Rio Group" loading="eager" style={{width:52,height:52}} className="rounded" />
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/az-logo-white.png" alt="AZ & Associates" style={{width:120,height:36,filter:"brightness(0)"}} />
+            <img src="/az-logo-white.png" alt="AZ & Associates" loading="eager" style={{width:120,height:36,filter:"brightness(0)"}} />
           </div>
           <h1 className="text-2xl font-bold mb-1 text-rio-black">Monthly Payment Summary</h1>
           <p className="text-sm text-gray-500 mb-1">{todayStr}</p>
@@ -500,8 +515,8 @@ function PaymentCalc() {
         )}
       </div>
 
-      {/* Results */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+      {/* Results — screen only; print table above already shows all values */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4 no-print">
         <ResultCard label="Monthly P&I" value={fmt(monthlyPI)} />
         <ResultCard
           label="Monthly PITI"
@@ -525,7 +540,7 @@ function PaymentCalc() {
       </div>
 
       {/* Loan summary strip */}
-      <div className="bg-rio-gray rounded-lg px-4 py-2.5 text-xs text-gray-600 border border-gray-200">
+      <div className="bg-rio-gray rounded-lg px-4 py-2.5 text-xs text-gray-600 border border-gray-200 no-print">
         <span className="font-semibold">Loan Summary: </span>
         Base loan {fmt(baseLoan)}
         {fhaUpfrontMIP > 0 && <span> + upfront MIP {fmt(fhaUpfrontMIP)}</span>}
@@ -732,7 +747,22 @@ function NewBuildCalc() {
 
   const todayStr = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
   const printRef = useRef<HTMLDivElement>(null);
-  const handlePrint = useReactToPrint({ contentRef: printRef });
+  const handlePrint = useReactToPrint({
+    contentRef: printRef,
+    pageStyle: `
+      @page { margin: 0.5in; size: letter portrait; }
+      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    `,
+    onBeforePrint: () => new Promise<void>((resolve) => {
+      const imgs = printRef.current?.querySelectorAll("img") ?? [];
+      if (!imgs.length) { resolve(); return; }
+      let pending = imgs.length;
+      imgs.forEach((img) => {
+        if (img.complete && img.naturalHeight !== 0) { if (--pending === 0) resolve(); }
+        else { img.onload = img.onerror = () => { if (--pending === 0) resolve(); }; const s = img.src; img.src = ""; img.src = s; }
+      });
+    }),
+  });
 
   const insurance = 1350;
 
@@ -786,9 +816,9 @@ function NewBuildCalc() {
         <div className="print-only mb-6">
           <div className="flex justify-between items-center pb-4 mb-4 border-b-2 border-[#C8202A]">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/rio-square.png" alt="Rio Group" style={{width:52,height:52}} className="rounded" />
+            <img src="/rio-square.png" alt="Rio Group" loading="eager" style={{width:52,height:52}} className="rounded" />
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/az-logo-white.png" alt="AZ & Associates" style={{width:120,height:36,filter:"brightness(0)"}} />
+            <img src="/az-logo-white.png" alt="AZ & Associates" loading="eager" style={{width:120,height:36,filter:"brightness(0)"}} />
           </div>
           <h1 className="text-2xl font-bold mb-1 text-rio-black">New Build vs. Resale Comparison</h1>
           <p className="text-sm text-gray-500">{todayStr}</p>
@@ -1118,7 +1148,22 @@ function SellerNetCalc({ importedPayoff }: { importedPayoff: number | null }) {
 
   const todayStr = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
   const printRef = useRef<HTMLDivElement>(null);
-  const handlePrint = useReactToPrint({ contentRef: printRef });
+  const handlePrint = useReactToPrint({
+    contentRef: printRef,
+    pageStyle: `
+      @page { margin: 0.5in; size: letter portrait; }
+      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    `,
+    onBeforePrint: () => new Promise<void>((resolve) => {
+      const imgs = printRef.current?.querySelectorAll("img") ?? [];
+      if (!imgs.length) { resolve(); return; }
+      let pending = imgs.length;
+      imgs.forEach((img) => {
+        if (img.complete && img.naturalHeight !== 0) { if (--pending === 0) resolve(); }
+        else { img.onload = img.onerror = () => { if (--pending === 0) resolve(); }; const s = img.src; img.src = ""; img.src = s; }
+      });
+    }),
+  });
 
   const parseLocalDate = (s: string) => {
     const [y, m, d] = s.split("-").map(Number);
@@ -1159,9 +1204,9 @@ function SellerNetCalc({ importedPayoff }: { importedPayoff: number | null }) {
         <div className="print-only mb-6">
           <div className="flex justify-between items-center pb-4 mb-4 border-b-2 border-[#C8202A]">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/rio-square.png" alt="Rio Group" style={{width:52,height:52}} className="rounded" />
+            <img src="/rio-square.png" alt="Rio Group" loading="eager" style={{width:52,height:52}} className="rounded" />
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/az-logo-white.png" alt="AZ & Associates" style={{width:120,height:36,filter:"brightness(0)"}} />
+            <img src="/az-logo-white.png" alt="AZ & Associates" loading="eager" style={{width:120,height:36,filter:"brightness(0)"}} />
           </div>
           <h1 className="text-2xl font-bold mb-1 text-rio-black">Seller Net Proceeds Estimate</h1>
           <p className="text-sm text-gray-500 mb-1">{todayStr}</p>
