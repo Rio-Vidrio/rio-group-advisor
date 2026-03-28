@@ -296,8 +296,10 @@ function PaymentCalc() {
         {/* ── PRINT-ONLY HEADER ── (hidden on screen) */}
         <div className="print-only mb-6">
           <div className="flex justify-between items-center pb-4 mb-4 border-b-2 border-[#C8202A]">
-            <Image src="/rio-square.png" alt="Rio Group" width={52} height={52} className="rounded" />
-            <Image src="/az-logo-white.png" alt="AZ & Associates" width={120} height={36} className="brightness-0" />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/rio-square.png" alt="Rio Group" style={{width:52,height:52}} className="rounded" />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/az-logo-white.png" alt="AZ & Associates" style={{width:120,height:36,filter:"brightness(0)"}} />
           </div>
           <h1 className="text-2xl font-bold mb-1 text-rio-black">Monthly Payment Summary</h1>
           <p className="text-sm text-gray-500 mb-1">{todayStr}</p>
@@ -783,8 +785,10 @@ function NewBuildCalc() {
         {/* ── PRINT-ONLY HEADER ── */}
         <div className="print-only mb-6">
           <div className="flex justify-between items-center pb-4 mb-4 border-b-2 border-[#C8202A]">
-            <Image src="/rio-square.png" alt="Rio Group" width={52} height={52} className="rounded" />
-            <Image src="/az-logo-white.png" alt="AZ & Associates" width={120} height={36} className="brightness-0" />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/rio-square.png" alt="Rio Group" style={{width:52,height:52}} className="rounded" />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/az-logo-white.png" alt="AZ & Associates" style={{width:120,height:36,filter:"brightness(0)"}} />
           </div>
           <h1 className="text-2xl font-bold mb-1 text-rio-black">New Build vs. Resale Comparison</h1>
           <p className="text-sm text-gray-500">{todayStr}</p>
@@ -1154,8 +1158,10 @@ function SellerNetCalc({ importedPayoff }: { importedPayoff: number | null }) {
         {/* ── PRINT-ONLY HEADER ── */}
         <div className="print-only mb-6">
           <div className="flex justify-between items-center pb-4 mb-4 border-b-2 border-[#C8202A]">
-            <Image src="/rio-square.png" alt="Rio Group" width={52} height={52} className="rounded" />
-            <Image src="/az-logo-white.png" alt="AZ & Associates" width={120} height={36} className="brightness-0" />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/rio-square.png" alt="Rio Group" style={{width:52,height:52}} className="rounded" />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/az-logo-white.png" alt="AZ & Associates" style={{width:120,height:36,filter:"brightness(0)"}} />
           </div>
           <h1 className="text-2xl font-bold mb-1 text-rio-black">Seller Net Proceeds Estimate</h1>
           <p className="text-sm text-gray-500 mb-1">{todayStr}</p>
