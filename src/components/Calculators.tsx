@@ -576,6 +576,10 @@ function NewBuildCalc() {
 
   useEffect(() => { setRsRate(rates.fha); }, [rates]);
 
+  const todayStr = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+  const printRef = useRef<HTMLDivElement>(null);
+  const handlePrint = useReactToPrint({ contentRef: printRef });
+
   const insurance = 1350;
 
   const calc = (price: number, rate: number, hoa: number, downPct: number, taxRate: number) => {
@@ -622,11 +626,79 @@ function NewBuildCalc() {
 
   return (
     <div>
-      <h3 className="text-lg font-bold mb-4">New Build vs. Resale Comparison</h3>
+      <div ref={printRef}>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-        {/* New Build inputs */}
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+        {/* ── PRINT-ONLY HEADER ── */}
+        <div className="print-only mb-6">
+          <div className="flex justify-between items-center pb-4 mb-4 border-b-2 border-[#C8202A]">
+            <Image src="/rio-square.png" alt="Rio Group" width={52} height={52} className="rounded" />
+            <Image src="/az-logo-white.png" alt="AZ & Associates" width={120} height={36} className="brightness-0" />
+          </div>
+          <h1 className="text-2xl font-bold mb-1 text-rio-black">New Build vs. Resale Comparison</h1>
+          <p className="text-sm text-gray-500">{todayStr}</p>
+        </div>
+
+        {/* ── PRINT-ONLY side-by-side summary ── */}
+        <div className="print-only mb-6">
+          <div className="grid grid-cols-2 gap-4 mb-4">
+            <div className="border border-blue-200 rounded-lg p-4 bg-blue-50">
+              <div className="font-bold text-blue-800 mb-3">New Build</div>
+              {[
+                { label: "Purchase Price",  value: fmt(nbPrice) },
+                { label: `Down (${nbDownPct}%)`, value: fmt(nb.down) },
+                { label: "Loan Amount",     value: fmt(nb.loan) },
+                { label: "Rate (buydown)",  value: `${nbRate}%` },
+                { label: "Tax Rate",        value: `${nbTaxRate}%` },
+                { label: "Monthly HOA",     value: fmt(nbHoa) },
+                { label: "P&I",             value: fmt(nb.pi) },
+                { label: "PITI",            value: fmt(nb.piti) },
+              ].map((r, i) => (
+                <div key={i} className="flex justify-between text-sm py-1 border-b border-blue-100">
+                  <span className="text-blue-700">{r.label}</span>
+                  <span className="font-semibold text-blue-900">{r.value}</span>
+                </div>
+              ))}
+              <div className="flex justify-between text-base font-bold mt-2 pt-2 text-blue-900">
+                <span>Total Monthly</span><span>{fmt(nb.total)}</span>
+              </div>
+            </div>
+            <div className="border border-green-200 rounded-lg p-4 bg-green-50">
+              <div className="font-bold text-green-800 mb-3">Resale</div>
+              {[
+                { label: "Purchase Price",  value: fmt(rsPrice) },
+                { label: `Down (${rsDownPct}%)`, value: fmt(rs.down) },
+                { label: "Loan Amount",     value: fmt(rs.loan) },
+                { label: "Rate (market)",   value: `${rsRate.toFixed(2)}%` },
+                { label: "Tax Rate",        value: `${rsTaxRate}%` },
+                { label: "Monthly HOA",     value: rsHoa > 0 ? fmt(rsHoa) : "None" },
+                { label: "P&I",             value: fmt(rs.pi) },
+                { label: "PITI",            value: fmt(rs.piti) },
+              ].map((r, i) => (
+                <div key={i} className="flex justify-between text-sm py-1 border-b border-green-100">
+                  <span className="text-green-700">{r.label}</span>
+                  <span className="font-semibold text-green-900">{r.value}</span>
+                </div>
+              ))}
+              <div className="flex justify-between text-base font-bold mt-2 pt-2 text-green-900">
+                <span>Total Monthly</span><span>{fmt(rs.total)}</span>
+              </div>
+            </div>
+          </div>
+          <div className="bg-rio-red/5 border-2 border-rio-red rounded-xl px-5 py-4 text-sm text-gray-700">
+            <strong className="text-rio-red">Monthly Difference: </strong>
+            {nb.total > rs.total
+              ? `Resale saves ${fmt(nb.total - rs.total)}/mo (${fmt((nb.total - rs.total) * 12)}/yr)`
+              : `New Build saves ${fmt(rs.total - nb.total)}/mo (${fmt((rs.total - nb.total) * 12)}/yr)`}
+            <br />
+            <strong>Payment-equivalent:</strong> {fmt(nbPrice)} new build at {nbRate}% = same payment as a {fmt(equivalentResalePrice)} resale at {rsRate.toFixed(2)}%
+          </div>
+        </div>
+
+        <h3 className="text-lg font-bold mb-4 no-print">New Build vs. Resale Comparison</h3>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 no-print">
+          {/* New Build inputs */}
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
           <h4 className="font-bold text-blue-800 mb-3">New Build</h4>
           <div className="space-y-3">
             <MoneyInput label="Purchase Price" value={nbPrice} onChange={setNbPrice} />
@@ -728,28 +800,43 @@ function NewBuildCalc() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm">
-          <h4 className="font-bold text-blue-800 mb-1">New Build Notes</h4>
-          <ul className="text-blue-700 space-y-1">
-            <li>✅ Lower payment due to builder buydown</li>
-            <li>✅ New construction — no repair costs</li>
-            <li>⚠️ Must use builder&apos;s lender</li>
-            <li>⚠️ 5–7% price premium over resale</li>
-            <li>⚠️ HOA required</li>
-            <li>⚠️ No pool / smaller lot / no RV gate</li>
-          </ul>
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm">
+            <h4 className="font-bold text-blue-800 mb-1">New Build Notes</h4>
+            <ul className="text-blue-700 space-y-1">
+              <li>✅ Lower payment due to builder buydown</li>
+              <li>✅ New construction — no repair costs</li>
+              <li>⚠️ Must use builder&apos;s lender</li>
+              <li>⚠️ 5–7% price premium over resale</li>
+              <li>⚠️ HOA required</li>
+              <li>⚠️ No pool / smaller lot / no RV gate</li>
+            </ul>
+          </div>
+          <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-sm">
+            <h4 className="font-bold text-green-800 mb-1">Resale Notes</h4>
+            <ul className="text-green-700 space-y-1">
+              <li>✅ Lower purchase price</li>
+              <li>✅ More lender flexibility</li>
+              <li>✅ Established neighborhoods</li>
+              <li>✅ Pool / larger lot options</li>
+              <li>⚠️ May need repairs/updates</li>
+              <li>⚠️ Higher rate = higher payment per $</li>
+            </ul>
+          </div>
         </div>
-        <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-sm">
-          <h4 className="font-bold text-green-800 mb-1">Resale Notes</h4>
-          <ul className="text-green-700 space-y-1">
-            <li>✅ Lower purchase price</li>
-            <li>✅ More lender flexibility</li>
-            <li>✅ Established neighborhoods</li>
-            <li>✅ Pool / larger lot options</li>
-            <li>⚠️ May need repairs/updates</li>
-            <li>⚠️ Higher rate = higher payment per $</li>
-          </ul>
+
+        {/* Print-only footer */}
+        <div className="print-only mt-8 pt-4 border-t border-gray-200 text-center text-xs text-gray-400">
+          The Rio Group — Powered by AZ &amp; Associates. All figures are estimates for informational purposes only. Subject to lender approval and qualification.
         </div>
+      </div>{/* end printRef */}
+
+      <div className="flex flex-wrap gap-3 mt-6 pt-6 border-t border-gray-100 no-print">
+        <button
+          onClick={() => handlePrint()}
+          className="px-6 py-2.5 rounded-lg text-sm font-semibold bg-rio-red text-white hover:bg-red-700 transition-colors"
+        >
+          Print / Save PDF
+        </button>
       </div>
     </div>
   );
@@ -856,6 +943,11 @@ function SellerNetCalc({ importedPayoff }: { importedPayoff: number | null }) {
   const [concessionsPct, setConcessionsPct] = useState(0);
   const [buyerAgentPct, setBuyerAgentPct] = useState(2.5);
   const [listingAgentPct, setListingAgentPct] = useState(3);
+  const [clientName, setClientName] = useState("");
+
+  const todayStr = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+  const printRef = useRef<HTMLDivElement>(null);
+  const handlePrint = useReactToPrint({ contentRef: printRef });
 
   const parseLocalDate = (s: string) => {
     const [y, m, d] = s.split("-").map(Number);
@@ -890,10 +982,37 @@ function SellerNetCalc({ importedPayoff }: { importedPayoff: number | null }) {
 
   return (
     <div>
-      <h3 className="text-lg font-bold mb-4">Seller Net Proceeds Estimator</h3>
+      <div ref={printRef}>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-        <MoneyInput label="Purchase / Offer Price" value={offerPrice} onChange={setOfferPrice} placeholder="400000" />
+        {/* ── PRINT-ONLY HEADER ── */}
+        <div className="print-only mb-6">
+          <div className="flex justify-between items-center pb-4 mb-4 border-b-2 border-[#C8202A]">
+            <Image src="/rio-square.png" alt="Rio Group" width={52} height={52} className="rounded" />
+            <Image src="/az-logo-white.png" alt="AZ & Associates" width={120} height={36} className="brightness-0" />
+          </div>
+          <h1 className="text-2xl font-bold mb-1 text-rio-black">Seller Net Proceeds Estimate</h1>
+          <p className="text-sm text-gray-500 mb-1">{todayStr}</p>
+          {clientName && <p className="text-sm text-gray-700">Client: <strong>{clientName}</strong></p>}
+        </div>
+
+        <h3 className="text-lg font-bold mb-4 no-print">Seller Net Proceeds Estimator</h3>
+
+        {/* Client name — for print only */}
+        <div className="mb-4 no-print">
+          <label className="block text-sm font-semibold text-gray-700 mb-1">
+            Client Name <span className="text-xs text-gray-400 font-normal">(optional — for print)</span>
+          </label>
+          <input
+            type="text"
+            value={clientName}
+            onChange={(e) => setClientName(e.target.value)}
+            placeholder="e.g. John & Jane Smith"
+            className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:border-rio-red focus:ring-1 focus:ring-rio-red outline-none"
+          />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 no-print">
+          <MoneyInput label="Purchase / Offer Price" value={offerPrice} onChange={setOfferPrice} placeholder="400000" />
 
         {/* Payoff with import button */}
         <div>
@@ -1012,9 +1131,9 @@ function SellerNetCalc({ importedPayoff }: { importedPayoff: number | null }) {
             <span className="font-bold text-gray-800">{fmt(titleFees)}</span>
           </div>
         </div>
-      </div>
+        </div>{/* end no-print inputs grid */}
 
-      {/* Line-by-line breakdown */}
+        {/* Line-by-line breakdown */}
       <div className="bg-white border border-gray-200 rounded-xl p-5">
         <h4 className="font-bold text-gray-800 mb-3 text-sm uppercase tracking-wide">Net Proceeds Breakdown</h4>
 
@@ -1048,6 +1167,21 @@ function SellerNetCalc({ importedPayoff }: { importedPayoff: number | null }) {
             ⚠ Estimated proceeds are negative — review payoff, concessions, and commission structure.
           </div>
         )}
+      </div>{/* end breakdown card */}
+
+      {/* Print-only footer */}
+      <div className="print-only mt-8 pt-4 border-t border-gray-200 text-center text-xs text-gray-400">
+        The Rio Group — Powered by AZ &amp; Associates. All figures are estimates for informational purposes only. Subject to lender approval and qualification.
+      </div>
+    </div>{/* end printRef */}
+
+      <div className="flex flex-wrap gap-3 mt-6 pt-6 border-t border-gray-100 no-print">
+        <button
+          onClick={() => handlePrint()}
+          className="px-6 py-2.5 rounded-lg text-sm font-semibold bg-rio-red text-white hover:bg-red-700 transition-colors"
+        >
+          Print / Save PDF
+        </button>
       </div>
     </div>
   );
