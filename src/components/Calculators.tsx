@@ -47,11 +47,23 @@ function FloatingCalc() {
     <div className="relative no-print">
       <button
         onClick={() => setOpen(o => !o)}
-        className="w-10 h-10 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center hover:border-gray-300 hover:shadow transition-all text-lg"
+        className="w-11 h-11 rounded-full bg-white border-2 border-[#C8202A] shadow-sm flex items-center justify-center hover:shadow-md transition-all"
         title="Quick Calculator"
         aria-label="Quick Calculator"
       >
-        🧮
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C8202A" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="4" y="2" width="16" height="20" rx="2" />
+          <rect x="6" y="4" width="12" height="4" rx="1" />
+          <circle cx="8" cy="12" r="0.5" fill="#C8202A" />
+          <circle cx="12" cy="12" r="0.5" fill="#C8202A" />
+          <circle cx="16" cy="12" r="0.5" fill="#C8202A" />
+          <circle cx="8" cy="15.5" r="0.5" fill="#C8202A" />
+          <circle cx="12" cy="15.5" r="0.5" fill="#C8202A" />
+          <circle cx="16" cy="15.5" r="0.5" fill="#C8202A" />
+          <circle cx="8" cy="19" r="0.5" fill="#C8202A" />
+          <circle cx="12" cy="19" r="0.5" fill="#C8202A" />
+          <circle cx="16" cy="19" r="0.5" fill="#C8202A" />
+        </svg>
       </button>
       {open && (
         <>
