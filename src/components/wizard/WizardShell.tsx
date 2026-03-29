@@ -389,14 +389,6 @@ export default function WizardShell({ onTabChange }: Props) {
                     The lesser of the two credit scores will be used for program qualification.
                   </p>
                 </div>
-                {/* Blue info banner */}
-                <div className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-2.5">
-                  <p className="text-sm text-blue-700">
-                    ℹ️ From this point forward all questions apply to both the client and co-signer equally.
-                    If either party meets or triggers a condition treat it as applying to both.
-                    One answer covers both borrowers.
-                  </p>
-                </div>
               </div>
             )}
           </div>
@@ -581,7 +573,7 @@ export default function WizardShell({ onTabChange }: Props) {
             {/* Annual Income */}
             <div className="mb-4">
               <label className="block text-sm font-semibold text-gray-700 mb-1">
-                Annual Gross Income
+                {client.hasCosigner === "yes" ? "Combined Annual Gross Income" : "Annual Gross Income"}
               </label>
               <MoneyInput
                 value={client.annualIncome}
@@ -589,51 +581,12 @@ export default function WizardShell({ onTabChange }: Props) {
                 placeholder="75000"
               />
               {client.hasCosigner === "yes" && (
-                <p className="text-xs text-gray-400 italic mt-1">Enter primary borrower income only — co-signer income entered separately below</p>
+                <p className="text-xs text-gray-400 italic mt-1">Include both client and co-signer income combined</p>
               )}
             </div>
 
-            {/* Co-signer income/debt fields — shown when co-signer selected at top */}
             {client.annualIncome > 0 && (
               <>
-                {client.hasCosigner === "yes" && (
-                  <div className="border-l-2 border-[#C8202A] pl-4 ml-2 space-y-4 mb-4">
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-1">
-                        Co-signer Annual Gross Income
-                      </label>
-                      <MoneyInput
-                        value={client.cosignerIncome}
-                        onChange={(v) => update({ cosignerIncome: v })}
-                      />
-                      <p className="text-xs text-gray-400 italic mt-1">Combined with client income for DTI qualification</p>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-1">
-                        Co-signer Monthly Debts
-                      </label>
-                      <MoneyInput
-                        value={client.cosignerDebts}
-                        onChange={(v) => update({ cosignerDebts: v })}
-                      />
-                      <p className="text-xs text-gray-400 italic mt-1">Combined with client debts for total DTI calculation</p>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-1">
-                        Co-signer Credit Score
-                      </label>
-                      <input
-                        type="number"
-                        value={client.cosignerCreditScore || ""}
-                        onChange={(e) =>
-                          update({ cosignerCreditScore: Number(e.target.value) })
-                        }
-                        className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:border-[#C8202A] focus:ring-1 focus:ring-[#C8202A] outline-none"
-                        placeholder="700"
-                      />
-                    </div>
-                  </div>
-                )}
 
                 {/* Self-employed */}
                 <div className="mb-4">
@@ -794,7 +747,7 @@ export default function WizardShell({ onTabChange }: Props) {
 
             <div className="mb-4">
               <label className="block text-sm font-semibold text-gray-700 mb-1">
-                Total Monthly Debt Payments
+                {client.hasCosigner === "yes" ? "Combined Monthly Debt Payments" : "Total Monthly Debt Payments"}
               </label>
               <MoneyInput
                 value={client.monthlyDebts}
@@ -805,7 +758,7 @@ export default function WizardShell({ onTabChange }: Props) {
                 placeholder="500"
               />
               {client.hasCosigner === "yes" && (
-                <p className="text-xs text-gray-400 italic mt-1">Include client debts only — co-signer debts entered separately above</p>
+                <p className="text-xs text-gray-400 italic mt-1">Include both client and co-signer debts combined</p>
               )}
               {!debtsTouched && (
                 <button
@@ -919,7 +872,7 @@ export default function WizardShell({ onTabChange }: Props) {
 
             <div className="mb-4">
               <label className="block text-sm font-semibold text-gray-700 mb-1">
-                Credit Score (Primary Borrower)
+                {client.hasCosigner === "yes" ? "Credit Score (Lower of the Two)" : "Credit Score"}
               </label>
               <input
                 type="number"
@@ -930,6 +883,9 @@ export default function WizardShell({ onTabChange }: Props) {
                 className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:border-[#C8202A] focus:ring-1 focus:ring-[#C8202A] outline-none"
                 placeholder="680"
               />
+              {client.hasCosigner === "yes" && (
+                <p className="text-xs text-gray-400 italic mt-1">Enter the lower credit score between client and co-signer — this score is used for program qualification</p>
+              )}
             </div>
 
             {client.creditScore > 0 && client.creditScore < 580 && (
