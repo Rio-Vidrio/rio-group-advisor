@@ -6,7 +6,7 @@ interface NavigationProps {
 }
 
 const tabs = [
-  { id: "wizard", label: "Client Wizard", icon: "📋" },
+  { id: "wizard", label: "Client Wizard", icon: "🧙🏼‍♂️" },
   { id: "calculators", label: "Calculators", icon: "🧮" },
   { id: "programs", label: "Program Reference", icon: "📊" },
   { id: "rates", label: "Market Rates", icon: "📈" },
