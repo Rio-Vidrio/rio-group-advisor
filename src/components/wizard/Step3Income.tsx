@@ -108,6 +108,16 @@ export default function Step3Income({ client, update }: Props) {
                 placeholder="700"
               />
             </div>
+
+            {/* Co-signer requirements disclaimer */}
+            <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3">
+              <p className="text-sm font-bold text-amber-800 mb-1">Co-Signer Requirements</p>
+              <p className="text-sm text-amber-700">
+                The co-signer must independently meet all credit history and employment requirements
+                including no late payments in the last 24 months, no open collections, and tradeline
+                minimums. For program qualification, the lesser of the two credit scores will be used.
+              </p>
+            </div>
           </div>
         )}
 
