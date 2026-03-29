@@ -4,7 +4,8 @@
     {
       "name": "rio-advisor",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
+      "runtimeArgs": ["run", "dev", "--", "-p", "3000"],
+      "autoPort": false,
       "port": 3000
     }
   ]
