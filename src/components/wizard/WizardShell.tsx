@@ -388,10 +388,6 @@ export default function WizardShell({ onTabChange }: Props) {
                     citizenship, homeownership, credit history, employment, debts, income, etc.
                     The lesser of the two credit scores will be used for program qualification.
                   </p>
-                  <p className="text-sm text-amber-700">
-                    <span className="font-semibold">Citizenship:</span> The co-signer must be a U.S. Citizen
-                    or eligible non-citizen. DACA recipients are not eligible as co-signers on FHA loans.
-                  </p>
                 </div>
                 {/* Blue info banner */}
                 <div className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-2.5">
