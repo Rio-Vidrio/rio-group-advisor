@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useReactToPrint } from "react-to-print";
 import { calculateMonthlyPayment } from "@/lib/loanPrograms";
 import { getRates, Rates, defaultRates } from "@/lib/rateStore";
-import { TRG_LOGO_BLACK_B64 } from "@/lib/printLogos";
+import { TRG_LOGO_BLACK_B64, AZ_LOGO_BLACK_B64 } from "@/lib/printLogos";
 
 function fmt(n: number) {
   return "$" + n.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
@@ -314,11 +314,10 @@ function PaymentCalc() {
           <div className="flex justify-between items-center pb-3 mb-3 border-b-2 border-[#C8202A]">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={TRG_LOGO_BLACK_B64} alt="The Rio Group"
-              style={{width:72,height:"auto",display:"block",printColorAdjust:"exact",WebkitPrintColorAdjust:"exact"} as React.CSSProperties} />
-            <div style={{textAlign:"right"}}>
-              <div style={{fontWeight:700,fontSize:13,color:"#000"}}>AZ &amp; Associates</div>
-              <div style={{fontSize:11,color:"#555"}}>Powered by</div>
-            </div>
+              style={{height:52,width:"auto",display:"block",printColorAdjust:"exact",WebkitPrintColorAdjust:"exact"} as React.CSSProperties} />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={AZ_LOGO_BLACK_B64} alt="AZ & Associates"
+              style={{height:40,width:"auto",display:"block",printColorAdjust:"exact",WebkitPrintColorAdjust:"exact"} as React.CSSProperties} />
           </div>
           <h1 className="text-xl font-bold mb-0.5 text-rio-black">Monthly Payment Summary</h1>
           <p className="text-sm text-gray-500 mb-1">{todayStr}</p>
@@ -821,11 +820,10 @@ function NewBuildCalc() {
           <div className="flex justify-between items-center pb-3 mb-3 border-b-2 border-[#C8202A]">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={TRG_LOGO_BLACK_B64} alt="The Rio Group"
-              style={{width:72,height:"auto",display:"block",printColorAdjust:"exact",WebkitPrintColorAdjust:"exact"} as React.CSSProperties} />
-            <div style={{textAlign:"right"}}>
-              <div style={{fontWeight:700,fontSize:13,color:"#000"}}>AZ &amp; Associates</div>
-              <div style={{fontSize:11,color:"#555"}}>Powered by</div>
-            </div>
+              style={{height:52,width:"auto",display:"block",printColorAdjust:"exact",WebkitPrintColorAdjust:"exact"} as React.CSSProperties} />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={AZ_LOGO_BLACK_B64} alt="AZ & Associates"
+              style={{height:40,width:"auto",display:"block",printColorAdjust:"exact",WebkitPrintColorAdjust:"exact"} as React.CSSProperties} />
           </div>
           <h1 className="text-xl font-bold mb-0.5 text-rio-black">New Build vs. Resale Comparison</h1>
           <p className="text-xs text-gray-500">{todayStr}</p>
@@ -1212,11 +1210,10 @@ function SellerNetCalc({ importedPayoff }: { importedPayoff: number | null }) {
           <div className="flex justify-between items-center pb-3 mb-3 border-b-2 border-[#C8202A]">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={TRG_LOGO_BLACK_B64} alt="The Rio Group"
-              style={{width:72,height:"auto",display:"block",printColorAdjust:"exact",WebkitPrintColorAdjust:"exact"} as React.CSSProperties} />
-            <div style={{textAlign:"right"}}>
-              <div style={{fontWeight:700,fontSize:13,color:"#000"}}>AZ &amp; Associates</div>
-              <div style={{fontSize:11,color:"#555"}}>Powered by</div>
-            </div>
+              style={{height:52,width:"auto",display:"block",printColorAdjust:"exact",WebkitPrintColorAdjust:"exact"} as React.CSSProperties} />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={AZ_LOGO_BLACK_B64} alt="AZ & Associates"
+              style={{height:40,width:"auto",display:"block",printColorAdjust:"exact",WebkitPrintColorAdjust:"exact"} as React.CSSProperties} />
           </div>
           <h1 className="text-xl font-bold mb-0.5 text-rio-black">Seller Net Proceeds Estimate</h1>
           <p className="text-xs text-gray-500 mb-1">{todayStr}</p>
