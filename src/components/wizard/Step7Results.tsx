@@ -2,6 +2,7 @@
 
 import { useRef } from "react";
 import Image from "next/image";
+import { TRG_LOGO_BLACK_B64, AZ_LOGO_BLACK_B64 } from "@/lib/printLogos";
 import { useReactToPrint } from "react-to-print";
 import { ClientData, ProgramEligibility } from "@/lib/loanPrograms";
 
@@ -39,8 +40,15 @@ export default function Step7Results({ client, results, ccFlags, onRestart }: Pr
     <div>
       <div ref={printRef} className="print-container">
         {/* Print Header */}
-        <div className="print-only mb-6 text-center">
-          <Image src="/rio-landscape.png" alt="The Rio Group" width={200} height={60} className="mx-auto mb-2" />
+        <div className="print-only mb-6">
+          <div className="flex justify-between items-center pb-3 mb-3 border-b-2 border-[#C8202A]">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={TRG_LOGO_BLACK_B64} alt="The Rio Group"
+              style={{height:48,width:"auto",display:"block",printColorAdjust:"exact",WebkitPrintColorAdjust:"exact"} as React.CSSProperties} />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={AZ_LOGO_BLACK_B64} alt="AZ & Associates"
+              style={{height:36,width:"auto",display:"block",printColorAdjust:"exact",WebkitPrintColorAdjust:"exact"} as React.CSSProperties} />
+          </div>
           <p className="text-sm text-gray-500">
             Prepared for {client.firstName} {client.lastName} | {client.date}
           </p>
