@@ -6,6 +6,85 @@ import { calculateMonthlyPayment } from "@/lib/loanPrograms";
 import { getRates, Rates, defaultRates } from "@/lib/rateStore";
 import { TRG_LOGO_BLACK_B64, AZ_LOGO_BLACK_B64 } from "@/lib/printLogos";
 
+/* ── Floating Quick Calculator ── */
+function FloatingCalc() {
+  const [open, setOpen] = useState(false);
+  const [display, setDisplay] = useState("0");
+  const [prev, setPrev] = useState<number | null>(null);
+  const [op, setOp] = useState<string | null>(null);
+  const [waitNext, setWaitNext] = useState(false);
+
+  const press = (key: string) => {
+    if (key === "C") { setDisplay("0"); setPrev(null); setOp(null); setWaitNext(false); return; }
+    if (key === "=") {
+      if (op === null || prev === null) return;
+      const cur = parseFloat(display);
+      let res = prev;
+      if (op === "+") res = prev + cur;
+      if (op === "-") res = prev - cur;
+      if (op === "×") res = prev * cur;
+      if (op === "÷") res = cur !== 0 ? prev / cur : 0;
+      const str = parseFloat(res.toFixed(10)).toString();
+      setDisplay(str); setPrev(null); setOp(null); setWaitNext(true);
+      return;
+    }
+    if (["+", "-", "×", "÷"].includes(key)) {
+      setPrev(parseFloat(display)); setOp(key); setWaitNext(true); return;
+    }
+    if (key === ".") {
+      if (waitNext) { setDisplay("0."); setWaitNext(false); return; }
+      if (!display.includes(".")) setDisplay(display + ".");
+      return;
+    }
+    if (waitNext) { setDisplay(key); setWaitNext(false); return; }
+    setDisplay(display === "0" ? key : display.length < 12 ? display + key : display);
+  };
+
+  const keys = ["C","÷","×","-","7","8","9","+","4","5","6","=","1","2","3","0","."];
+  const wide = new Set(["=","0"]);
+
+  return (
+    <div className="relative no-print">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="w-10 h-10 rounded-full bg-rio-red text-white shadow-lg flex items-center justify-center hover:bg-red-700 transition-colors text-lg"
+        title="Quick Calculator"
+        aria-label="Quick Calculator"
+      >
+        🧮
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div className="absolute bottom-12 right-0 z-50 bg-white rounded-2xl shadow-2xl border border-gray-200 w-52 overflow-hidden">
+            <div className="bg-gray-900 px-3 pt-3 pb-2">
+              <div className="text-right text-white text-xl font-mono truncate">{display}</div>
+              {op && <div className="text-right text-gray-400 text-xs">{op}</div>}
+            </div>
+            <div className="grid grid-cols-4 gap-px bg-gray-200 p-px">
+              {keys.map(k => (
+                <button
+                  key={k}
+                  onClick={() => press(k)}
+                  className={`${wide.has(k) ? (k === "=" ? "col-span-1 row-span-2" : "col-span-2") : ""} ${
+                    k === "=" ? "bg-rio-red text-white row-span-2" :
+                    k === "C" ? "bg-red-100 text-red-700 font-bold" :
+                    ["+","-","×","÷"].includes(k) ? "bg-amber-50 text-amber-700 font-bold" :
+                    "bg-white text-gray-800"
+                  } py-3 text-sm font-semibold hover:brightness-95 transition-all`}
+                >
+                  {k}
+                </button>
+              ))}
+            </div>
+            <button onClick={() => setOpen(false)} className="w-full text-xs text-gray-400 py-1.5 hover:text-gray-600 bg-gray-50 border-t border-gray-100">✕ Close</button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 function fmt(n: number) {
   return "$" + n.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
@@ -559,13 +638,14 @@ function PaymentCalc() {
       </div>{/* end printRef */}
 
       {/* Print button — outside printRef, won't appear on print */}
-      <div className="flex flex-wrap gap-3 mt-6 pt-6 border-t border-gray-100 no-print">
+      <div className="flex flex-wrap items-center justify-between gap-3 mt-6 pt-6 border-t border-gray-100 no-print">
         <button
           onClick={() => handlePrint()}
           className="px-6 py-2.5 rounded-lg text-sm font-semibold bg-rio-red text-white hover:bg-red-700 transition-colors"
         >
           Print / Save PDF
         </button>
+        <FloatingCalc />
       </div>
     </div>
   );
@@ -1385,13 +1465,14 @@ function SellerNetCalc({ importedPayoff }: { importedPayoff: number | null }) {
       </div>
     </div>{/* end printRef */}
 
-      <div className="flex flex-wrap gap-3 mt-6 pt-6 border-t border-gray-100 no-print">
+      <div className="flex flex-wrap items-center justify-between gap-3 mt-6 pt-6 border-t border-gray-100 no-print">
         <button
           onClick={() => handlePrint()}
           className="px-6 py-2.5 rounded-lg text-sm font-semibold bg-rio-red text-white hover:bg-red-700 transition-colors"
         >
           Print / Save PDF
         </button>
+        <FloatingCalc />
       </div>
     </div>
   );

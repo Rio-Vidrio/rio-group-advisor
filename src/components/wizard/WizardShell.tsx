@@ -366,6 +366,46 @@ export default function WizardShell({ onTabChange }: Props) {
           </div>
         </div>
 
+        {/* Co-signer Y/N — immediately after client name fields */}
+        {client.firstName.trim().length > 0 && (
+          <div className="mt-4">
+            <label className="block text-sm font-semibold text-gray-700">
+              Co-signer?
+            </label>
+            <YesNoButtons
+              value={client.hasCosigner}
+              onChange={(v) => update({ hasCosigner: v as "yes" | "no" })}
+            />
+
+            {client.hasCosigner === "yes" && (
+              <div className="mt-3 space-y-2">
+                {/* Amber requirements card */}
+                <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 space-y-1.5">
+                  <p className="text-sm font-bold text-amber-800">Co-Signer Requirements</p>
+                  <p className="text-sm text-amber-700">
+                    For all following questions answers should reflect the combined profile of both
+                    the client and co-signer. If either party triggers a condition apply it to both —
+                    citizenship, homeownership, credit history, employment, debts, income, etc.
+                    The lesser of the two credit scores will be used for program qualification.
+                  </p>
+                  <p className="text-sm text-amber-700">
+                    <span className="font-semibold">Citizenship:</span> The co-signer must be a U.S. Citizen
+                    or eligible non-citizen. DACA recipients are not eligible as co-signers on FHA loans.
+                  </p>
+                </div>
+                {/* Blue info banner */}
+                <div className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-2.5">
+                  <p className="text-sm text-blue-700">
+                    ℹ️ From this point forward all questions apply to both the client and co-signer equally.
+                    If either party meets or triggers a condition treat it as applying to both.
+                    One answer covers both borrowers.
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* ---------------------------------------------------------- */}
         {/*  SECTION 2 — CITIZENSHIP & ELIGIBILITY                      */}
         {/* ---------------------------------------------------------- */}
@@ -552,40 +592,16 @@ export default function WizardShell({ onTabChange }: Props) {
                 onChange={(v) => update({ annualIncome: v })}
                 placeholder="75000"
               />
+              {client.hasCosigner === "yes" && (
+                <p className="text-xs text-gray-400 italic mt-1">Enter primary borrower income only — co-signer income entered separately below</p>
+              )}
             </div>
 
-            {/* Co-signer */}
+            {/* Co-signer income/debt fields — shown when co-signer selected at top */}
             {client.annualIncome > 0 && (
               <>
-                <div className="mb-4">
-                  <label className="block text-sm font-semibold text-gray-700">
-                    Co-signer?
-                  </label>
-                  <YesNoButtons
-                    value={client.hasCosigner}
-                    onChange={(v) =>
-                      update({ hasCosigner: v as "yes" | "no" })
-                    }
-                  />
-                </div>
-
                 {client.hasCosigner === "yes" && (
                   <div className="border-l-2 border-[#C8202A] pl-4 ml-2 space-y-4 mb-4">
-
-                    {/* Co-signer requirements disclaimer */}
-                    <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 space-y-2">
-                      <p className="text-sm font-bold text-amber-800">Co-Signer Requirements</p>
-                      <p className="text-sm text-amber-700">
-                        The co-signer must independently meet all credit history and employment requirements
-                        including no late payments in the last 24 months, no open collections, and tradeline
-                        minimums. For program qualification, the lesser of the two credit scores will be used.
-                      </p>
-                      <p className="text-sm text-amber-700">
-                        <span className="font-semibold">Citizenship:</span> The co-signer must be a U.S. Citizen
-                        or eligible non-citizen. DACA recipients are not eligible as co-signers on FHA loans.
-                      </p>
-                    </div>
-
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-1">
                         Co-signer Annual Gross Income
@@ -594,6 +610,7 @@ export default function WizardShell({ onTabChange }: Props) {
                         value={client.cosignerIncome}
                         onChange={(v) => update({ cosignerIncome: v })}
                       />
+                      <p className="text-xs text-gray-400 italic mt-1">Combined with client income for DTI qualification</p>
                     </div>
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-1">
@@ -603,6 +620,7 @@ export default function WizardShell({ onTabChange }: Props) {
                         value={client.cosignerDebts}
                         onChange={(v) => update({ cosignerDebts: v })}
                       />
+                      <p className="text-xs text-gray-400 italic mt-1">Combined with client debts for total DTI calculation</p>
                     </div>
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-1">
@@ -790,6 +808,9 @@ export default function WizardShell({ onTabChange }: Props) {
                 }}
                 placeholder="500"
               />
+              {client.hasCosigner === "yes" && (
+                <p className="text-xs text-gray-400 italic mt-1">Include client debts only — co-signer debts entered separately above</p>
+              )}
               {!debtsTouched && (
                 <button
                   onClick={() => setDebtsTouched(true)}
