@@ -1,7 +1,7 @@
 {
-  "name": "Rio Group Advisor",
-  "short_name": "Rio Grp Advisor",
-  "description": "Internal agent-facing loan products advisor for client consultations",
+  "name": "Rio Group Client Advisor",
+  "short_name": "Rio Client Advisor",
+  "description": "The Rio Group — Built Different | Client Advisor powered by AZ & Associates",
   "start_url": "/",
   "display": "standalone",
   "scope": "/",

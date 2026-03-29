@@ -56,7 +56,7 @@ export default function Header() {
               The Rio Group
             </div>
             <div style={{ fontSize: "10px", color: "rgba(255,255,255,0.4)", letterSpacing: "0.14em", textTransform: "uppercase", marginTop: "2px" }}>
-              Products Advisor
+              Built Different
             </div>
           </div>
         </div>
@@ -71,7 +71,7 @@ export default function Header() {
             letterSpacing: "0.08em",
             textTransform: "uppercase",
           }}>
-            Rio Group&nbsp;&nbsp;|&nbsp;&nbsp;Home Buying Advisor
+            Rio Group&nbsp;&nbsp;|&nbsp;&nbsp;Client Advisor
           </span>
         </div>
 
@@ -113,7 +113,7 @@ export default function Header() {
           letterSpacing: "0.08em",
           textTransform: "uppercase",
         }}>
-          Rio Group&nbsp;|&nbsp;Advisor
+          Rio Group&nbsp;|&nbsp;Client Advisor
         </span>
         <Image
           src="/az-logo-white.png"

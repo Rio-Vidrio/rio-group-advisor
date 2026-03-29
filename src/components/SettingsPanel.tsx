@@ -196,7 +196,7 @@ export default function SettingsPanel() {
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
         <h3 className="text-lg font-bold mb-2">About</h3>
         <p className="text-sm text-gray-600">
-          <strong>The Rio Group Products Advisor</strong> — powered by AZ &amp; Associates.
+          <strong>The Rio Group Client Advisor</strong> — Built Different | Powered by AZ &amp; Associates.
         </p>
         <p className="text-sm text-gray-500 mt-2">
           Internal agent-facing consultation tool. All data stored locally in your browser.
