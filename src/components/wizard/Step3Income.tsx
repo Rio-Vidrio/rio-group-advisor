@@ -78,6 +78,21 @@ export default function Step3Income({ client, update }: Props) {
 
         {client.hasCosigner === "yes" && (
           <div className="ml-4 pl-4 border-l-2 border-rio-red/30 space-y-4">
+
+            {/* Co-signer requirements disclaimer — shown immediately on Yes */}
+            <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 space-y-2">
+              <p className="text-sm font-bold text-amber-800">Co-Signer Requirements</p>
+              <p className="text-sm text-amber-700">
+                The co-signer must independently meet all credit history and employment requirements
+                including no late payments in the last 24 months, no open collections, and tradeline
+                minimums. For program qualification, the lesser of the two credit scores will be used.
+              </p>
+              <p className="text-sm text-amber-700">
+                <span className="font-semibold">Citizenship:</span> The co-signer must be a U.S. Citizen
+                or eligible non-citizen. DACA recipients are not eligible as co-signers on FHA loans.
+              </p>
+            </div>
+
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1">
                 Co-signer Annual Gross Income
@@ -109,19 +124,6 @@ export default function Step3Income({ client, update }: Props) {
               />
             </div>
 
-            {/* Co-signer requirements disclaimer */}
-            <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 space-y-2">
-              <p className="text-sm font-bold text-amber-800">Co-Signer Requirements</p>
-              <p className="text-sm text-amber-700">
-                The co-signer must independently meet all credit history and employment requirements
-                including no late payments in the last 24 months, no open collections, and tradeline
-                minimums. For program qualification, the lesser of the two credit scores will be used.
-              </p>
-              <p className="text-sm text-amber-700">
-                <span className="font-semibold">Citizenship:</span> The co-signer must be a U.S. Citizen
-                or eligible non-citizen. DACA recipients are not eligible as co-signers on FHA loans.
-              </p>
-            </div>
           </div>
         )}
 
