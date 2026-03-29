@@ -1,7 +1,6 @@
 "use client";
 
 import { useRef } from "react";
-import Image from "next/image";
 import { TRG_LOGO_BLACK_B64, AZ_LOGO_BLACK_B64 } from "@/lib/printLogos";
 import { useReactToPrint } from "react-to-print";
 import { ClientData, ProgramEligibility } from "@/lib/loanPrograms";
