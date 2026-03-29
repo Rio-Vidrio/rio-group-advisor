@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useReactToPrint } from "react-to-print";
 import { calculateMonthlyPayment } from "@/lib/loanPrograms";
 import { getRates, Rates, defaultRates } from "@/lib/rateStore";
+import { TRG_LOGO_BLACK_B64 } from "@/lib/printLogos";
 
 function fmt(n: number) {
   return "$" + n.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
@@ -312,9 +313,8 @@ function PaymentCalc() {
         <div className="print-only mb-4">
           <div className="flex justify-between items-center pb-3 mb-3 border-b-2 border-[#C8202A]">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/rio-square.png" alt="The Rio Group" loading="eager"
-              style={{width:48,height:48,display:"block",printColorAdjust:"exact",WebkitPrintColorAdjust:"exact"} as React.CSSProperties}
-              className="rounded" />
+            <img src={TRG_LOGO_BLACK_B64} alt="The Rio Group"
+              style={{width:72,height:"auto",display:"block",printColorAdjust:"exact",WebkitPrintColorAdjust:"exact"} as React.CSSProperties} />
             <div style={{textAlign:"right"}}>
               <div style={{fontWeight:700,fontSize:13,color:"#000"}}>AZ &amp; Associates</div>
               <div style={{fontSize:11,color:"#555"}}>Powered by</div>
@@ -555,7 +555,7 @@ function PaymentCalc() {
       </div>
 
         {/* Print-only footer */}
-        <div className="print-only mt-8 pt-4 border-t border-gray-200 text-center text-xs text-gray-400">
+        <div className="print-only mt-3 pt-3 border-t border-gray-200 text-center text-xs text-gray-400">
           The Rio Group — Powered by AZ &amp; Associates. All figures are estimates for informational purposes only. Subject to lender approval and qualification.
         </div>
       </div>{/* end printRef */}
@@ -820,9 +820,8 @@ function NewBuildCalc() {
         <div className="print-only mb-4">
           <div className="flex justify-between items-center pb-3 mb-3 border-b-2 border-[#C8202A]">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/rio-square.png" alt="The Rio Group" loading="eager"
-              style={{width:48,height:48,display:"block",printColorAdjust:"exact",WebkitPrintColorAdjust:"exact"} as React.CSSProperties}
-              className="rounded" />
+            <img src={TRG_LOGO_BLACK_B64} alt="The Rio Group"
+              style={{width:72,height:"auto",display:"block",printColorAdjust:"exact",WebkitPrintColorAdjust:"exact"} as React.CSSProperties} />
             <div style={{textAlign:"right"}}>
               <div style={{fontWeight:700,fontSize:13,color:"#000"}}>AZ &amp; Associates</div>
               <div style={{fontSize:11,color:"#555"}}>Powered by</div>
@@ -1033,7 +1032,7 @@ function NewBuildCalc() {
         </div>
 
         {/* Print-only footer */}
-        <div className="print-only mt-8 pt-4 border-t border-gray-200 text-center text-xs text-gray-400">
+        <div className="print-only mt-3 pt-3 border-t border-gray-200 text-center text-xs text-gray-400">
           The Rio Group — Powered by AZ &amp; Associates. All figures are estimates for informational purposes only. Subject to lender approval and qualification.
         </div>
       </div>{/* end printRef */}
@@ -1212,9 +1211,8 @@ function SellerNetCalc({ importedPayoff }: { importedPayoff: number | null }) {
         <div className="print-only mb-4">
           <div className="flex justify-between items-center pb-3 mb-3 border-b-2 border-[#C8202A]">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/rio-square.png" alt="The Rio Group" loading="eager"
-              style={{width:48,height:48,display:"block",printColorAdjust:"exact",WebkitPrintColorAdjust:"exact"} as React.CSSProperties}
-              className="rounded" />
+            <img src={TRG_LOGO_BLACK_B64} alt="The Rio Group"
+              style={{width:72,height:"auto",display:"block",printColorAdjust:"exact",WebkitPrintColorAdjust:"exact"} as React.CSSProperties} />
             <div style={{textAlign:"right"}}>
               <div style={{fontWeight:700,fontSize:13,color:"#000"}}>AZ &amp; Associates</div>
               <div style={{fontSize:11,color:"#555"}}>Powered by</div>
@@ -1386,7 +1384,7 @@ function SellerNetCalc({ importedPayoff }: { importedPayoff: number | null }) {
       </div>{/* end breakdown card */}
 
       {/* Print-only footer */}
-      <div className="print-only mt-8 pt-4 border-t border-gray-200 text-center text-xs text-gray-400">
+      <div className="print-only mt-3 pt-3 border-t border-gray-200 text-center text-xs text-gray-400">
         The Rio Group — Powered by AZ &amp; Associates. All figures are estimates for informational purposes only. Subject to lender approval and qualification.
       </div>
     </div>{/* end printRef */}
