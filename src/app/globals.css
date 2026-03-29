@@ -2,26 +2,235 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap');
 
 :root {
+  --red: #C8202A;
+  --black: #0D0D0D;
+  --white: #FFFFFF;
+  --gray-50: #F9F8F6;
+  --gray-100: #F0EEE9;
+  --gray-300: #D4D0C8;
+  --gray-500: #8C8880;
+  --gray-700: #4A4845;
+  --shadow-sm: 0 1px 4px rgba(0,0,0,0.06);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.08);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.10);
+  --radius: 14px;
+  --radius-sm: 8px;
+
+  /* Legacy aliases (keep for components that still reference them) */
   --rio-red: #C8202A;
-  --rio-black: #111111;
+  --rio-red-light: #FFF5F5;
+  --rio-red-tint: #FFF8F8;
+  --rio-black: #0D0D0D;
   --rio-white: #FFFFFF;
-  --rio-gray: #F5F5F5;
-  --rio-dark: #1A1A1A;
+  --rio-surface: #F9F8F6;
+  --rio-surface-card: #FFFFFF;
+  --rio-text-primary: #0D0D0D;
+  --rio-text-secondary: #8C8880;
+  --rio-text-muted: #8C8880;
+  --rio-border: #D4D0C8;
+  --rio-border-focus: #C8202A;
+  --rio-shadow-card: 0 4px 16px rgba(0,0,0,0.08);
+  --rio-shadow-card-hover: 0 8px 32px rgba(0,0,0,0.10);
 }
 
-body {
-  font-family: "DM Sans", system-ui, sans-serif;
-  background: var(--rio-gray);
-  color: var(--rio-black);
+@layer base {
+  body {
+    font-family: "DM Sans", system-ui, sans-serif;
+    background: var(--gray-50);
+    color: var(--black);
+    line-height: 1.6;
+    letter-spacing: 0.01em;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3 {
+    font-family: "Playfair Display", Georgia, serif;
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+  }
+
+  h4, h5, h6 {
+    font-family: "DM Sans", system-ui, sans-serif;
+    letter-spacing: -0.01em;
+    line-height: 1.25;
+  }
 }
 
 @layer utilities {
   .text-balance {
     text-wrap: balance;
   }
+
+  /* Section label — small uppercase Rio red tracking text */
+  .section-label {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--rio-red);
+  }
+
+  /* Premium card */
+  .card {
+    background: var(--white);
+    border-radius: var(--radius);
+    border: 1px solid var(--gray-100);
+    box-shadow: var(--shadow-md);
+    padding: 32px;
+    transition: box-shadow 150ms ease;
+  }
+
+  .card:hover {
+    box-shadow: var(--shadow-lg);
+  }
+
+  /* Card with red top accent border (recommended) */
+  .card-accent-top {
+    border-top: 4px solid var(--rio-red);
+  }
+
+  /* Card with red left accent border (active section) */
+  .card-accent-left {
+    border-left: 4px solid var(--rio-red);
+  }
+
+  /* Answer / option button — unselected */
+  .btn-option {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 100px;
+    min-height: 48px;
+    padding: 12px 24px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--gray-300);
+    background: var(--white);
+    color: var(--black);
+    font-family: "DM Sans", sans-serif;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: border-color 80ms, background 80ms, color 80ms;
+  }
+
+  .btn-option:hover {
+    background: var(--gray-50);
+  }
+
+  /* Answer / option button — selected */
+  .btn-option-selected {
+    background: var(--red) !important;
+    color: white !important;
+    border-color: var(--red) !important;
+  }
+
+  /* Primary CTA button */
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 48px;
+    padding: 12px 28px;
+    border-radius: var(--radius-sm);
+    background: var(--red);
+    color: white;
+    font-family: "DM Sans", sans-serif;
+    font-weight: 600;
+    font-size: 0.9375rem;
+    cursor: pointer;
+    border: none;
+    transition: background 80ms;
+  }
+
+  .btn-primary:hover {
+    background: #b01c25;
+  }
+
+  /* Ghost / outline button */
+  .btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 40px;
+    padding: 8px 20px;
+    border-radius: var(--radius-sm);
+    border: 1.5px solid var(--red);
+    background: transparent;
+    color: var(--red);
+    font-family: "DM Sans", sans-serif;
+    font-weight: 600;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: background 80ms;
+  }
+
+  .btn-ghost:hover {
+    background: var(--rio-red-light);
+  }
+
+  /* Clean text input */
+  .input-field {
+    width: 100%;
+    background: white;
+    border: 1px solid var(--gray-300);
+    border-radius: var(--radius-sm);
+    padding: 14px 16px;
+    font-family: "DM Sans", sans-serif;
+    font-size: 1rem;
+    color: var(--black);
+    outline: none;
+    transition: border-color 80ms, box-shadow 80ms;
+  }
+
+  .input-field:focus {
+    border-color: var(--red);
+    border-width: 2px;
+    box-shadow: 0 0 0 3px rgba(200, 32, 42, 0.08);
+  }
+
+  /* Fade-in animation for new question cards */
+  .fade-in {
+    animation: fadeIn 220ms ease-out forwards;
+  }
+}
+
+/* Fade in keyframes */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Alert/notice boxes */
+.alert-amber {
+  background: #FFFBEB;
+  border-left: 4px solid #F59E0B;
+  border-radius: 0 8px 8px 0;
+  padding: 14px 16px;
+}
+
+.alert-red {
+  background: var(--rio-red-light);
+  border-left: 4px solid var(--rio-red);
+  border-radius: 0 8px 8px 0;
+  padding: 14px 16px;
+}
+
+.alert-green {
+  background: #F0FDF4;
+  border-left: 4px solid #22C55E;
+  border-radius: 0 8px 8px 0;
+  padding: 14px 16px;
+}
+
+.alert-blue {
+  background: #EFF6FF;
+  border-left: 4px solid #3B82F6;
+  border-radius: 0 8px 8px 0;
+  padding: 14px 16px;
 }
 
 /* Rate ticker animation */

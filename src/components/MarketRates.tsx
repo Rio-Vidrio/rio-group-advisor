@@ -84,13 +84,13 @@ function CustomTooltip({ active, payload, label }: {
 }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-white border border-gray-200 rounded-lg shadow-lg px-4 py-3 text-sm">
-      <p className="font-semibold text-gray-700 mb-1">{label}</p>
+    <div style={{ background: "#FFFFFF", border: "1px solid #E8E8E8", borderRadius: "10px", boxShadow: "0 4px 16px rgba(0,0,0,0.08)", padding: "12px 16px", fontSize: "0.8125rem" }}>
+      <p style={{ fontWeight: 600, color: "#111111", marginBottom: "6px" }}>{label}</p>
       {payload.map((p) => (
-        <div key={p.name} className="flex items-center gap-2">
-          <span className="w-2.5 h-2.5 rounded-full inline-block" style={{ backgroundColor: p.color }} />
-          <span className="text-gray-600">{p.name}:</span>
-          <span className="font-bold" style={{ color: p.color }}>{p.value.toFixed(2)}%</span>
+        <div key={p.name} style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "2px" }}>
+          <span style={{ width: "8px", height: "8px", borderRadius: "50%", display: "inline-block", background: p.color, flexShrink: 0 }} />
+          <span style={{ color: "#6B6B6B" }}>{p.name}:</span>
+          <span style={{ fontWeight: 700, color: p.color }}>{p.value.toFixed(2)}%</span>
         </div>
       ))}
     </div>
@@ -227,13 +227,13 @@ export default function MarketRates() {
 
   // ── Render ───────────────────────────────────────────────────────────────────
   return (
-    <div className="max-w-5xl mx-auto">
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold mb-1">Market Rates</h2>
-        <p className="text-gray-500 text-sm">
+    <div>
+      <div style={{ marginBottom: "28px" }}>
+        <h2 style={{ fontSize: "1.375rem", fontWeight: 700, color: "#111111", margin: "0 0 4px 0" }}>Market Rates</h2>
+        <p style={{ color: "#6B6B6B", fontSize: "0.875rem", margin: 0 }}>
           30-year mortgage rate trends — Freddie Mac PMMS via Federal Reserve (FRED).
           {dataUpdated && (
-            <span className="ml-1 text-gray-400">
+            <span style={{ marginLeft: "4px", color: "#9B9B9B" }}>
               Chart data as of {new Date(dataUpdated + "T12:00:00").toLocaleDateString("en-US", {
                 month: "long", day: "numeric", year: "numeric",
               })}.
@@ -243,27 +243,33 @@ export default function MarketRates() {
       </div>
 
       {/* ── Chart Card ────────────────────────────────────────────────────── */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
+      <div style={{ background: "#FFFFFF", borderRadius: "16px", border: "1px solid #E8E8E8", boxShadow: "0 2px 12px rgba(0,0,0,0.06)", padding: "28px", marginBottom: "20px" }}>
 
         {/* Range toggles + updated badge */}
-        <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
-          <div className="flex items-center gap-1">
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "20px", flexWrap: "wrap", gap: "12px" }}>
+          <div style={{ display: "flex", gap: "6px" }}>
             {(Object.entries(RANGE_LABELS) as [Range, string][]).map(([key, label]) => (
               <button
                 key={key}
                 onClick={() => setRange(key)}
-                className={`px-4 py-1.5 rounded-lg text-sm font-semibold border transition-colors ${
-                  range === key
-                    ? "bg-rio-red text-white border-rio-red"
-                    : "bg-white text-gray-600 border-gray-200 hover:border-gray-400"
-                }`}
+                style={{
+                  padding: "6px 14px",
+                  borderRadius: "8px",
+                  fontSize: "0.8125rem",
+                  fontWeight: 600,
+                  border: range === key ? "1.5px solid #C8202A" : "1.5px solid #E8E8E8",
+                  background: range === key ? "#C8202A" : "#FFFFFF",
+                  color: range === key ? "#FFFFFF" : "#6B6B6B",
+                  cursor: "pointer",
+                  transition: "background 100ms, border-color 100ms, color 100ms",
+                }}
               >
                 {label}
               </button>
             ))}
           </div>
           {dataUpdated && (
-            <span className="text-xs text-gray-400">
+            <span style={{ fontSize: "0.75rem", color: "#9B9B9B" }}>
               Updated {new Date(dataUpdated + "T12:00:00").toLocaleDateString("en-US", {
                 month: "short", day: "numeric", year: "numeric",
               })}
@@ -273,30 +279,30 @@ export default function MarketRates() {
 
         {/* Loading state */}
         {!dataLoaded && (
-          <div className="flex items-center justify-center h-64 text-gray-400">
-            <div className="text-center">
-              <div className="text-2xl mb-2 animate-pulse">📈</div>
-              <div className="text-sm">Loading rate history…</div>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "256px" }}>
+            <div style={{ textAlign: "center", color: "#9B9B9B" }}>
+              <div style={{ fontSize: "1.5rem", marginBottom: "8px" }}>📈</div>
+              <div style={{ fontSize: "0.875rem" }}>Loading rate history…</div>
             </div>
           </div>
         )}
 
         {/* Error state */}
         {dataLoaded && chartError && history.length === 0 && (
-          <div className="flex items-center justify-center h-64">
-            <div className="bg-amber-50 border border-amber-200 rounded-lg px-5 py-4 text-sm text-amber-800 text-center">
-              <div className="font-semibold mb-1">Could not load rate history</div>
-              <div className="text-xs text-amber-600">{chartError}</div>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "256px" }}>
+            <div style={{ background: "#FFFBEB", borderLeft: "4px solid #F59E0B", borderRadius: "0 10px 10px 0", padding: "16px 20px", fontSize: "0.875rem", color: "#92400E", textAlign: "center" }}>
+              <div style={{ fontWeight: 600, marginBottom: "4px" }}>Could not load rate history</div>
+              <div style={{ fontSize: "0.75rem", color: "#B45309" }}>{chartError}</div>
             </div>
           </div>
         )}
 
         {/* Empty state (no error, just no data for this range) */}
         {dataLoaded && !chartError && history.length === 0 && (
-          <div className="flex items-center justify-center h-64">
-            <div className="bg-gray-50 border border-gray-200 rounded-lg px-5 py-4 text-sm text-gray-500 text-center">
-              <div className="font-semibold mb-1">No data for this range yet</div>
-              <div className="text-xs">Rate history will refresh automatically on the next scheduled run.</div>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "256px" }}>
+            <div style={{ background: "#F7F6F4", border: "1px solid #E8E8E8", borderRadius: "10px", padding: "16px 20px", fontSize: "0.875rem", color: "#6B6B6B", textAlign: "center" }}>
+              <div style={{ fontWeight: 600, marginBottom: "4px" }}>No data for this range yet</div>
+              <div style={{ fontSize: "0.75rem" }}>Rate history will refresh automatically on the next scheduled run.</div>
             </div>
           </div>
         )}
@@ -338,14 +344,14 @@ export default function MarketRates() {
         )}
 
         {dataLoaded && (
-          <p className="text-xs text-gray-400 mt-3 text-center">
+          <p style={{ fontSize: "0.75rem", color: "#9B9B9B", marginTop: "12px", textAlign: "center" }}>
             FHA and VA derived from Freddie Mac conventional PMMS (−0.25% / −0.50%). Override below if needed.
           </p>
         )}
       </div>
 
       {/* ── Today's Rate Cards ─────────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px", marginBottom: "16px" }}>
         {[
           { label: "Conventional 30yr", key: "conventional" as keyof Rates, color: "#C8202A", override: overrideConv, setOverride: setOverrideConv, current: rates.conventional, note: "Source: Freddie Mac PMMS" },
           { label: "FHA 30yr",          key: "fha"          as keyof Rates, color: "#333333", override: overrideFHA,  setOverride: setOverrideFHA,  current: rates.fha,          note: "Derived: Conv − 0.25%" },
@@ -353,32 +359,31 @@ export default function MarketRates() {
         ].map((card) => (
           <div
             key={card.key}
-            className="bg-white rounded-xl shadow-sm border border-gray-100 p-6"
-            style={{ borderTopWidth: "3px", borderTopColor: card.color }}
+            style={{ background: "#FFFFFF", borderRadius: "16px", border: "1px solid #E8E8E8", boxShadow: "0 2px 12px rgba(0,0,0,0.06)", padding: "24px", borderTop: `4px solid ${card.color}` }}
           >
-            <div className="flex items-center justify-between mb-1">
-              <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "6px" }}>
+              <div style={{ fontSize: "0.6875rem", fontWeight: 600, color: "#9B9B9B", textTransform: "uppercase", letterSpacing: "0.1em" }}>
                 {card.label}
               </div>
               {refreshing && (
-                <span className="text-xs text-gray-300 animate-pulse">updating…</span>
+                <span style={{ fontSize: "0.75rem", color: "#D1D5DB" }}>updating…</span>
               )}
             </div>
-            <div className="text-5xl font-bold mb-1 tabular-nums" style={{ color: card.color }}>
+            <div style={{ fontSize: "3rem", fontWeight: 700, marginBottom: "4px", fontVariantNumeric: "tabular-nums", color: card.color, lineHeight: 1 }}>
               {card.current.toFixed(2)}
-              <span className="text-xl font-semibold text-gray-400">%</span>
+              <span style={{ fontSize: "1.25rem", fontWeight: 600, color: "#9B9B9B" }}>%</span>
             </div>
-            <div className="text-xs text-gray-400 mb-4">
+            <div style={{ fontSize: "0.75rem", color: "#9B9B9B", marginBottom: "16px" }}>
               {card.note}
               {lastUpdated && (
-                <span className="block mt-0.5">
+                <span style={{ display: "block", marginTop: "2px" }}>
                   As of {new Date(lastUpdated).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                 </span>
               )}
             </div>
-            <div className="border-t border-gray-100 pt-3">
-              <label className="block text-xs font-semibold text-gray-500 mb-1">Manual Override</label>
-              <div className="relative">
+            <div style={{ borderTop: "1px solid #E8E8E8", paddingTop: "12px" }}>
+              <label style={{ display: "block", fontSize: "0.75rem", fontWeight: 600, color: "#6B6B6B", marginBottom: "6px" }}>Manual Override</label>
+              <div style={{ position: "relative" }}>
                 <input
                   type="number"
                   step="0.125"
@@ -386,10 +391,10 @@ export default function MarketRates() {
                   max="20"
                   value={card.override}
                   onChange={(e) => card.setOverride(e.target.value)}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm font-semibold focus:border-rio-red focus:ring-1 focus:ring-rio-red outline-none"
+                  style={{ width: "100%", border: "1.5px solid #E8E8E8", borderRadius: "8px", padding: "8px 32px 8px 12px", fontSize: "0.875rem", fontWeight: 600, outline: "none", boxSizing: "border-box", color: "#111111" }}
                   placeholder={card.current.toFixed(3)}
                 />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">%</span>
+                <span style={{ position: "absolute", right: "12px", top: "50%", transform: "translateY(-50%)", color: "#9B9B9B", fontSize: "0.75rem" }}>%</span>
               </div>
             </div>
           </div>
@@ -397,31 +402,29 @@ export default function MarketRates() {
       </div>
 
       {/* ── Save / Refresh Controls ─────────────────────────────────────────── */}
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm px-6 py-4 flex flex-wrap items-center justify-between gap-4">
-        <div className="text-sm text-gray-600">
-          <span className="font-semibold">Manual override</span> — edit the rates above and save to update all calculators instantly.
-          <span className="block text-xs text-gray-400 mt-0.5">
+      <div style={{ background: "#FFFFFF", borderRadius: "16px", border: "1px solid #E8E8E8", boxShadow: "0 2px 12px rgba(0,0,0,0.06)", padding: "20px 24px", display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "16px" }}>
+        <div style={{ fontSize: "0.875rem", color: "#6B6B6B" }}>
+          <span style={{ fontWeight: 600, color: "#111111" }}>Manual override</span> — edit the rates above and save to update all calculators instantly.
+          <span style={{ display: "block", fontSize: "0.75rem", color: "#9B9B9B", marginTop: "2px" }}>
             Rates auto-refresh on page load. Use <strong>Refresh Rates</strong> to pull the latest from Freddie Mac PMMS on demand.
           </span>
         </div>
-        <div className="flex items-center gap-3 flex-wrap">
+        <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
           {(saveMsg || refreshMsg) && (
-            <span className={`text-sm font-medium ${
-              (saveMsg || refreshMsg).startsWith("⚠️") ? "text-amber-600" : "text-green-600"
-            }`}>
+            <span style={{ fontSize: "0.875rem", fontWeight: 500, color: (saveMsg || refreshMsg).startsWith("⚠️") ? "#D97706" : "#16A34A" }}>
               {saveMsg || refreshMsg}
             </span>
           )}
           <button
             onClick={handleRefreshRates}
             disabled={refreshing}
-            className="px-5 py-2 rounded-lg text-sm font-semibold border border-gray-300 text-gray-700 hover:border-gray-500 hover:text-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{ padding: "10px 20px", borderRadius: "10px", fontSize: "0.875rem", fontWeight: 600, border: "1.5px solid #E8E8E8", background: "#FFFFFF", color: "#111111", cursor: refreshing ? "not-allowed" : "pointer", opacity: refreshing ? 0.5 : 1 }}
           >
-            {refreshing ? "Refreshing…" : "Refresh Rates"}
+            {refreshing ? "Refreshing…" : "↻ Refresh Live Rates"}
           </button>
           <button
             onClick={handleSaveRates}
-            className="px-6 py-2 rounded-lg text-sm font-semibold bg-rio-red text-white hover:bg-red-700 transition-colors"
+            style={{ padding: "10px 24px", borderRadius: "10px", fontSize: "0.875rem", fontWeight: 600, background: "#C8202A", color: "#FFFFFF", border: "none", cursor: "pointer" }}
           >
             Save Rates
           </button>

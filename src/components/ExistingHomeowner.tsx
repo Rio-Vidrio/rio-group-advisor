@@ -112,22 +112,20 @@ const VACATING_TOOLTIP_TEXT =
 function VacatingTooltip() {
   const [open, setOpen] = useState(false);
   return (
-    <span className="relative inline-flex items-center">
+    <span style={{ position: "relative", display: "inline-flex", alignItems: "center" }}>
       <button
         type="button"
         aria-label="What is a vacating residence?"
         onClick={() => setOpen((v) => !v)}
         onMouseEnter={() => setOpen(true)}
         onMouseLeave={() => setOpen(false)}
-        className="ml-1 inline-flex items-center justify-center w-4 h-4 rounded-full bg-gray-200 text-gray-500 hover:bg-gray-300 text-xs font-bold leading-none focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-gray-400"
-        style={{ fontSize: "10px" }}
+        style={{ marginLeft: "4px", display: "inline-flex", alignItems: "center", justifyContent: "center", width: "16px", height: "16px", borderRadius: "50%", background: "#E8E8E8", color: "#6B6B6B", fontSize: "10px", fontWeight: 700, border: "none", cursor: "pointer" }}
       >
         ⓘ
       </button>
       {open && (
         <span
-          className="absolute z-50 left-6 top-0 w-64 bg-gray-900 text-white text-xs rounded-lg p-3 shadow-lg leading-relaxed"
-          style={{ minWidth: "220px" }}
+          style={{ position: "absolute", zIndex: 50, left: "22px", top: 0, width: "240px", background: "#111111", color: "#FFFFFF", fontSize: "0.75rem", borderRadius: "8px", padding: "12px", boxShadow: "0 4px 20px rgba(0,0,0,0.15)", lineHeight: 1.6 }}
         >
           {VACATING_TOOLTIP_TEXT}
         </span>
@@ -152,17 +150,24 @@ function SelectionCard({
   return (
     <button
       onClick={onClick}
-      className={`w-full text-left p-5 rounded-xl border-2 transition-all duration-150 ${
-        selected
-          ? "border-[#C8202A] bg-red-50"
-          : "border-gray-200 bg-white hover:border-gray-400 hover:shadow-sm"
-      }`}
+      style={{
+        width: "100%",
+        textAlign: "left",
+        padding: "20px 22px",
+        borderRadius: "12px",
+        border: selected ? "2px solid #C8202A" : "1.5px solid #E8E8E8",
+        background: selected ? "#FFF8F8" : "#FFFFFF",
+        cursor: "pointer",
+        transition: "border-color 100ms, background 100ms, box-shadow 100ms",
+        boxShadow: selected ? "none" : "0 1px 4px rgba(0,0,0,0.04)",
+        minHeight: "64px",
+      }}
     >
-      <div className={`font-bold text-lg ${selected ? "text-[#C8202A]" : "text-gray-900"}`}>
+      <div style={{ fontWeight: 600, fontSize: "0.9375rem", color: selected ? "#C8202A" : "#111111", lineHeight: 1.3 }}>
         {title}
       </div>
       {note && (
-        <div className="text-xs italic text-gray-400 mt-1 leading-snug">{note}</div>
+        <div style={{ fontSize: "0.75rem", color: "#9B9B9B", marginTop: "4px" }}>{note}</div>
       )}
     </button>
   );
@@ -178,26 +183,38 @@ function PillToggle({
   onChange: (v: boolean) => void;
 }) {
   return (
-    <div className="flex items-center justify-between gap-4 py-3 border-b border-gray-100 last:border-0">
-      <span className="text-gray-800 font-medium text-sm flex-1">{label}</span>
-      <div className="flex gap-2">
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "16px", padding: "12px 0", borderBottom: "1px solid #E8E8E8" }}>
+      <span style={{ color: "#111111", fontWeight: 500, fontSize: "0.875rem", flex: 1 }}>{label}</span>
+      <div style={{ display: "flex", gap: "8px", flexShrink: 0 }}>
         <button
           onClick={() => onChange(true)}
-          className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-colors ${
-            value === true
-              ? "bg-[#C8202A] text-white"
-              : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-          }`}
+          style={{
+            padding: "6px 16px",
+            borderRadius: "20px",
+            fontSize: "0.8125rem",
+            fontWeight: 600,
+            border: "none",
+            cursor: "pointer",
+            transition: "background 100ms, color 100ms",
+            background: value === true ? "#C8202A" : "#F7F6F4",
+            color: value === true ? "#FFFFFF" : "#6B6B6B",
+          }}
         >
           Yes
         </button>
         <button
           onClick={() => onChange(false)}
-          className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-colors ${
-            value === false
-              ? "bg-gray-800 text-white"
-              : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-          }`}
+          style={{
+            padding: "6px 16px",
+            borderRadius: "20px",
+            fontSize: "0.8125rem",
+            fontWeight: 600,
+            border: "none",
+            cursor: "pointer",
+            transition: "background 100ms, color 100ms",
+            background: value === false ? "#111111" : "#F7F6F4",
+            color: value === false ? "#FFFFFF" : "#6B6B6B",
+          }}
         >
           No
         </button>
@@ -208,28 +225,27 @@ function PillToggle({
 
 function ProgramCard({ programKey }: { programKey: ProgramKey }) {
   const p = PROGRAMS[programKey];
-  const isBlue = p.color === "blue";
   return (
-    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden flex flex-col">
-      <div className={`px-4 py-3 flex items-start justify-between gap-2 ${isBlue ? "bg-blue-50" : "bg-gray-50"}`}>
-        <span className="font-bold text-sm text-gray-900 leading-snug">{p.name}</span>
-        <span className="shrink-0 text-xs font-bold text-white bg-[#C8202A] px-2 py-0.5 rounded-full">
+    <div style={{ background: "#FFFFFF", border: "1px solid #E8E8E8", borderRadius: "12px", overflow: "hidden", display: "flex", flexDirection: "column" }}>
+      <div style={{ padding: "12px 16px", display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "8px", background: "#F7F6F4" }}>
+        <span style={{ fontWeight: 600, fontSize: "0.875rem", color: "#111111", lineHeight: 1.3 }}>{p.name}</span>
+        <span style={{ flexShrink: 0, fontSize: "0.6875rem", fontWeight: 700, color: "#FFFFFF", background: "#C8202A", padding: "2px 8px", borderRadius: "20px" }}>
           {p.minScore}
         </span>
       </div>
-      <div className="px-4 py-3 flex-1">
-        <ul className="space-y-1">
+      <div style={{ padding: "12px 16px", flex: 1 }}>
+        <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
           {p.bullets.map((b, i) => (
-            <li key={i} className="text-xs text-gray-700 flex gap-1.5">
-              <span className="text-gray-400 shrink-0">•</span>
+            <li key={i} style={{ fontSize: "0.75rem", color: "#4B4B4B", display: "flex", gap: "8px", marginBottom: "4px" }}>
+              <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#C8202A", flexShrink: 0, marginTop: "5px" }} />
               {b}
             </li>
           ))}
         </ul>
-        <p className="mt-2 text-xs font-semibold text-gray-700">{p.impact}</p>
+        <p style={{ marginTop: "8px", fontSize: "0.75rem", fontWeight: 600, color: "#111111" }}>{p.impact}</p>
       </div>
-      <div className="px-4 py-2 border-t border-gray-100">
-        <p className="text-xs text-gray-400 italic">{p.note}</p>
+      <div style={{ padding: "8px 16px", borderTop: "1px solid #E8E8E8" }}>
+        <p style={{ fontSize: "0.6875rem", color: "#9B9B9B", fontStyle: "italic" }}>{p.note}</p>
       </div>
     </div>
   );
@@ -238,10 +254,10 @@ function ProgramCard({ programKey }: { programKey: ProgramKey }) {
 function ProgramRow({ programs }: { programs: ProgramKey[] }) {
   return (
     <div>
-      <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">
+      <div style={{ fontSize: "0.6875rem", fontWeight: 600, color: "#C8202A", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: "12px" }}>
         Available Programs
-      </h4>
-      <div className={`grid gap-3 ${programs.length === 1 ? "grid-cols-1" : "grid-cols-1 sm:grid-cols-2"}`}>
+      </div>
+      <div style={{ display: "grid", gap: "12px", gridTemplateColumns: programs.length === 1 ? "1fr" : "repeat(auto-fit, minmax(220px, 1fr))" }}>
         {programs.map((pk) => (
           <ProgramCard key={pk} programKey={pk} />
         ))}
@@ -265,46 +281,42 @@ function PathCard({
   flagBox?: { color: "amber" | "red"; text: string };
   programs: ProgramKey[];
 }) {
-  const borderClass =
-    borderColor === "red"
-      ? "border-l-[#C8202A]"
-      : borderColor === "green"
-      ? "border-l-green-500"
-      : "border-l-gray-300";
+  const leftBorderColor =
+    borderColor === "red" ? "#C8202A" : borderColor === "green" ? "#22C55E" : "#D1D5DB";
 
-  const badgeBg =
+  const badgeStyle: React.CSSProperties =
     badge?.color === "red"
-      ? "bg-[#C8202A] text-white"
+      ? { background: "#C8202A", color: "#FFFFFF" }
       : badge?.color === "green"
-      ? "bg-green-600 text-white"
-      : "bg-gray-200 text-gray-700";
+      ? { background: "#22C55E", color: "#FFFFFF" }
+      : { background: "#F7F6F4", color: "#6B6B6B" };
 
   return (
-    <div className={`bg-white rounded-xl border border-gray-200 border-l-4 ${borderClass} p-5 space-y-4`}>
-      <div className="flex items-center gap-3 flex-wrap">
-        <h3 className="font-bold text-gray-900 text-base">{title}</h3>
+    <div style={{ background: "#FFFFFF", borderRadius: "12px", border: "1px solid #E8E8E8", borderLeft: `4px solid ${leftBorderColor}`, padding: "20px", display: "flex", flexDirection: "column", gap: "16px" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+        <h3 style={{ fontWeight: 700, color: "#111111", fontSize: "0.9375rem", margin: 0 }}>{title}</h3>
         {badge && (
-          <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${badgeBg}`}>
+          <span style={{ fontSize: "0.6875rem", fontWeight: 700, padding: "2px 10px", borderRadius: "20px", ...badgeStyle }}>
             {badge.text}
           </span>
         )}
       </div>
-      <ul className="space-y-1.5">
+      <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: "6px" }}>
         {bullets.map((b, i) => (
-          <li key={i} className="text-sm text-gray-700 flex gap-2">
-            <span className="shrink-0">{b.icon}</span>
+          <li key={i} style={{ fontSize: "0.875rem", color: "#4B4B4B", display: "flex", gap: "8px" }}>
+            <span style={{ flexShrink: 0 }}>{b.icon}</span>
             {b.text}
           </li>
         ))}
       </ul>
       {flagBox && (
-        <div
-          className={`rounded-lg p-3 text-sm ${
-            flagBox.color === "amber"
-              ? "bg-amber-50 border border-amber-200 text-amber-800"
-              : "bg-red-50 border border-red-200 text-red-800"
-          }`}
-        >
+        <div style={{
+          padding: "12px",
+          fontSize: "0.875rem",
+          ...(flagBox.color === "amber"
+            ? { background: "#FFFBEB", borderLeft: "4px solid #F59E0B", color: "#92400E", borderRadius: "0 8px 8px 0" }
+            : { background: "#FFF5F5", borderLeft: "4px solid #C8202A", color: "#7F1D1D", borderRadius: "0 8px 8px 0" })
+        }}>
           {flagBox.text}
         </div>
       )}
@@ -317,11 +329,11 @@ function PathCard({
 
 function DisqualifierCard({ reason }: { reason: string }) {
   return (
-    <div className="bg-red-50 border-2 border-[#C8202A] rounded-xl p-4 flex gap-3 items-start">
-      <span className="text-[#C8202A] text-base font-bold shrink-0 mt-0.5">✗</span>
+    <div style={{ background: "#FFF5F5", borderLeft: "4px solid #C8202A", borderRadius: "0 10px 10px 0", padding: "14px 16px", display: "flex", gap: "12px", alignItems: "flex-start" }}>
+      <span style={{ color: "#C8202A", fontWeight: 700, flexShrink: 0, marginTop: "1px" }}>✗</span>
       <div>
-        <div className="font-bold text-[#C8202A] text-sm mb-1">Not Available</div>
-        <div className="text-sm text-gray-800 leading-snug">{reason}</div>
+        <div style={{ fontWeight: 700, color: "#C8202A", fontSize: "0.8125rem", marginBottom: "4px" }}>Not Available</div>
+        <div style={{ fontSize: "0.875rem", color: "#111111", lineHeight: 1.5 }}>{reason}</div>
       </div>
     </div>
   );
@@ -331,11 +343,11 @@ function DisqualifierCard({ reason }: { reason: string }) {
 
 function BankruptcyWarningBanner({ years, loanType }: { years: 2 | 4; loanType: string }) {
   return (
-    <div className="bg-amber-50 border-2 border-amber-400 rounded-xl p-4 flex gap-3 items-start">
-      <span className="text-amber-500 text-base font-bold shrink-0 mt-0.5">⚠</span>
+    <div style={{ background: "#FFFBEB", borderLeft: "4px solid #F59E0B", borderRadius: "0 10px 10px 0", padding: "14px 16px", display: "flex", gap: "12px", alignItems: "flex-start" }}>
+      <span style={{ color: "#F59E0B", fontWeight: 700, flexShrink: 0, marginTop: "1px" }}>⚠</span>
       <div>
-        <div className="font-bold text-amber-800 text-sm mb-1">Currently Ineligible — Planning View</div>
-        <p className="text-sm text-amber-900 leading-snug">
+        <div style={{ fontWeight: 700, color: "#92400E", fontSize: "0.8125rem", marginBottom: "4px" }}>Currently Ineligible — Planning View</div>
+        <p style={{ fontSize: "0.875rem", color: "#78350F", lineHeight: 1.5, margin: 0 }}>
           {loanType} requires <strong>{years} years post-bankruptcy discharge</strong>. This client does not yet meet
           the minimum time requirement. Options shown below are for planning purposes only — the client must
           reach the {years}-year mark before submitting an application.
@@ -349,8 +361,8 @@ function BankruptcyWarningBanner({ years, loanType }: { years: 2 | 4; loanType: 
 
 function PlanningDisclaimer({ years, loanType }: { years: 2 | 4; loanType: string }) {
   return (
-    <div className="bg-amber-50 border border-amber-300 rounded-lg px-3 py-2 text-xs text-amber-800 flex gap-2 items-start">
-      <span className="shrink-0 font-bold">⚠</span>
+    <div style={{ background: "#FFFBEB", borderLeft: "4px solid #F59E0B", borderRadius: "0 8px 8px 0", padding: "8px 12px", fontSize: "0.75rem", color: "#92400E", display: "flex", gap: "8px", alignItems: "flex-start" }}>
+      <span style={{ flexShrink: 0, fontWeight: 700 }}>⚠</span>
       <span>
         <strong>Planning only</strong> — {loanType} {years}-year post-bankruptcy requirement must be met before applying.
       </span>
@@ -362,9 +374,9 @@ function PlanningDisclaimer({ years, loanType }: { years: 2 | 4; loanType: strin
 
 function NoProgramsCard() {
   return (
-    <div className="bg-gray-900 rounded-xl p-5 text-white space-y-2">
-      <div className="font-bold text-base">No Programs Currently Available</div>
-      <p className="text-sm text-gray-300 leading-relaxed">
+    <div style={{ background: "#111111", borderRadius: "12px", padding: "20px", color: "#FFFFFF" }}>
+      <div style={{ fontWeight: 700, fontSize: "0.9375rem", marginBottom: "8px" }}>No Programs Currently Available</div>
+      <p style={{ fontSize: "0.875rem", color: "#9B9B9B", lineHeight: 1.6, margin: 0 }}>
         This client does not qualify for any available programs at this time.
         Recommend a credit and financial recovery plan before reapplying.
       </p>
@@ -375,12 +387,7 @@ function NoProgramsCard() {
 // ─── Section Connector ────────────────────────────────────────────────────────
 
 function SectionConnector() {
-  return (
-    <div className="flex items-center gap-2 pl-4 my-1">
-      <div className="w-px h-6 bg-gray-200" />
-      <span className="text-gray-300 text-xs">▼</span>
-    </div>
-  );
+  return <div style={{ height: "1px", background: "#E8E8E8", margin: "24px 0" }} />;
 }
 
 // ─── Breadcrumb ───────────────────────────────────────────────────────────────
@@ -515,8 +522,8 @@ export default function ExistingHomeowner() {
   );
 
   const convToFHANoEquityCard = (
-    <div className="space-y-4">
-      <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-800">
+    <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+      <div style={{ background: "#FFFBEB", borderLeft: "4px solid #F59E0B", borderRadius: "0 8px 8px 0", padding: "12px 16px", fontSize: "0.875rem", color: "#92400E" }}>
         The client can still proceed but must qualify carrying both mortgage payments. Review debt-to-income impact carefully.
       </div>
       <ProgramRow programs={["fhaDPA", "fhaSolar"]} />
@@ -545,23 +552,24 @@ export default function ExistingHomeowner() {
 
   // ─── Render ────────────────────────────────────────────────────────────────
   return (
-    <div className="max-w-4xl mx-auto">
+    <div style={{ background: "#FFFFFF", borderRadius: "16px", border: "1px solid #E8E8E8", boxShadow: "0 2px 12px rgba(0,0,0,0.06)", padding: "36px" }}>
       {/* Header bar */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-2 flex-wrap">
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "24px", flexWrap: "wrap", gap: "12px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
           {breadcrumb.length === 0 ? (
-            <span className="text-sm text-gray-400 italic">No path selected yet</span>
+            <span style={{ fontSize: "0.875rem", color: "#9B9B9B", fontStyle: "italic" }}>No path selected yet</span>
           ) : (
             breadcrumb.map((crumb, i) => (
-              <span key={i} className="flex items-center gap-2">
-                {i > 0 && <span className="text-gray-300 text-xs">›</span>}
-                <span
-                  className={`text-sm font-semibold px-2.5 py-1 rounded-full ${
-                    i === breadcrumb.length - 1
-                      ? "bg-[#C8202A] text-white"
-                      : "bg-gray-100 text-gray-600"
-                  }`}
-                >
+              <span key={i} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                {i > 0 && <span style={{ color: "#D1D5DB", fontSize: "0.75rem" }}>›</span>}
+                <span style={{
+                  fontSize: "0.8125rem",
+                  fontWeight: 600,
+                  padding: "4px 10px",
+                  borderRadius: "20px",
+                  background: i === breadcrumb.length - 1 ? "#C8202A" : "#F7F6F4",
+                  color: i === breadcrumb.length - 1 ? "#FFFFFF" : "#6B6B6B",
+                }}>
                   {crumb}
                 </span>
               </span>
@@ -571,28 +579,28 @@ export default function ExistingHomeowner() {
         {state.currentLoan !== null && (
           <button
             onClick={resetAll}
-            className="shrink-0 text-sm font-semibold border-2 border-[#C8202A] text-[#C8202A] px-3 py-1.5 rounded-lg hover:bg-red-50 transition-colors"
+            style={{ flexShrink: 0, fontSize: "0.875rem", fontWeight: 600, border: "1.5px solid #C8202A", color: "#C8202A", padding: "6px 14px", borderRadius: "8px", background: "transparent", cursor: "pointer" }}
           >
             ↺ Start Over
           </button>
         )}
       </div>
 
-      <div className="max-w-2xl mx-auto space-y-0">
+      <div style={{ maxWidth: "640px", margin: "0 auto" }}>
 
         {/* ── SECTION 1: Always visible — current loan type ─────────────────── */}
-        <div className="space-y-4">
+        <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">Existing Homeowner Options</h2>
-            <p className="text-gray-500 mt-1 text-base">
+            <h2 style={{ fontSize: "1.375rem", fontWeight: 700, color: "#111111", margin: "0 0 4px 0" }}>Existing Homeowner Options</h2>
+            <p style={{ color: "#6B6B6B", margin: 0, fontSize: "0.9375rem" }}>
               Find the best path for the client&apos;s next home purchase.
             </p>
           </div>
           <div>
-            <p className="text-sm font-semibold text-gray-700 mb-3">
+            <p style={{ fontSize: "0.875rem", fontWeight: 600, color: "#111111", marginBottom: "12px" }}>
               What type of loan does the client currently have on their existing home?
             </p>
-            <div className="grid grid-cols-2 gap-4">
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
               <SelectionCard
                 title="FHA"
                 note="FHA-insured mortgage"
@@ -617,11 +625,11 @@ export default function ExistingHomeowner() {
         {showBankruptcyFHA && (
           <>
             <SectionConnector />
-            <div className="space-y-4">
-              <p className="text-sm font-semibold text-gray-700">
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              <p style={{ fontSize: "0.875rem", fontWeight: 600, color: "#111111", margin: 0 }}>
                 Has the client had a bankruptcy discharged within the last 2 years?
               </p>
-              <div className="grid grid-cols-2 gap-4">
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
                 <SelectionCard
                   title="Yes"
                   selected={state.bankruptcyFHA === "yes"}
@@ -649,11 +657,11 @@ export default function ExistingHomeowner() {
         {showCitizenshipFHA && (
           <>
             <SectionConnector />
-            <div className="space-y-4">
-              <p className="text-sm font-semibold text-gray-700">
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              <p style={{ fontSize: "0.875rem", fontWeight: 600, color: "#111111", margin: 0 }}>
                 What is the client&apos;s citizenship status?
               </p>
-              <div className="grid grid-cols-2 gap-4">
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
                 <SelectionCard
                   title="U.S. Citizen or Permanent Resident"
                   selected={state.citizenship === "citizen"}
@@ -673,18 +681,18 @@ export default function ExistingHomeowner() {
         {fhaDacaBlocked && (
           <>
             <SectionConnector />
-            <div className="space-y-4">
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
               <DisqualifierCard reason="FHA financing is not available for DACA or work permit holders. All FHA programs are ineligible." />
               {fhaHasBankruptcy ? (
                 <>
                   <NoProgramsCard />
-                  <div className="bg-amber-50 border border-amber-300 rounded-lg px-3 py-2 text-xs text-amber-800">
+                  <div style={{ background: "#FFFBEB", borderLeft: "4px solid #F59E0B", borderRadius: "0 8px 8px 0", padding: "8px 12px", fontSize: "0.75rem", color: "#92400E" }}>
                     ⚠ Conventional financing is also affected by the bankruptcy discharge timeline — recommend consulting once the 2-year FHA requirement is met.
                   </div>
                 </>
               ) : (
                 <>
-                  <h3 className="text-base font-bold text-gray-900">Available Path — Conventional</h3>
+                  <h3 style={{ fontSize: "0.9375rem", fontWeight: 700, color: "#111111", margin: 0 }}>Available Path — Conventional</h3>
                   {fhaToConvCard}
                 </>
               )}
@@ -699,11 +707,11 @@ export default function ExistingHomeowner() {
         {showFHAMainFlow && (
           <>
             <SectionConnector />
-            <div className="space-y-4">
-              <p className="text-sm font-semibold text-gray-700">
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              <p style={{ fontSize: "0.875rem", fontWeight: 600, color: "#111111", margin: 0 }}>
                 When did the client purchase their current home?
               </p>
-              <div className="grid grid-cols-2 gap-4">
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
                 <SelectionCard
                   title="2021 or Later"
                   note="Most homes purchased after 2021 have not yet accumulated 25% equity"
@@ -725,11 +733,11 @@ export default function ExistingHomeowner() {
         {showFHAMainFlow && state.purchaseTiming === "recent" && (
           <>
             <SectionConnector />
-            <div className="space-y-4">
-              <p className="text-sm font-semibold text-gray-700">
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              <p style={{ fontSize: "0.875rem", fontWeight: 600, color: "#111111", margin: 0 }}>
                 Has the client&apos;s family size increased since purchasing? (marriage or children)
               </p>
-              <div className="grid grid-cols-2 gap-4">
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
                 <SelectionCard
                   title="Yes"
                   selected={state.familySizeIncreased === "yes"}
@@ -747,10 +755,10 @@ export default function ExistingHomeowner() {
             {state.familySizeIncreased === "no" && (
               <>
                 <SectionConnector />
-                <div className="space-y-4">
+                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
                   <DisqualifierCard reason="FHA to FHA not available — the client's new home is within 100 miles and there has been no family size increase." />
                   {fhaHasBankruptcy && <PlanningDisclaimer years={2} loanType="FHA" />}
-                  <h3 className="text-base font-bold text-gray-900">Recommended Path</h3>
+                  <h3 style={{ fontSize: "0.9375rem", fontWeight: 700, color: "#111111", margin: 0 }}>Recommended Path</h3>
                   {fhaToConvCard}
                 </div>
               </>
@@ -760,10 +768,10 @@ export default function ExistingHomeowner() {
             {state.familySizeIncreased === "yes" && (
               <>
                 <SectionConnector />
-                <div className="space-y-4">
+                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
                   {fhaHasBankruptcy && <PlanningDisclaimer years={2} loanType="FHA" />}
-                  <h3 className="text-base font-bold text-gray-900">Available Options</h3>
-                  <div className="space-y-4">
+                  <h3 style={{ fontSize: "0.9375rem", fontWeight: 700, color: "#111111", margin: 0 }}>Available Options</h3>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
                     <PathCard
                       title="Path 1 — FHA → FHA (Second FHA Loan)"
                       borderColor="red"
@@ -774,7 +782,7 @@ export default function ExistingHomeowner() {
                           text: (
                             <span>
                               Must currently live in home (not{" "}
-                              <span className="font-medium">vacating residence</span>
+                              <span style={{ fontWeight: 600 }}>vacating residence</span>
                               <VacatingTooltip />
                             </span>
                           ),
@@ -812,10 +820,10 @@ export default function ExistingHomeowner() {
         {showFHAMainFlow && state.purchaseTiming === "longago" && (
           <>
             <SectionConnector />
-            <div className="space-y-4">
-              <div className="bg-white border border-gray-200 rounded-xl p-5">
-                <h3 className="font-bold text-gray-900 mb-4">Client&apos;s Situation</h3>
-                <div className="space-y-1">
+            <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+              <div style={{ background: "#FFFFFF", border: "1px solid #E8E8E8", borderRadius: "12px", padding: "20px" }}>
+                <h3 style={{ fontWeight: 700, color: "#111111", marginBottom: "16px", fontSize: "0.9375rem" }}>Client&apos;s Situation</h3>
+                <div>
                   <PillToggle
                     label="Does the client's current home have 25%+ equity?"
                     value={state.hasEquity25}
@@ -830,8 +838,8 @@ export default function ExistingHomeowner() {
                     label={
                       <span>
                         Has the client already vacated the home or established a different address?{" "}
-                        <span className="font-normal text-gray-500">
-                          (<span className="italic">vacating residence</span>
+                        <span style={{ fontWeight: 400, color: "#9B9B9B" }}>
+                          (<span style={{ fontStyle: "italic" }}>vacating residence</span>
                           <VacatingTooltip />)
                         </span>
                       </span>
@@ -846,7 +854,7 @@ export default function ExistingHomeowner() {
               {longAgoAllAnswered && (
                 <>
                   <SectionConnector />
-                  <div className="space-y-4">
+                  <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
                     {fhaHasBankruptcy && <PlanningDisclaimer years={2} loanType="FHA" />}
                     {(() => {
                       const c = getLongAgoCase();
@@ -854,7 +862,7 @@ export default function ExistingHomeowner() {
                       if (c === 1) {
                         return (
                           <>
-                            <h3 className="text-base font-bold text-gray-900">Available Options</h3>
+                            <h3 style={{ fontSize: "0.9375rem", fontWeight: 700, color: "#111111", margin: 0 }}>Available Options</h3>
                             <PathCard
                               title="FHA → FHA Available ✅"
                               borderColor="green"
@@ -866,7 +874,7 @@ export default function ExistingHomeowner() {
                                   text: (
                                     <span>
                                       Home has been vacated /{" "}
-                                      <span className="font-medium">vacating residence</span>
+                                      <span style={{ fontWeight: 600 }}>vacating residence</span>
                                       <VacatingTooltip /> established
                                     </span>
                                   ),
@@ -893,15 +901,15 @@ export default function ExistingHomeowner() {
                         return (
                           <>
                             <DisqualifierCard reason="FHA to FHA not available — the home has not been vacated and no 12-month rental history is documented on tax returns." />
-                            <div className="bg-[#C8202A] text-white rounded-xl p-5 space-y-2">
-                              <h3 className="font-bold text-lg">⏱ Timing Opportunity</h3>
-                              <p className="text-sm leading-relaxed text-red-100">
+                            <div style={{ background: "#C8202A", borderRadius: "12px", padding: "20px", display: "flex", flexDirection: "column", gap: "8px" }}>
+                              <h3 style={{ fontWeight: 700, fontSize: "1rem", color: "#FFFFFF", margin: 0 }}>⏱ Timing Opportunity</h3>
+                              <p style={{ fontSize: "0.875rem", lineHeight: 1.6, color: "rgba(255,255,255,0.85)", margin: 0 }}>
                                 The client qualifies once they vacate. Move into the new home first — the
                                 application address cannot match the current home. Once moved, all three
                                 requirements are met.
                               </p>
                             </div>
-                            <h3 className="text-base font-bold text-gray-900">Always Available</h3>
+                            <h3 style={{ fontSize: "0.9375rem", fontWeight: 700, color: "#111111", margin: 0 }}>Always Available</h3>
                             {fhaToConvCard}
                           </>
                         );
@@ -939,11 +947,11 @@ export default function ExistingHomeowner() {
         {showBankruptcyConv && (
           <>
             <SectionConnector />
-            <div className="space-y-4">
-              <p className="text-sm font-semibold text-gray-700">
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              <p style={{ fontSize: "0.875rem", fontWeight: 600, color: "#111111", margin: 0 }}>
                 Has the client had a bankruptcy discharged within the last 4 years?
               </p>
-              <div className="grid grid-cols-2 gap-4">
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
                 <SelectionCard
                   title="Yes"
                   selected={state.bankruptcyConv === "yes"}
@@ -971,11 +979,11 @@ export default function ExistingHomeowner() {
         {showCitizenshipConv && (
           <>
             <SectionConnector />
-            <div className="space-y-4">
-              <p className="text-sm font-semibold text-gray-700">
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              <p style={{ fontSize: "0.875rem", fontWeight: 600, color: "#111111", margin: 0 }}>
                 What is the client&apos;s citizenship status?
               </p>
-              <div className="grid grid-cols-2 gap-4">
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
                 <SelectionCard
                   title="U.S. Citizen or Permanent Resident"
                   selected={state.citizenship === "citizen"}
@@ -995,18 +1003,18 @@ export default function ExistingHomeowner() {
         {convDacaBlocked && (
           <>
             <SectionConnector />
-            <div className="space-y-4">
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
               <DisqualifierCard reason="FHA financing is not available for DACA or work permit holders. All FHA programs are ineligible." />
               {convHasBankruptcy ? (
                 <>
                   <NoProgramsCard />
-                  <div className="bg-amber-50 border border-amber-300 rounded-lg px-3 py-2 text-xs text-amber-800">
+                  <div style={{ background: "#FFFBEB", borderLeft: "4px solid #F59E0B", borderRadius: "0 8px 8px 0", padding: "8px 12px", fontSize: "0.75rem", color: "#92400E" }}>
                     ⚠ Conventional financing is also in the 4-year post-bankruptcy waiting period — recommend consulting once the requirement is met.
                   </div>
                 </>
               ) : (
                 <>
-                  <h3 className="text-base font-bold text-gray-900">Available Path — Conventional Only</h3>
+                  <h3 style={{ fontSize: "0.9375rem", fontWeight: 700, color: "#111111", margin: 0 }}>Available Path — Conventional Only</h3>
                   <PathCard
                     title="Conventional → Conventional ✅"
                     badge={{ text: "Only Available Path", color: "red" }}
@@ -1030,11 +1038,11 @@ export default function ExistingHomeowner() {
         {showConvMainFlow && (
           <>
             <SectionConnector />
-            <div className="space-y-4">
-              <p className="text-sm font-semibold text-gray-700">
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              <p style={{ fontSize: "0.875rem", fontWeight: 600, color: "#111111", margin: 0 }}>
                 Is the client looking to buy their next home with FHA or Conventional financing?
               </p>
-              <div className="grid grid-cols-2 gap-4">
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
                 <SelectionCard
                   title="FHA"
                   selected={state.nextLoanType === "fha"}
@@ -1054,11 +1062,11 @@ export default function ExistingHomeowner() {
         {showConvMainFlow && state.nextLoanType === "fha" && (
           <>
             <SectionConnector />
-            <div className="space-y-4">
-              <p className="text-sm font-semibold text-gray-700">
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              <p style={{ fontSize: "0.875rem", fontWeight: 600, color: "#111111", margin: 0 }}>
                 Does the client&apos;s current home have 25%+ equity?
               </p>
-              <div className="grid grid-cols-2 gap-4">
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
                 <SelectionCard
                   title="Yes"
                   selected={state.convToFHAEquity === "yes"}
@@ -1075,9 +1083,9 @@ export default function ExistingHomeowner() {
             {state.convToFHAEquity === "yes" && (
               <>
                 <SectionConnector />
-                <div className="space-y-4">
+                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
                   {convHasBankruptcy && <PlanningDisclaimer years={4} loanType="Conventional" />}
-                  <h3 className="text-base font-bold text-gray-900">Client&apos;s Path</h3>
+                  <h3 style={{ fontSize: "0.9375rem", fontWeight: 700, color: "#111111", margin: 0 }}>Client&apos;s Path</h3>
                   {convToFHAAvailableCard}
                 </div>
               </>
@@ -1086,9 +1094,9 @@ export default function ExistingHomeowner() {
             {state.convToFHAEquity === "no" && (
               <>
                 <SectionConnector />
-                <div className="space-y-4">
+                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
                   {convHasBankruptcy && <PlanningDisclaimer years={4} loanType="Conventional" />}
-                  <h3 className="text-base font-bold text-gray-900">Proceeding Without Full Equity</h3>
+                  <h3 style={{ fontSize: "0.9375rem", fontWeight: 700, color: "#111111", margin: 0 }}>Proceeding Without Full Equity</h3>
                   {convToFHANoEquityCard}
                 </div>
               </>
@@ -1100,9 +1108,9 @@ export default function ExistingHomeowner() {
         {showConvMainFlow && state.nextLoanType === "conventional" && (
           <>
             <SectionConnector />
-            <div className="space-y-4">
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
               {convHasBankruptcy && <PlanningDisclaimer years={4} loanType="Conventional" />}
-              <h3 className="text-base font-bold text-gray-900">Client&apos;s Path</h3>
+              <h3 style={{ fontSize: "0.9375rem", fontWeight: 700, color: "#111111", margin: 0 }}>Client&apos;s Path</h3>
               <PathCard
                 title="Conventional → Conventional ✅"
                 badge={{ text: "Cleanest Path", color: "green" }}

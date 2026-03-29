@@ -6,33 +6,66 @@ interface NavigationProps {
 }
 
 const tabs = [
-  { id: "wizard", label: "Client Wizard", icon: "🧙🏼‍♂️" },
-  { id: "calculators", label: "Calculators", icon: "🧮" },
-  { id: "programs", label: "Program Reference", icon: "📊" },
-  { id: "rates", label: "Market Rates", icon: "📈" },
-  { id: "homeowner", label: "Existing Homeowner", icon: "🏠" },
-  { id: "settings", label: "Settings", icon: "⚙️" },
+  { id: "wizard", label: "Client Wizard" },
+  { id: "calculators", label: "Calculators" },
+  { id: "programs", label: "Programs" },
+  { id: "rates", label: "Market Rates" },
+  { id: "homeowner", label: "Existing Homeowner" },
+  { id: "settings", label: "Settings" },
 ];
 
 export default function Navigation({ activeTab, onTabChange }: NavigationProps) {
   return (
-    <nav className="bg-white border-b border-gray-200 no-print">
-      <div className="max-w-7xl mx-auto px-4">
-        <div className="flex gap-0 overflow-x-auto">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => onTabChange(tab.id)}
-              className={`px-4 py-3 text-sm font-semibold whitespace-nowrap border-b-2 transition-colors ${
-                activeTab === tab.id
-                  ? "border-rio-red text-rio-red"
-                  : "border-transparent text-gray-500 hover:text-gray-800 hover:border-gray-300"
-              }`}
-            >
-              <span className="mr-1.5 hidden sm:inline">{tab.icon}</span>
-              {tab.label}
-            </button>
-          ))}
+    <nav
+      className="no-print"
+      style={{
+        background: "#FFFFFF",
+        borderBottom: "1px solid #F0EEE9",
+        boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+      }}
+    >
+      <div style={{ maxWidth: "1280px", margin: "0 auto", padding: "0 28px" }}>
+        <div
+          style={{ display: "flex", overflowX: "auto" }}
+          className="scrollbar-none"
+        >
+          {tabs.map((tab) => {
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => onTabChange(tab.id)}
+                style={{
+                  padding: "16px 24px",
+                  fontSize: "14px",
+                  fontFamily: "'DM Sans', sans-serif",
+                  fontWeight: isActive ? 600 : 500,
+                  whiteSpace: "nowrap",
+                  border: "none",
+                  borderBottom: isActive ? "3px solid #C8202A" : "3px solid transparent",
+                  background: "transparent",
+                  color: isActive ? "#C8202A" : "#8C8880",
+                  cursor: "pointer",
+                  transition: "color 120ms, background 120ms",
+                  marginBottom: "-1px",
+                }}
+                onMouseEnter={(e) => {
+                  if (!isActive) {
+                    (e.currentTarget as HTMLButtonElement).style.color = "#4A4845";
+                    (e.currentTarget as HTMLButtonElement).style.background = "#F0EEE9";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isActive) {
+                    (e.currentTarget as HTMLButtonElement).style.color = "#8C8880";
+                    (e.currentTarget as HTMLButtonElement).style.background = "transparent";
+                  }
+                }}
+              >
+                {tab.label}
+              </button>
+            );
+          })}
         </div>
       </div>
     </nav>

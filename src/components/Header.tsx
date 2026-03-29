@@ -4,77 +4,124 @@ import Image from "next/image";
 
 export default function Header() {
   return (
-    <header className="bg-rio-dark text-white sticky top-0 z-50 shadow-lg border-b-2 border-rio-red">
-      {/* Desktop: single row with logo | title | az mark */}
-      <div className="hidden sm:flex max-w-7xl mx-auto px-4 py-3 items-center justify-between">
-        {/* Logo Left */}
-        <div className="flex items-center gap-3 flex-shrink-0">
+    <header
+      className="sticky top-0 z-50 no-print"
+      style={{
+        position: "relative",
+        overflow: "hidden",
+        borderBottom: "3px solid #C8202A",
+        boxShadow: "0 2px 12px rgba(0,0,0,0.3)",
+      }}
+    >
+      {/* Background image — blurred, darkened, texture only */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          inset: 0,
+          backgroundImage: "url('/NAI-BUILDING.jpg')",
+          backgroundSize: "cover",
+          backgroundPosition: "center 40%",
+          filter: "blur(2px) brightness(0.35)",
+          transform: "scale(1.05)",
+          zIndex: 0,
+        }}
+      />
+
+      {/* Desktop content */}
+      <div
+        className="hidden sm:flex"
+        style={{
+          position: "relative",
+          zIndex: 1,
+          maxWidth: "1280px",
+          margin: "0 auto",
+          padding: "0 28px",
+          height: "72px",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
+        {/* Logo + Name */}
+        <div style={{ display: "flex", alignItems: "center", gap: "12px", flexShrink: 0 }}>
           <Image
             src="/rio-square.png"
             alt="The Rio Group"
-            width={40}
-            height={40}
-            className="rounded-lg"
+            width={44}
+            height={44}
+            style={{ borderRadius: "10px" }}
           />
           <div>
-            <div className="font-bold text-lg leading-tight">The Rio Group</div>
-            <div className="text-xs text-gray-400">Products Advisor</div>
+            <div style={{ fontWeight: 600, fontSize: "0.9375rem", color: "#FFFFFF", lineHeight: 1.2, letterSpacing: "0.01em" }}>
+              The Rio Group
+            </div>
+            <div style={{ fontSize: "10px", color: "rgba(255,255,255,0.4)", letterSpacing: "0.14em", textTransform: "uppercase", marginTop: "2px" }}>
+              Products Advisor
+            </div>
           </div>
         </div>
 
         {/* Center Title */}
-        <div className="absolute left-1/2 -translate-x-1/2 text-center pointer-events-none">
-          <span className="text-white font-medium text-sm tracking-wide">
-            Rio Group&nbsp;|&nbsp;Home Buying Advisor
+        <div style={{ position: "absolute", left: "50%", transform: "translateX(-50%)", textAlign: "center", pointerEvents: "none" }}>
+          <span style={{
+            fontFamily: "'DM Sans', sans-serif",
+            color: "rgba(255,255,255,0.85)",
+            fontSize: "13px",
+            fontWeight: 500,
+            letterSpacing: "0.08em",
+            textTransform: "uppercase",
+          }}>
+            Rio Group&nbsp;&nbsp;|&nbsp;&nbsp;Home Buying Advisor
           </span>
         </div>
 
-        {/* AZ Mark Right */}
-        <div className="flex items-center gap-2 flex-shrink-0">
-          <div className="text-right">
-            <div className="text-[10px] text-gray-500 uppercase tracking-wider">Powered by</div>
-            <div className="text-sm font-semibold text-gray-300">AZ &amp; Associates</div>
+        {/* AZ Mark */}
+        <div style={{ display: "flex", alignItems: "center", gap: "12px", flexShrink: 0 }}>
+          <div style={{ textAlign: "right" }}>
+            <div style={{ fontSize: "10px", color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.12em" }}>Powered by</div>
+            <div style={{ fontSize: "0.8125rem", fontWeight: 600, color: "rgba(255,255,255,0.75)", lineHeight: 1.2, marginTop: "1px" }}>
+              AZ &amp; Associates
+            </div>
           </div>
           <Image
             src="/az-logo-white.png"
             alt="AZ & Associates"
-            width={36}
-            height={36}
-            className="rounded"
+            width={38}
+            height={38}
+            style={{ borderRadius: "8px", opacity: 0.85 }}
           />
         </div>
       </div>
 
-      {/* Mobile: logo row + title below */}
-      <div className="sm:hidden max-w-7xl mx-auto px-4">
-        <div className="flex items-center justify-between py-2">
-          {/* Logo Left */}
-          <div className="flex items-center gap-2">
-            <Image
-              src="/rio-square.png"
-              alt="The Rio Group"
-              width={32}
-              height={32}
-              className="rounded-lg"
-            />
-          </div>
-          {/* AZ Mark Right */}
-          <div className="flex items-center gap-2">
-            <Image
-              src="/az-logo-white.png"
-              alt="AZ & Associates"
-              width={30}
-              height={30}
-              className="rounded"
-            />
-          </div>
-        </div>
-        {/* Title row below logos */}
-        <div className="text-center pb-2">
-          <span className="text-white font-medium text-xs tracking-wide">
-            Rio Group&nbsp;|&nbsp;Home Buying Advisor
-          </span>
-        </div>
+      {/* Mobile content */}
+      <div
+        className="sm:hidden flex items-center justify-between"
+        style={{ position: "relative", zIndex: 1, height: "60px", padding: "0 16px" }}
+      >
+        <Image
+          src="/rio-square.png"
+          alt="The Rio Group"
+          width={36}
+          height={36}
+          style={{ borderRadius: "8px" }}
+        />
+        <span style={{
+          fontFamily: "'DM Sans', sans-serif",
+          color: "rgba(255,255,255,0.85)",
+          fontSize: "11px",
+          fontWeight: 500,
+          letterSpacing: "0.08em",
+          textTransform: "uppercase",
+        }}>
+          Rio Group&nbsp;|&nbsp;Advisor
+        </span>
+        <Image
+          src="/az-logo-white.png"
+          alt="AZ & Associates"
+          width={32}
+          height={32}
+          style={{ borderRadius: "6px", opacity: 0.8 }}
+        />
       </div>
     </header>
   );

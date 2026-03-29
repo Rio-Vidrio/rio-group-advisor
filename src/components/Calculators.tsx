@@ -89,6 +89,24 @@ function fmt(n: number) {
   return "$" + n.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
 
+const inputStyle: React.CSSProperties = {
+  width: "100%",
+  border: "1.5px solid #E8E8E8",
+  borderRadius: "10px",
+  padding: "11px 16px",
+  fontSize: "0.9375rem",
+  color: "#111111",
+  background: "#FFFFFF",
+  outline: "none",
+};
+const labelStyle: React.CSSProperties = {
+  display: "block",
+  fontSize: "0.8125rem",
+  fontWeight: 500,
+  color: "#111111",
+  marginBottom: "7px",
+};
+
 function MoneyInput({
   label,
   value,
@@ -102,14 +120,14 @@ function MoneyInput({
 }) {
   return (
     <div>
-      <label className="block text-sm font-semibold text-gray-700 mb-1">{label}</label>
+      <label style={labelStyle}>{label}</label>
       <div className="relative">
-        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">$</span>
+        <span style={{ position: "absolute", left: "14px", top: "50%", transform: "translateY(-50%)", color: "#9B9B9B", fontSize: "0.875rem" }}>$</span>
         <input
           type="number"
           value={value || ""}
           onChange={(e) => onChange(Number(e.target.value))}
-          className="w-full border border-gray-300 rounded-lg pl-7 pr-4 py-2.5 text-sm focus:border-rio-red focus:ring-1 focus:ring-rio-red outline-none"
+          style={{ ...inputStyle, paddingLeft: "28px" }}
           placeholder={placeholder || "0"}
         />
       </div>
@@ -134,18 +152,18 @@ function NumberInput({
 }) {
   return (
     <div>
-      <label className="block text-sm font-semibold text-gray-700 mb-1">{label}</label>
+      <label style={labelStyle}>{label}</label>
       <div className="relative">
         <input
           type="number"
           value={value || ""}
           onChange={(e) => onChange(Number(e.target.value))}
           step={step || "any"}
-          className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:border-rio-red focus:ring-1 focus:ring-rio-red outline-none"
+          style={{ ...inputStyle, paddingRight: suffix ? "40px" : "16px" }}
           placeholder={placeholder || "0"}
         />
         {suffix && (
-          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">
+          <span style={{ position: "absolute", right: "14px", top: "50%", transform: "translateY(-50%)", color: "#9B9B9B", fontSize: "0.875rem" }}>
             {suffix}
           </span>
         )}
@@ -215,8 +233,8 @@ function TaxInput({
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-1">
-        <label className="text-sm font-semibold text-gray-700">{label || "Property Taxes"}</label>
+      <div className="flex items-center justify-between mb-2">
+        <label style={labelStyle}>{label || "Property Taxes"}</label>
         {assessorLink && (
           <a
             href="https://mcassessor.maricopa.gov"
@@ -230,42 +248,41 @@ function TaxInput({
       </div>
       {/* Toggle */}
       <div className="flex gap-1 mb-2">
-        <button
-          type="button"
-          onClick={() => handleModeSwitch("dollar")}
-          className={`flex-1 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${
-            mode === "dollar"
-              ? "bg-rio-red text-white border-rio-red"
-              : "bg-white text-gray-500 border-gray-300 hover:border-gray-400"
-          }`}
-        >
-          $ Amount
-        </button>
-        <button
-          type="button"
-          onClick={() => handleModeSwitch("rate")}
-          className={`flex-1 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${
-            mode === "rate"
-              ? "bg-rio-red text-white border-rio-red"
-              : "bg-white text-gray-500 border-gray-300 hover:border-gray-400"
-          }`}
-        >
-          Tax Rate %
-        </button>
+        {(["dollar", "rate"] as const).map((m) => (
+          <button
+            key={m}
+            type="button"
+            onClick={() => handleModeSwitch(m)}
+            style={{
+              flex: 1,
+              padding: "7px 0",
+              borderRadius: "7px",
+              fontSize: "0.75rem",
+              fontWeight: 600,
+              border: mode === m ? "1.5px solid #C8202A" : "1.5px solid #E8E8E8",
+              background: mode === m ? "#C8202A" : "#FFFFFF",
+              color: mode === m ? "#FFFFFF" : "#6B6B6B",
+              cursor: "pointer",
+              transition: "background 100ms, color 100ms",
+            }}
+          >
+            {m === "dollar" ? "$ Amount" : "Tax Rate %"}
+          </button>
+        ))}
       </div>
       {mode === "dollar" ? (
         <>
           <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">$</span>
+            <span style={{ position: "absolute", left: "14px", top: "50%", transform: "translateY(-50%)", color: "#9B9B9B", fontSize: "0.875rem" }}>$</span>
             <input
               type="number"
               value={taxDollars || ""}
               onChange={(e) => onTaxDollarsChange(Number(e.target.value))}
-              className="w-full border border-gray-300 rounded-lg pl-7 pr-4 py-2.5 text-sm focus:border-rio-red focus:ring-1 focus:ring-rio-red outline-none"
+              style={{ ...inputStyle, paddingLeft: "28px" }}
               placeholder="1800"
             />
           </div>
-          <div className="text-xs text-gray-400 mt-1 pl-1">= {derivedRate}% of {fmt(price)}</div>
+          <div style={{ fontSize: "0.6875rem", color: "#9B9B9B", marginTop: "4px" }}>= {derivedRate}% of {fmt(price)}</div>
         </>
       ) : (
         <>
@@ -275,12 +292,12 @@ function TaxInput({
               value={taxRate || ""}
               onChange={(e) => onTaxRateChange(Number(e.target.value))}
               step="0.01"
-              className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:border-rio-red focus:ring-1 focus:ring-rio-red outline-none"
+              style={{ ...inputStyle, paddingRight: "36px" }}
               placeholder="0.45"
             />
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">%</span>
+            <span style={{ position: "absolute", right: "14px", top: "50%", transform: "translateY(-50%)", color: "#9B9B9B", fontSize: "0.875rem" }}>%</span>
           </div>
-          <div className="text-xs text-gray-400 mt-1 pl-1">= {fmt(derivedDollars)}/yr</div>
+          <div style={{ fontSize: "0.6875rem", color: "#9B9B9B", marginTop: "4px" }}>= {fmt(derivedDollars)}/yr</div>
         </>
       )}
       {note && <div className="mt-1">{note}</div>}
@@ -288,12 +305,12 @@ function TaxInput({
   );
 }
 
-function ResultCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
+function ResultCard({ label, value, sub, highlight }: { label: string; value: string; sub?: string; highlight?: boolean }) {
   return (
-    <div className="bg-rio-gray rounded-lg p-4 border border-gray-200">
-      <div className="text-xs text-gray-500">{label}</div>
-      <div className="text-xl font-bold text-rio-black">{value}</div>
-      {sub && <div className="text-xs text-gray-400 mt-0.5">{sub}</div>}
+    <div style={{ background: "#F7F6F4", borderRadius: "10px", padding: "14px 16px", border: "1px solid #E8E8E8" }}>
+      <div style={{ fontSize: "0.6875rem", color: "#6B6B6B", marginBottom: "4px", textTransform: "uppercase", letterSpacing: "0.06em" }}>{label}</div>
+      <div style={{ fontSize: "1.25rem", fontWeight: 700, color: highlight ? "#C8202A" : "#111111" }}>{value}</div>
+      {sub && <div style={{ fontSize: "0.6875rem", color: "#9B9B9B", marginTop: "2px" }}>{sub}</div>}
     </div>
   );
 }
@@ -443,12 +460,12 @@ function PaymentCalc() {
         </div>
 
         {/* ── SCREEN-ONLY title & inputs ── */}
-        <h3 className="text-lg font-bold mb-4 no-print">Monthly Payment Calculator</h3>
+        <h3 className="text-lg font-bold mb-5 no-print" style={{ color: "#111111", letterSpacing: "-0.01em" }}>Monthly Payment Calculator</h3>
 
         {/* Client info for print */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5 pb-5 border-b border-gray-100 no-print">
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1">
+            <label style={labelStyle}>
               Client Name <span className="text-xs text-gray-400 font-normal">(optional — for print)</span>
             </label>
             <input
@@ -456,11 +473,11 @@ function PaymentCalc() {
               value={clientName}
               onChange={(e) => setClientName(e.target.value)}
               placeholder="e.g. John & Jane Smith"
-              className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:border-rio-red focus:ring-1 focus:ring-rio-red outline-none"
+              style={inputStyle}
             />
           </div>
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1">
+            <label style={labelStyle}>
               Property Address <span className="text-xs text-gray-400 font-normal">(optional — for print)</span>
             </label>
             <input
@@ -468,26 +485,36 @@ function PaymentCalc() {
               value={propertyAddress}
               onChange={(e) => setPropertyAddress(e.target.value)}
               placeholder="e.g. 1234 W Main St, Chandler AZ"
-              className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:border-rio-red focus:ring-1 focus:ring-rio-red outline-none"
+              style={inputStyle}
             />
           </div>
         </div>
 
       {/* Loan type sub-tabs */}
       <div className="flex gap-2 mb-6 no-print">
-        {(["conventional", "fha", "va"] as LoanMode[]).map((m) => (
-          <button
-            key={m}
-            onClick={() => setLoanMode(m)}
-            className={`px-5 py-2 rounded-lg text-sm font-semibold border transition-colors ${
-              loanMode === m
-                ? "bg-rio-red text-white border-rio-red"
-                : "bg-white text-gray-600 border-gray-300 hover:border-gray-400"
-            }`}
-          >
-            {m === "conventional" ? "Conventional" : m === "fha" ? "FHA" : "VA"}
-          </button>
-        ))}
+        {(["conventional", "fha", "va"] as LoanMode[]).map((m) => {
+          const isActive = loanMode === m;
+          return (
+            <button
+              key={m}
+              onClick={() => setLoanMode(m)}
+              style={{
+                padding: "8px 20px",
+                borderRadius: "8px",
+                fontSize: "0.875rem",
+                fontWeight: 500,
+                border: isActive ? "1.5px solid #C8202A" : "1.5px solid #E8E8E8",
+                background: isActive ? "#C8202A" : "#FFFFFF",
+                color: isActive ? "#FFFFFF" : "#6B6B6B",
+                cursor: "pointer",
+                transition: "background 100ms, color 100ms",
+                minHeight: "40px",
+              }}
+            >
+              {m === "conventional" ? "Conventional" : m === "fha" ? "FHA" : "VA"}
+            </button>
+          );
+        })}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 no-print">
@@ -510,7 +537,7 @@ function PaymentCalc() {
 
         {/* Rate slider */}
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-1">
+          <label style={labelStyle}>
             Interest Rate: {rate.toFixed(2)}%
           </label>
           <input
@@ -641,7 +668,7 @@ function PaymentCalc() {
       <div className="flex flex-wrap items-center justify-between gap-3 mt-6 pt-6 border-t border-gray-100 no-print">
         <button
           onClick={() => handlePrint()}
-          className="px-6 py-2.5 rounded-lg text-sm font-semibold bg-rio-red text-white hover:bg-red-700 transition-colors"
+          style={{ padding: "12px 28px", borderRadius: "10px", background: "#C8202A", color: "#FFFFFF", fontWeight: 600, fontSize: "0.9375rem", border: "none", cursor: "pointer" }}
         >
           Print / Save PDF
         </button>
@@ -672,7 +699,7 @@ function DTICalc() {
 
   return (
     <div>
-      <h3 className="text-lg font-bold mb-4">DTI Calculator</h3>
+      <h3 className="text-lg font-bold mb-5" style={{ color: "#111111", letterSpacing: "-0.01em" }}>DTI Calculator</h3>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
         <MoneyInput label="Annual Gross Income" value={income} onChange={setIncome} />
         <MoneyInput label="Monthly Debts" value={debts} onChange={setDebts} />
@@ -680,9 +707,16 @@ function DTICalc() {
         <div className="flex items-end">
           <button
             onClick={() => setHasCosigner(!hasCosigner)}
-            className={`px-4 py-2.5 rounded-lg text-sm font-semibold border transition-colors ${
-              hasCosigner ? "bg-rio-red text-white border-rio-red" : "bg-white text-gray-600 border-gray-300"
-            }`}
+            style={{
+              padding: "11px 18px",
+              borderRadius: "8px",
+              fontSize: "0.875rem",
+              fontWeight: 500,
+              border: hasCosigner ? "1.5px solid #C8202A" : "1.5px solid #E8E8E8",
+              background: hasCosigner ? "#C8202A" : "#FFFFFF",
+              color: hasCosigner ? "#FFFFFF" : "#6B6B6B",
+              cursor: "pointer",
+            }}
           >
             {hasCosigner ? "✓ Co-signer Added" : "Add Co-signer"}
           </button>
@@ -746,7 +780,7 @@ function MaxPriceCalc() {
 
   return (
     <div>
-      <h3 className="text-lg font-bold mb-4">Max Purchase Price Calculator</h3>
+      <h3 className="text-lg font-bold mb-5" style={{ color: "#111111", letterSpacing: "-0.01em" }}>Max Purchase Price Calculator</h3>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         <MoneyInput label="Annual Gross Income" value={income} onChange={setIncome} />
         <MoneyInput label="Monthly Debts" value={debts} onChange={setDebts} />
@@ -784,7 +818,7 @@ function SolarCalc() {
 
   return (
     <div>
-      <h3 className="text-lg font-bold mb-4">Solar Savings Calculator</h3>
+      <h3 className="text-lg font-bold mb-5" style={{ color: "#111111", letterSpacing: "-0.01em" }}>Solar Savings Calculator</h3>
       <p className="text-sm text-gray-500 mb-4">
         Phoenix Metro defaults — APS/SRP average ~$180/month for 1,800 sq ft
       </p>
@@ -964,7 +998,7 @@ function NewBuildCalc() {
           </div>
         </div>
 
-        <h3 className="text-lg font-bold mb-4 no-print">New Build vs. Resale Comparison</h3>
+        <h3 className="text-lg font-bold mb-5 no-print" style={{ color: "#111111", letterSpacing: "-0.01em" }}>New Build vs. Resale Comparison</h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 no-print">
           {/* New Build inputs */}
@@ -1117,7 +1151,7 @@ function NewBuildCalc() {
       <div className="flex flex-wrap gap-3 mt-6 pt-6 border-t border-gray-100 no-print">
         <button
           onClick={() => handlePrint()}
-          className="px-6 py-2.5 rounded-lg text-sm font-semibold bg-rio-red text-white hover:bg-red-700 transition-colors"
+          style={{ padding: "12px 28px", borderRadius: "10px", background: "#C8202A", color: "#FFFFFF", fontWeight: 600, fontSize: "0.9375rem", border: "none", cursor: "pointer" }}
         >
           Print / Save PDF
         </button>
@@ -1172,17 +1206,17 @@ function LoanPayoffCalc({ onPayoffCalculated }: { onPayoffCalculated: (amount: n
 
   return (
     <div>
-      <h3 className="text-lg font-bold mb-4">Loan Payoff Estimator</h3>
+      <h3 className="text-lg font-bold mb-5" style={{ color: "#111111", letterSpacing: "-0.01em" }}>Loan Payoff Estimator</h3>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         <MoneyInput label="Original Loan Amount" value={originalLoan} onChange={setOriginalLoan} placeholder="350000" />
         <NumberInput label="Original Interest Rate %" value={interestRate} onChange={setInterestRate} suffix="%" step="0.125" placeholder="6.5" />
         <div className="md:col-span-2">
-          <label className="block text-sm font-semibold text-gray-700 mb-1">Date of First Payment</label>
+          <label style={labelStyle}>Date of First Payment</label>
           <input
             type="date"
             value={firstPaymentDate}
             onChange={(e) => setFirstPaymentDate(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:border-rio-red focus:ring-1 focus:ring-rio-red outline-none"
+            style={inputStyle}
           />
         </div>
       </div>
@@ -1299,11 +1333,11 @@ function SellerNetCalc({ importedPayoff }: { importedPayoff: number | null }) {
           {clientName && <p className="text-xs text-gray-700">Client: <strong>{clientName}</strong></p>}
         </div>
 
-        <h3 className="text-lg font-bold mb-4 no-print">Seller Net Proceeds Estimator</h3>
+        <h3 className="text-lg font-bold mb-5 no-print" style={{ color: "#111111", letterSpacing: "-0.01em" }}>Seller Net Proceeds Estimator</h3>
 
         {/* Client name — for print only */}
         <div className="mb-4 no-print">
-          <label className="block text-sm font-semibold text-gray-700 mb-1">
+          <label style={labelStyle}>
             Client Name <span className="text-xs text-gray-400 font-normal">(optional — for print)</span>
           </label>
           <input
@@ -1311,7 +1345,7 @@ function SellerNetCalc({ importedPayoff }: { importedPayoff: number | null }) {
             value={clientName}
             onChange={(e) => setClientName(e.target.value)}
             placeholder="e.g. John & Jane Smith"
-            className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:border-rio-red focus:ring-1 focus:ring-rio-red outline-none"
+            style={inputStyle}
           />
         </div>
 
@@ -1320,7 +1354,7 @@ function SellerNetCalc({ importedPayoff }: { importedPayoff: number | null }) {
 
         {/* Payoff with import button */}
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-1">Payoff Amount</label>
+          <label style={labelStyle}>Payoff Amount</label>
           <div className="flex gap-2">
             <div className="relative flex-1">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">$</span>
@@ -1328,7 +1362,7 @@ function SellerNetCalc({ importedPayoff }: { importedPayoff: number | null }) {
                 type="number"
                 value={payoff || ""}
                 onChange={(e) => setPayoff(Number(e.target.value))}
-                className="w-full border border-gray-300 rounded-lg pl-7 pr-4 py-2.5 text-sm focus:border-rio-red focus:ring-1 focus:ring-rio-red outline-none"
+                style={{ ...inputStyle, paddingLeft: "28px" }}
                 placeholder="0"
               />
             </div>
@@ -1358,18 +1392,18 @@ function SellerNetCalc({ importedPayoff }: { importedPayoff: number | null }) {
 
         {/* Closing date */}
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-1">Closing Date</label>
+          <label style={labelStyle}>Closing Date</label>
           <input
             type="date"
             value={closingDate}
             onChange={(e) => setClosingDate(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:border-rio-red focus:ring-1 focus:ring-rio-red outline-none"
+            style={inputStyle}
           />
         </div>
 
         {/* Seller concessions */}
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-1">
+          <label style={labelStyle}>
             Seller Concessions: {concessionsPct.toFixed(1)}%
             <span className="ml-2 text-rio-red font-bold">{fmt(concessionsAmt)}</span>
           </label>
@@ -1383,7 +1417,7 @@ function SellerNetCalc({ importedPayoff }: { importedPayoff: number | null }) {
 
         {/* Buyer agent commission */}
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-1">
+          <label style={labelStyle}>
             Buyer&apos;s Agent Commission: {buyerAgentPct.toFixed(2)}%
             <span className="ml-2 text-rio-red font-bold">{fmt(buyerAgentAmt)}</span>
           </label>
@@ -1397,7 +1431,7 @@ function SellerNetCalc({ importedPayoff }: { importedPayoff: number | null }) {
 
         {/* Listing agent commission */}
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-1">
+          <label style={labelStyle}>
             Listing Agent Commission: {listingAgentPct.toFixed(2)}%
             <span className="ml-2 text-rio-red font-bold">{fmt(listingAgentAmt)}</span>
           </label>
@@ -1415,7 +1449,7 @@ function SellerNetCalc({ importedPayoff }: { importedPayoff: number | null }) {
 
         {/* Title fees — read only */}
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-1">Title Fees (1% — fixed)</label>
+          <label style={labelStyle}>Title Fees (1% — fixed)</label>
           <div className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-2.5 text-sm text-gray-600 flex justify-between items-center">
             <span>1% of purchase price</span>
             <span className="font-bold text-gray-800">{fmt(titleFees)}</span>
@@ -1468,7 +1502,7 @@ function SellerNetCalc({ importedPayoff }: { importedPayoff: number | null }) {
       <div className="flex flex-wrap items-center justify-between gap-3 mt-6 pt-6 border-t border-gray-100 no-print">
         <button
           onClick={() => handlePrint()}
-          className="px-6 py-2.5 rounded-lg text-sm font-semibold bg-rio-red text-white hover:bg-red-700 transition-colors"
+          style={{ padding: "12px 28px", borderRadius: "10px", background: "#C8202A", color: "#FFFFFF", fontWeight: 600, fontSize: "0.9375rem", border: "none", cursor: "pointer" }}
         >
           Print / Save PDF
         </button>
@@ -1496,50 +1530,49 @@ export default function Calculators() {
     { id: "sellernet", label: "Net Proceeds" },
   ];
 
+  const TabBtn = ({ id, label }: { id: string; label: string }) => {
+    const isActive = active === id;
+    return (
+      <button
+        onClick={() => setActive(id)}
+        style={{
+          padding: "8px 18px",
+          borderRadius: "8px",
+          fontSize: "0.8125rem",
+          fontWeight: 500,
+          border: isActive ? "1.5px solid #C8202A" : "1.5px solid #E8E8E8",
+          background: isActive ? "#C8202A" : "#FFFFFF",
+          color: isActive ? "#FFFFFF" : "#6B6B6B",
+          cursor: "pointer",
+          transition: "background 100ms, color 100ms, border-color 100ms",
+          whiteSpace: "nowrap" as const,
+        }}
+      >
+        {label}
+      </button>
+    );
+  };
+
   return (
-    <div className="max-w-4xl mx-auto">
-      {/* Buyer tool tabs */}
-      <div className="flex flex-wrap gap-2 mb-3">
-        {buyerTabs.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActive(tab.id)}
-            className={`px-4 py-2 rounded-lg text-sm font-semibold border transition-colors ${
-              active === tab.id
-                ? "bg-rio-red text-white border-rio-red"
-                : "bg-white text-gray-600 border-gray-300 hover:border-gray-400"
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
+    <div>
+      {/* Tab groups */}
+      <div className="mb-6">
+        <div style={{ fontSize: "0.6875rem", fontWeight: 600, color: "#C8202A", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "10px" }}>
+          Buyer Tools
+        </div>
+        <div className="flex flex-wrap gap-2 mb-5">
+          {buyerTabs.map((tab) => <TabBtn key={tab.id} id={tab.id} label={tab.label} />)}
+        </div>
+
+        <div style={{ fontSize: "0.6875rem", fontWeight: 600, color: "#C8202A", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "10px" }}>
+          Seller Tools
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {sellerTabs.map((tab) => <TabBtn key={tab.id} id={tab.id} label={tab.label} />)}
+        </div>
       </div>
 
-      {/* Seller Tools divider */}
-      <div className="flex items-center gap-3 my-3">
-        <div className="h-px flex-1 bg-gray-200" />
-        <span className="text-xs font-bold text-gray-400 uppercase tracking-widest px-1">Seller Tools</span>
-        <div className="h-px flex-1 bg-gray-200" />
-      </div>
-
-      {/* Seller tool tabs */}
-      <div className="flex flex-wrap gap-2 mb-6">
-        {sellerTabs.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActive(tab.id)}
-            className={`px-4 py-2 rounded-lg text-sm font-semibold border transition-colors ${
-              active === tab.id
-                ? "bg-rio-red text-white border-rio-red"
-                : "bg-white text-gray-600 border-gray-300 hover:border-gray-400"
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
-
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 md:p-8">
+      <div style={{ background: "#FFFFFF", borderRadius: "16px", border: "1px solid #E8E8E8", boxShadow: "0 2px 12px rgba(0,0,0,0.06)", padding: "32px" }}>
         {active === "payment"    && <PaymentCalc />}
         {active === "dti"        && <DTICalc />}
         {active === "maxprice"   && <MaxPriceCalc />}

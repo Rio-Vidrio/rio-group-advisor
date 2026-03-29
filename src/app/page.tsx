@@ -24,23 +24,25 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-rio-gray">
+    <div className="min-h-screen" style={{ background: "var(--gray-50)" }}>
       <Header />
       <Navigation activeTab={activeTab} onTabChange={setActiveTab} />
 
-      <main className="px-4 py-6 md:py-8">
-        {/* Keep all tabs mounted so wizard state is never lost when switching tabs */}
-        <div style={{ display: activeTab === "wizard" ? "block" : "none" }}><WizardShell onTabChange={setActiveTab} /></div>
-        <div style={{ display: activeTab === "calculators" ? "block" : "none" }}><Calculators /></div>
-        <div style={{ display: activeTab === "programs" ? "block" : "none" }}><ProgramReference /></div>
-        <div style={{ display: activeTab === "rates" ? "block" : "none" }}><MarketRates /></div>
-        <div style={{ display: activeTab === "homeowner" ? "block" : "none" }}><ExistingHomeowner /></div>
-        <div style={{ display: activeTab === "settings" ? "block" : "none" }}><SettingsPanel /></div>
+      <main className="px-4 sm:px-6 py-8 md:py-10" style={{ background: "var(--gray-50)", minHeight: "calc(100vh - 72px)" }}>
+        <div style={{ maxWidth: "860px", margin: "0 auto" }}>
+          {/* Keep all tabs mounted so wizard state is never lost when switching tabs */}
+          <div style={{ display: activeTab === "wizard" ? "block" : "none" }}><WizardShell onTabChange={setActiveTab} /></div>
+          <div style={{ display: activeTab === "calculators" ? "block" : "none" }}><Calculators /></div>
+          <div style={{ display: activeTab === "programs" ? "block" : "none" }}><ProgramReference /></div>
+          <div style={{ display: activeTab === "rates" ? "block" : "none" }}><MarketRates /></div>
+          <div style={{ display: activeTab === "homeowner" ? "block" : "none" }}><ExistingHomeowner /></div>
+          <div style={{ display: activeTab === "settings" ? "block" : "none" }}><SettingsPanel /></div>
+        </div>
       </main>
 
-      <footer className="bg-rio-dark text-gray-500 text-center text-xs py-4 mt-8 no-print">
-        <p>The Rio Group — powered by AZ &amp; Associates</p>
-        <p className="mt-1">All estimates for informational purposes only. Subject to lender approval.</p>
+      <footer className="no-print" style={{ borderTop: "1px solid var(--gray-100)", background: "#FFFFFF", textAlign: "center", padding: "24px", marginTop: "32px" }}>
+        <p className="text-xs font-medium text-gray-400 tracking-wide">The Rio Group — powered by AZ &amp; Associates</p>
+        <p className="text-xs text-gray-300 mt-1">All estimates for informational purposes only. Subject to lender approval.</p>
       </footer>
     </div>
   );

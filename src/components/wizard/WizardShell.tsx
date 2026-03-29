@@ -25,23 +25,19 @@ interface Props {
 
 function SectionLabel({ label }: { label: string }) {
   return (
-    <div className="flex items-center gap-3 mt-8 mb-4">
-      <div className="h-px flex-1 bg-gray-200" />
-      <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">
+    <div className="mb-5">
+      <span
+        className="text-[11px] font-semibold uppercase tracking-[0.12em]"
+        style={{ color: "#C8202A" }}
+      >
         {label}
       </span>
-      <div className="h-px flex-1 bg-gray-200" />
     </div>
   );
 }
 
 function SectionConnector() {
-  return (
-    <div className="flex items-center gap-2 pl-4 my-1">
-      <div className="w-px h-6 bg-gray-200" />
-      <span className="text-gray-300 text-xs">▼</span>
-    </div>
-  );
+  return <div className="h-px my-8" style={{ background: "#E8E8E8" }} />;
 }
 
 function YesNoButtons({
@@ -52,22 +48,30 @@ function YesNoButtons({
   onChange: (v: string) => void;
 }) {
   return (
-    <div className="flex gap-2 mt-1.5">
-      {["yes", "no"].map((v) => (
-        <button
-          key={v}
-          onClick={() => onChange(v)}
-          className={`px-5 py-2 rounded-lg text-sm font-semibold border transition-colors ${
-            value === v
-              ? v === "yes"
-                ? "bg-[#C8202A] text-white border-[#C8202A]"
-                : "bg-gray-800 text-white border-gray-800"
-              : "bg-white text-gray-600 border-gray-300 hover:border-gray-400"
-          }`}
-        >
-          {v === "yes" ? "Yes" : "No"}
-        </button>
-      ))}
+    <div className="flex gap-2 mt-2">
+      {["yes", "no"].map((v) => {
+        const selected = value === v;
+        return (
+          <button
+            key={v}
+            onClick={() => onChange(v)}
+            style={{
+              minHeight: "44px",
+              padding: "0 20px",
+              borderRadius: "8px",
+              border: selected ? "1.5px solid #C8202A" : "1.5px solid #E8E8E8",
+              background: selected ? "#C8202A" : "#FFFFFF",
+              color: selected ? "#FFFFFF" : "#111111",
+              fontSize: "0.875rem",
+              fontWeight: 500,
+              cursor: "pointer",
+              transition: "background 100ms, border-color 100ms, color 100ms",
+            }}
+          >
+            {v === "yes" ? "Yes" : "No"}
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -82,20 +86,30 @@ function ThreeButtons({
   onChange: (v: string) => void;
 }) {
   return (
-    <div className="flex flex-wrap gap-2 mt-1.5">
-      {options.map((opt) => (
-        <button
-          key={opt.value}
-          onClick={() => onChange(opt.value)}
-          className={`px-5 py-2 rounded-lg text-sm font-semibold border transition-colors ${
-            value === opt.value
-              ? "bg-[#C8202A] text-white border-[#C8202A]"
-              : "bg-white text-gray-600 border-gray-300 hover:border-gray-400"
-          }`}
-        >
-          {opt.label}
-        </button>
-      ))}
+    <div className="flex flex-wrap gap-2 mt-2">
+      {options.map((opt) => {
+        const selected = value === opt.value;
+        return (
+          <button
+            key={opt.value}
+            onClick={() => onChange(opt.value)}
+            style={{
+              minHeight: "44px",
+              padding: "0 20px",
+              borderRadius: "8px",
+              border: selected ? "1.5px solid #C8202A" : "1.5px solid #E8E8E8",
+              background: selected ? "#C8202A" : "#FFFFFF",
+              color: selected ? "#FFFFFF" : "#111111",
+              fontSize: "0.875rem",
+              fontWeight: 500,
+              cursor: "pointer",
+              transition: "background 100ms, border-color 100ms, color 100ms",
+            }}
+          >
+            {opt.label}
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -111,14 +125,37 @@ function MoneyInput({
 }) {
   return (
     <div className="relative">
-      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">
+      <span
+        className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-medium"
+        style={{ color: "#9B9B9B" }}
+      >
         $
       </span>
       <input
         type="number"
         value={value || ""}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="w-full border border-gray-300 rounded-lg pl-7 pr-4 py-2.5 text-sm focus:border-[#C8202A] focus:ring-1 focus:ring-[#C8202A] outline-none"
+        style={{
+          width: "100%",
+          border: "1.5px solid #E8E8E8",
+          borderRadius: "10px",
+          paddingLeft: "28px",
+          paddingRight: "16px",
+          paddingTop: "12px",
+          paddingBottom: "12px",
+          fontSize: "0.9375rem",
+          color: "#111111",
+          background: "#FFFFFF",
+          outline: "none",
+        }}
+        onFocus={(e) => {
+          e.currentTarget.style.borderColor = "#C8202A";
+          e.currentTarget.style.boxShadow = "0 0 0 3px rgba(200,32,42,0.08)";
+        }}
+        onBlur={(e) => {
+          e.currentTarget.style.borderColor = "#E8E8E8";
+          e.currentTarget.style.boxShadow = "none";
+        }}
         placeholder={placeholder || "0"}
       />
     </div>
@@ -134,15 +171,21 @@ function AlertBox({
   title?: string;
   children: React.ReactNode;
 }) {
-  const colors = {
-    amber: "bg-amber-50 border-amber-300 text-amber-800",
-    red: "bg-red-50 border-red-300 text-red-800",
-    green: "bg-green-50 border-green-300 text-green-800",
-    blue: "bg-blue-50 border-blue-300 text-blue-800",
+  const styles: Record<string, React.CSSProperties> = {
+    amber: { background: "#FFFBEB", borderLeft: "4px solid #F59E0B", borderRadius: "0 8px 8px 0", padding: "14px 16px", marginTop: "12px" },
+    red: { background: "#FFF5F5", borderLeft: "4px solid #C8202A", borderRadius: "0 8px 8px 0", padding: "14px 16px", marginTop: "12px" },
+    green: { background: "#F0FDF4", borderLeft: "4px solid #22C55E", borderRadius: "0 8px 8px 0", padding: "14px 16px", marginTop: "12px" },
+    blue: { background: "#EFF6FF", borderLeft: "4px solid #3B82F6", borderRadius: "0 8px 8px 0", padding: "14px 16px", marginTop: "12px" },
+  };
+  const textColors: Record<string, string> = {
+    amber: "#92400E",
+    red: "#991B1B",
+    green: "#166534",
+    blue: "#1E40AF",
   };
   return (
-    <div className={`rounded-lg px-4 py-3 border text-sm mt-3 ${colors[color]}`}>
-      {title && <strong>{title}</strong>}
+    <div style={{ ...styles[color], fontSize: "0.875rem", color: textColors[color] }}>
+      {title && <div style={{ fontWeight: 600, marginBottom: "4px" }}>{title}</div>}
       {children}
     </div>
   );
@@ -297,32 +340,97 @@ export default function WizardShell({ onTabChange }: Props) {
   /*  JSX                                                              */
   /* ================================================================ */
 
+  /* ---- Progress step calculation ---- */
+  const steps = [
+    { label: "Client Info", done: client.firstName.trim().length > 0 },
+    { label: "Citizenship", done: client.citizenship !== "" },
+    { label: "Income", done: client.annualIncome > 0 },
+    { label: "Debts", done: debtsTouched },
+    { label: "Credit", done: client.creditScore > 0 },
+    { label: "Purchase", done: client.purchasePrice > 0 && client.propertyType !== "" },
+    { label: "Results", done: canShowResults },
+  ];
+  const completedCount = steps.filter((s) => s.done).length;
+
   return (
-    <div className="max-w-2xl mx-auto">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-2 no-print">
+    <div>
+      {/* Page header row */}
+      <div className="flex items-center justify-between mb-6 no-print">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="text-2xl font-bold" style={{ color: "#111111", letterSpacing: "-0.02em" }}>
             Client Consultation
           </h1>
-          <p className="text-gray-500 text-sm">
+          <p className="text-sm mt-1" style={{ color: "#6B6B6B" }}>
             Complete each section — results appear once all details are filled.
           </p>
         </div>
         {client.firstName && (
           <button
             onClick={restart}
-            className="text-sm font-semibold text-[#C8202A] border border-[#C8202A] rounded-lg px-4 py-1.5 hover:bg-red-50 transition-colors"
+            style={{
+              fontSize: "0.8125rem",
+              fontWeight: 600,
+              color: "#C8202A",
+              border: "1.5px solid #C8202A",
+              borderRadius: "8px",
+              padding: "7px 16px",
+              background: "transparent",
+              cursor: "pointer",
+            }}
           >
             ↻ Start Over
           </button>
         )}
       </div>
 
+      {/* Progress indicator */}
+      {client.firstName.trim().length > 0 && (
+        <div className="mb-6 no-print">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {steps.map((step, i) => (
+              <div key={i} className="flex items-center gap-1.5">
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "5px",
+                    padding: "4px 10px",
+                    borderRadius: "999px",
+                    fontSize: "0.6875rem",
+                    fontWeight: 600,
+                    background: step.done ? "#C8202A" : "#F7F6F4",
+                    color: step.done ? "#FFFFFF" : "#9B9B9B",
+                    border: step.done ? "none" : "1px solid #E8E8E8",
+                    transition: "background 200ms, color 200ms",
+                  }}
+                >
+                  {step.done && <span style={{ fontSize: "9px" }}>✓</span>}
+                  {step.label}
+                </div>
+                {i < steps.length - 1 && (
+                  <div style={{ width: "12px", height: "1px", background: "#E8E8E8", flexShrink: 0 }} />
+                )}
+              </div>
+            ))}
+          </div>
+          <div className="mt-2" style={{ fontSize: "0.75rem", color: "#9B9B9B" }}>
+            {completedCount} of {steps.length} sections complete
+          </div>
+        </div>
+      )}
+
       {/* ============================================================ */}
       {/*  SINGLE CARD — all sections live inside one container         */}
       {/* ============================================================ */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-0">
+      <div
+        style={{
+          background: "#FFFFFF",
+          borderRadius: "16px",
+          border: "1px solid #E8E8E8",
+          boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
+          padding: "36px",
+        }}
+      >
         {/* ---------------------------------------------------------- */}
         {/*  SECTION 1 — CLIENT INFO (always visible)                   */}
         {/* ---------------------------------------------------------- */}
@@ -330,38 +438,38 @@ export default function WizardShell({ onTabChange }: Props) {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1">
+            <label className="block text-sm font-medium mb-2" style={{ color: "#111111" }}>
               First Name <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
               value={client.firstName}
               onChange={(e) => update({ firstName: e.target.value })}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:border-[#C8202A] focus:ring-1 focus:ring-[#C8202A] outline-none"
+              className="w-full outline-none" style={{ border: "1.5px solid #E8E8E8", borderRadius: "10px", padding: "12px 16px", fontSize: "0.9375rem", color: "#111111", background: "#FFFFFF" }}
               placeholder="First name"
             />
           </div>
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1">
+            <label className="block text-sm font-medium mb-2" style={{ color: "#111111" }}>
               Last Name
             </label>
             <input
               type="text"
               value={client.lastName}
               onChange={(e) => update({ lastName: e.target.value })}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:border-[#C8202A] focus:ring-1 focus:ring-[#C8202A] outline-none"
+              className="w-full outline-none" style={{ border: "1.5px solid #E8E8E8", borderRadius: "10px", padding: "12px 16px", fontSize: "0.9375rem", color: "#111111", background: "#FFFFFF" }}
               placeholder="Last name"
             />
           </div>
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1">
+            <label className="block text-sm font-medium mb-2" style={{ color: "#111111" }}>
               Date
             </label>
             <input
               type="date"
               value={client.date}
               onChange={(e) => update({ date: e.target.value })}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:border-[#C8202A] focus:ring-1 focus:ring-[#C8202A] outline-none"
+              className="w-full outline-none" style={{ border: "1.5px solid #E8E8E8", borderRadius: "10px", padding: "12px 16px", fontSize: "0.9375rem", color: "#111111", background: "#FFFFFF" }}
             />
           </div>
         </div>
@@ -369,7 +477,7 @@ export default function WizardShell({ onTabChange }: Props) {
         {/* Co-signer Y/N — immediately after client name fields */}
         {client.firstName.trim().length > 0 && (
           <div className="mt-4">
-            <label className="block text-sm font-semibold text-gray-700">
+            <label className="block text-sm font-medium mb-2" style={{ color: "#111111" }}>
               Co-signer?
             </label>
             <YesNoButtons
@@ -378,15 +486,18 @@ export default function WizardShell({ onTabChange }: Props) {
             />
 
             {client.hasCosigner === "yes" && (
-              <div className="mt-3 space-y-2">
-                {/* Amber requirements card */}
-                <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 space-y-1.5">
-                  <p className="text-sm font-bold text-amber-800">Co-Signer Requirements</p>
-                  <p className="text-sm text-amber-700">
-                    For all following questions answers should reflect the combined profile of both
-                    the client and co-signer. If either party triggers a condition apply it to both —
-                    citizenship, homeownership, credit history, employment, debts, income, etc.
-                    The lesser of the two credit scores will be used for program qualification.
+              <div className="mt-4 space-y-3 fade-in">
+                <div style={{ background: "#FFFBEB", borderLeft: "4px solid #F59E0B", borderRadius: "0 8px 8px 0", padding: "14px 16px" }}>
+                  <p className="text-sm font-semibold" style={{ color: "#92400E", marginBottom: "4px" }}>Co-Signer Requirements</p>
+                  <p className="text-sm" style={{ color: "#92400E" }}>
+                    All following answers should reflect the combined profile of both the client and co-signer.
+                    If either party triggers a condition, apply it to both. The lesser of the two credit scores
+                    will be used for program qualification.
+                  </p>
+                </div>
+                <div style={{ background: "#EFF6FF", borderLeft: "4px solid #3B82F6", borderRadius: "0 8px 8px 0", padding: "14px 16px" }}>
+                  <p className="text-sm" style={{ color: "#1E40AF" }}>
+                    From this point forward all questions apply to both borrowers equally. One answer covers both.
                   </p>
                 </div>
               </div>
@@ -404,7 +515,7 @@ export default function WizardShell({ onTabChange }: Props) {
 
             {/* Q: Citizenship */}
             <div className="mb-4">
-              <label className="block text-sm font-semibold text-gray-700">
+              <label className="block text-sm font-medium mb-2" style={{ color: "#111111" }}>
                 Is the client a U.S. citizen or permanent resident?
               </label>
               <ThreeButtons
@@ -437,7 +548,7 @@ export default function WizardShell({ onTabChange }: Props) {
             {(client.citizenship === "yes" ||
               client.citizenship === "daca") && (
               <div className="mb-4 mt-4">
-                <label className="block text-sm font-semibold text-gray-700">
+                <label className="block text-sm font-medium mb-2" style={{ color: "#111111" }}>
                   Is the client using a VA loan?
                 </label>
                 <YesNoButtons
@@ -460,7 +571,7 @@ export default function WizardShell({ onTabChange }: Props) {
             {client.citizenship !== "" && client.citizenship !== "no" && (
               <>
                 <div className="mb-4">
-                  <label className="block text-sm font-semibold text-gray-700">
+                  <label className="block text-sm font-medium mb-2" style={{ color: "#111111" }}>
                     Is the client currently a homeowner?
                   </label>
                   <YesNoButtons
@@ -473,20 +584,18 @@ export default function WizardShell({ onTabChange }: Props) {
 
                 {/* Homeowner Redirect Card */}
                 {showHomeownerRedirect && (
-                  <div className="space-y-5 mt-4">
-                    <div className="border-2 border-[#C8202A] rounded-xl p-6 bg-red-50 text-center">
-                      <div className="text-3xl mb-3">🏠</div>
-                      <h3 className="text-xl font-bold text-[#C8202A] mb-2">
+                  <div className="space-y-4 mt-4 fade-in">
+                    <div style={{ border: "1.5px solid #E8E8E8", borderTop: "4px solid #C8202A", borderRadius: "16px", padding: "32px", background: "#FFFFFF", textAlign: "center", boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
+                      <div style={{ fontSize: "2rem", marginBottom: "12px" }}>🏠</div>
+                      <h3 style={{ fontSize: "1.125rem", fontWeight: 700, color: "#111111", marginBottom: "8px" }}>
                         This client is an existing homeowner.
                       </h3>
-                      <p className="text-gray-700 text-sm mb-5">
-                        Use the Existing Homeowner tool to explore their purchase
-                        options — it&apos;s built specifically for clients who
-                        already own and want to buy again.
+                      <p style={{ fontSize: "0.875rem", color: "#6B6B6B", marginBottom: "24px", maxWidth: "400px", margin: "0 auto 24px" }}>
+                        Use the Existing Homeowner tool to explore their purchase options — built specifically for clients who already own and want to buy again.
                       </p>
                       <button
                         onClick={() => onTabChange?.("homeowner")}
-                        className="w-full sm:w-auto px-8 py-3 rounded-xl text-base font-bold bg-[#C8202A] text-white hover:bg-red-700 transition-colors shadow-sm"
+                        style={{ padding: "12px 32px", borderRadius: "10px", background: "#C8202A", color: "#FFFFFF", fontWeight: 700, fontSize: "0.9375rem", border: "none", cursor: "pointer" }}
                       >
                         Open Existing Homeowner Tool →
                       </button>
@@ -494,7 +603,7 @@ export default function WizardShell({ onTabChange }: Props) {
                     <div className="text-center">
                       <button
                         onClick={() => setOverrideHomeowner(true)}
-                        className="text-sm text-gray-400 hover:text-gray-600 underline transition-colors"
+                        style={{ fontSize: "0.8125rem", color: "#9B9B9B", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}
                       >
                         Continue with first-time buyer wizard anyway
                       </button>
@@ -504,9 +613,9 @@ export default function WizardShell({ onTabChange }: Props) {
 
                 {/* Homeowner sub-questions (when homeowner=yes but override is active) */}
                 {client.isHomeowner === "yes" && overrideHomeowner && (
-                  <div className="border-l-2 border-[#C8202A] pl-4 ml-2 space-y-4 mb-4">
+                  <div className="pl-4 ml-2 space-y-4 mb-4 fade-in" style={{ borderLeft: "3px solid rgba(200,32,42,0.2)" }}>
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700">
+                      <label className="block text-sm font-medium mb-2" style={{ color: "#111111" }}>
                         Does the client have 25%+ equity?
                       </label>
                       <YesNoButtons
@@ -517,7 +626,7 @@ export default function WizardShell({ onTabChange }: Props) {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700">
+                      <label className="block text-sm font-medium mb-2" style={{ color: "#111111" }}>
                         Has the client&apos;s family size increased since
                         purchasing?
                       </label>
@@ -529,7 +638,7 @@ export default function WizardShell({ onTabChange }: Props) {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700">
+                      <label className="block text-sm font-medium mb-2" style={{ color: "#111111" }}>
                         Has the client vacated the home or is it currently
                         rented?
                       </label>
@@ -546,7 +655,7 @@ export default function WizardShell({ onTabChange }: Props) {
                 {/* Owned in last 3 years */}
                 {!showHomeownerRedirect && (
                   <div className="mb-4">
-                    <label className="block text-sm font-semibold text-gray-700">
+                    <label className="block text-sm font-medium mb-2" style={{ color: "#111111" }}>
                       Has the client owned a home in the last 3 years?
                     </label>
                     <YesNoButtons
@@ -572,8 +681,8 @@ export default function WizardShell({ onTabChange }: Props) {
 
             {/* Annual Income */}
             <div className="mb-4">
-              <label className="block text-sm font-semibold text-gray-700 mb-1">
-                {client.hasCosigner === "yes" ? "Combined Annual Gross Income" : "Annual Gross Income"}
+              <label className="block text-sm font-medium mb-2" style={{ color: "#111111" }}>
+                Annual Gross Income
               </label>
               <MoneyInput
                 value={client.annualIncome}
@@ -581,16 +690,55 @@ export default function WizardShell({ onTabChange }: Props) {
                 placeholder="75000"
               />
               {client.hasCosigner === "yes" && (
-                <p className="text-xs text-gray-400 italic mt-1">Include both client and co-signer income combined</p>
+                <p className="text-xs text-gray-400 italic mt-1">Enter primary borrower income only — co-signer income entered separately below</p>
               )}
             </div>
 
+            {/* Co-signer income/debt fields — shown when co-signer selected at top */}
             {client.annualIncome > 0 && (
               <>
+                {client.hasCosigner === "yes" && (
+                  <div className="pl-4 ml-2 space-y-4 mb-4 fade-in" style={{ borderLeft: "3px solid rgba(200,32,42,0.2)" }}>
+                    <div>
+                      <label className="block text-sm font-medium mb-2" style={{ color: "#111111" }}>
+                        Co-signer Annual Gross Income
+                      </label>
+                      <MoneyInput
+                        value={client.cosignerIncome}
+                        onChange={(v) => update({ cosignerIncome: v })}
+                      />
+                      <p className="text-xs text-gray-400 italic mt-1">Combined with client income for DTI qualification</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-2" style={{ color: "#111111" }}>
+                        Co-signer Monthly Debts
+                      </label>
+                      <MoneyInput
+                        value={client.cosignerDebts}
+                        onChange={(v) => update({ cosignerDebts: v })}
+                      />
+                      <p className="text-xs text-gray-400 italic mt-1">Combined with client debts for total DTI calculation</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-2" style={{ color: "#111111" }}>
+                        Co-signer Credit Score
+                      </label>
+                      <input
+                        type="number"
+                        value={client.cosignerCreditScore || ""}
+                        onChange={(e) =>
+                          update({ cosignerCreditScore: Number(e.target.value) })
+                        }
+                        className="w-full outline-none" style={{ border: "1.5px solid #E8E8E8", borderRadius: "10px", padding: "12px 16px", fontSize: "0.9375rem", color: "#111111", background: "#FFFFFF" }}
+                        placeholder="700"
+                      />
+                    </div>
+                  </div>
+                )}
 
                 {/* Self-employed */}
                 <div className="mb-4">
-                  <label className="block text-sm font-semibold text-gray-700">
+                  <label className="block text-sm font-medium mb-2" style={{ color: "#111111" }}>
                     Is the client self-employed or do they receive 1099 income?
                   </label>
                   <YesNoButtons
@@ -602,8 +750,8 @@ export default function WizardShell({ onTabChange }: Props) {
                 </div>
 
                 {client.isSelfEmployed === "yes" && (
-                  <div className="border-l-2 border-[#C8202A] pl-4 ml-2 mb-4">
-                    <label className="block text-sm font-semibold text-gray-700">
+                  <div className="pl-4 ml-2 mb-4 fade-in" style={{ borderLeft: "3px solid rgba(200,32,42,0.2)" }}>
+                    <label className="block text-sm font-medium mb-2" style={{ color: "#111111" }}>
                       Does the client reduce their net income on taxes to lower
                       tax liability?
                     </label>
@@ -626,7 +774,7 @@ export default function WizardShell({ onTabChange }: Props) {
 
                 {/* Employment gaps */}
                 <div className="mb-4">
-                  <label className="block text-sm font-semibold text-gray-700">
+                  <label className="block text-sm font-medium mb-2" style={{ color: "#111111" }}>
                     Does the client have any gaps in employment in the last 2
                     years?
                   </label>
@@ -645,7 +793,7 @@ export default function WizardShell({ onTabChange }: Props) {
 
                 {/* Variable income */}
                 <div className="mb-4">
-                  <label className="block text-sm font-semibold text-gray-700">
+                  <label className="block text-sm font-medium mb-2" style={{ color: "#111111" }}>
                     Is any portion of the client&apos;s income commission-based
                     or variable (bonuses, overtime)?
                   </label>
@@ -658,8 +806,8 @@ export default function WizardShell({ onTabChange }: Props) {
                 </div>
 
                 {client.hasVariableIncome === "yes" && (
-                  <div className="border-l-2 border-[#C8202A] pl-4 ml-2 mb-4">
-                    <label className="block text-sm font-semibold text-gray-700">
+                  <div className="pl-4 ml-2 mb-4 fade-in" style={{ borderLeft: "3px solid rgba(200,32,42,0.2)" }}>
+                    <label className="block text-sm font-medium mb-2" style={{ color: "#111111" }}>
                       Does the client have 12 or more months of documented
                       history with this income?
                     </label>
@@ -698,12 +846,12 @@ export default function WizardShell({ onTabChange }: Props) {
 
                 {/* ITIN Loan Eligibility Check */}
                 {client.citizenship === "no" && (
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-4 space-y-3 mb-4">
-                    <p className="text-sm font-semibold text-blue-900">
+                  <div style={{ background: "#EFF6FF", borderLeft: "4px solid #3B82F6", borderRadius: "0 10px 10px 0", padding: "16px 18px", marginBottom: "16px" }}>
+                    <p style={{ fontSize: "0.875rem", fontWeight: 600, color: "#1E40AF", marginBottom: "12px" }}>
                       ITIN Loan Eligibility Check
                     </p>
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700">
+                      <label className="block text-sm font-medium mb-2" style={{ color: "#111111" }}>
                         Does the client have 2 years of documented work history
                         and/or tax returns?
                       </label>
@@ -746,8 +894,8 @@ export default function WizardShell({ onTabChange }: Props) {
             </p>
 
             <div className="mb-4">
-              <label className="block text-sm font-semibold text-gray-700 mb-1">
-                {client.hasCosigner === "yes" ? "Combined Monthly Debt Payments" : "Total Monthly Debt Payments"}
+              <label className="block text-sm font-medium mb-2" style={{ color: "#111111" }}>
+                Total Monthly Debt Payments
               </label>
               <MoneyInput
                 value={client.monthlyDebts}
@@ -758,12 +906,12 @@ export default function WizardShell({ onTabChange }: Props) {
                 placeholder="500"
               />
               {client.hasCosigner === "yes" && (
-                <p className="text-xs text-gray-400 italic mt-1">Include both client and co-signer debts combined</p>
+                <p className="text-xs text-gray-400 italic mt-1">Include client debts only — co-signer debts entered separately above</p>
               )}
               {!debtsTouched && (
                 <button
                   onClick={() => setDebtsTouched(true)}
-                  className="text-xs text-[#C8202A] mt-2 underline hover:text-red-700"
+                  style={{ fontSize: "0.8125rem", color: "#C8202A", background: "none", border: "none", cursor: "pointer", textDecoration: "underline", marginTop: "8px", padding: 0 }}
                 >
                   No debts — continue →
                 </button>
@@ -772,61 +920,37 @@ export default function WizardShell({ onTabChange }: Props) {
 
             {/* Live DTI Preview */}
             {debtsTouched && monthlyIncome > 0 && (
-              <div className="bg-[#f5f5f5] rounded-xl p-5 border border-gray-200 mb-4">
-                <h4 className="font-bold text-sm mb-3 text-gray-700">
+              <div className="fade-in" style={{ background: "#F7F6F4", borderRadius: "12px", border: "1px solid #E8E8E8", padding: "20px", marginBottom: "16px" }}>
+                <h4 style={{ fontWeight: 600, fontSize: "0.8125rem", marginBottom: "14px", color: "#6B6B6B", textTransform: "uppercase", letterSpacing: "0.08em" }}>
                   Live DTI Preview
                 </h4>
-                <div className="grid grid-cols-2 gap-4 mb-4">
-                  <div className="bg-white rounded-lg p-3 border">
-                    <div className="text-xs text-gray-500">
-                      Max Payment (45% DTI)
-                    </div>
-                    <div className="text-xl font-bold">
+                <div className="grid grid-cols-2 gap-3 mb-4">
+                  <div style={{ background: "#FFFFFF", borderRadius: "10px", padding: "14px", border: "1px solid #E8E8E8" }}>
+                    <div style={{ fontSize: "0.6875rem", color: "#6B6B6B", marginBottom: "4px" }}>Max Payment (45% DTI)</div>
+                    <div style={{ fontSize: "1.25rem", fontWeight: 700, color: "#111111" }}>
                       ${maxPayment45 > 0 ? maxPayment45.toFixed(0) : "—"}
                     </div>
-                    <div className="text-xs text-gray-400">
-                      Front-End Ratio Guide
-                    </div>
+                    <div style={{ fontSize: "0.6875rem", color: "#9B9B9B" }}>Front-End Guide</div>
                   </div>
-                  <div className="bg-white rounded-lg p-3 border">
-                    <div className="text-xs text-gray-500">
-                      Max Payment (57% DTI)
-                    </div>
-                    <div className="text-xl font-bold">
+                  <div style={{ background: "#FFFFFF", borderRadius: "10px", padding: "14px", border: "1px solid #E8E8E8" }}>
+                    <div style={{ fontSize: "0.6875rem", color: "#6B6B6B", marginBottom: "4px" }}>Max Payment (57% DTI)</div>
+                    <div style={{ fontSize: "1.25rem", fontWeight: 700, color: "#111111" }}>
                       ${maxPayment57 > 0 ? maxPayment57.toFixed(0) : "—"}
                     </div>
-                    <div className="text-xs text-gray-400">
-                      Back-End Ratio Guide
-                    </div>
+                    <div style={{ fontSize: "0.6875rem", color: "#9B9B9B" }}>Back-End Guide</div>
                   </div>
                 </div>
                 {estimatedPITI > 0 && (
-                  <div className="grid grid-cols-2 gap-4 mb-4">
-                    <div className="bg-white rounded-lg p-3 border">
-                      <div className="text-xs text-gray-500">Housing DTI</div>
-                      <div
-                        className={`text-xl font-bold ${
-                          housingDTI > 46
-                            ? "text-red-600"
-                            : housingDTI > 43
-                            ? "text-amber-600"
-                            : "text-green-600"
-                        }`}
-                      >
+                  <div className="grid grid-cols-2 gap-3 mb-4">
+                    <div style={{ background: "#FFFFFF", borderRadius: "10px", padding: "14px", border: "1px solid #E8E8E8" }}>
+                      <div style={{ fontSize: "0.6875rem", color: "#6B6B6B", marginBottom: "4px" }}>Housing DTI</div>
+                      <div style={{ fontSize: "1.25rem", fontWeight: 700, color: housingDTI > 46 ? "#C8202A" : housingDTI > 43 ? "#D97706" : "#16A34A" }}>
                         {housingDTI.toFixed(1)}%
                       </div>
                     </div>
-                    <div className="bg-white rounded-lg p-3 border">
-                      <div className="text-xs text-gray-500">Total DTI</div>
-                      <div
-                        className={`text-xl font-bold ${
-                          totalDTI_preview > 50
-                            ? "text-red-600"
-                            : totalDTI_preview > 43
-                            ? "text-amber-600"
-                            : "text-green-600"
-                        }`}
-                      >
+                    <div style={{ background: "#FFFFFF", borderRadius: "10px", padding: "14px", border: "1px solid #E8E8E8" }}>
+                      <div style={{ fontSize: "0.6875rem", color: "#6B6B6B", marginBottom: "4px" }}>Total DTI</div>
+                      <div style={{ fontSize: "1.25rem", fontWeight: 700, color: totalDTI_preview > 50 ? "#C8202A" : totalDTI_preview > 43 ? "#D97706" : "#16A34A" }}>
                         {totalDTI_preview.toFixed(1)}%
                       </div>
                     </div>
@@ -871,8 +995,8 @@ export default function WizardShell({ onTabChange }: Props) {
             <SectionLabel label="Credit Profile" />
 
             <div className="mb-4">
-              <label className="block text-sm font-semibold text-gray-700 mb-1">
-                {client.hasCosigner === "yes" ? "Credit Score (Lower of the Two)" : "Credit Score"}
+              <label className="block text-sm font-medium mb-2" style={{ color: "#111111" }}>
+                Credit Score (Primary Borrower)
               </label>
               <input
                 type="number"
@@ -880,12 +1004,9 @@ export default function WizardShell({ onTabChange }: Props) {
                 onChange={(e) =>
                   update({ creditScore: Number(e.target.value) })
                 }
-                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:border-[#C8202A] focus:ring-1 focus:ring-[#C8202A] outline-none"
+                className="w-full outline-none" style={{ border: "1.5px solid #E8E8E8", borderRadius: "10px", padding: "12px 16px", fontSize: "0.9375rem", color: "#111111", background: "#FFFFFF" }}
                 placeholder="680"
               />
-              {client.hasCosigner === "yes" && (
-                <p className="text-xs text-gray-400 italic mt-1">Enter the lower credit score between client and co-signer — this score is used for program qualification</p>
-              )}
             </div>
 
             {client.creditScore > 0 && client.creditScore < 580 && (
@@ -901,7 +1022,7 @@ export default function WizardShell({ onTabChange }: Props) {
             {client.creditScore > 0 && (
               <>
                 <div className="mb-4">
-                  <label className="block text-sm font-semibold text-gray-700">
+                  <label className="block text-sm font-medium mb-2" style={{ color: "#111111" }}>
                     Any late payments in the last 24 months?
                   </label>
                   <YesNoButtons
@@ -913,7 +1034,7 @@ export default function WizardShell({ onTabChange }: Props) {
                 </div>
 
                 <div className="mb-4">
-                  <label className="block text-sm font-semibold text-gray-700">
+                  <label className="block text-sm font-medium mb-2" style={{ color: "#111111" }}>
                     Any open collections (excluding medical)?
                   </label>
                   <YesNoButtons
@@ -925,7 +1046,7 @@ export default function WizardShell({ onTabChange }: Props) {
                 </div>
 
                 <div className="mb-4">
-                  <label className="block text-sm font-semibold text-gray-700">
+                  <label className="block text-sm font-medium mb-2" style={{ color: "#111111" }}>
                     Traditional tradelines active 12+ months
                   </label>
                   <p className="text-xs text-gray-500 mb-1">
@@ -947,7 +1068,7 @@ export default function WizardShell({ onTabChange }: Props) {
                 </div>
 
                 <div className="mb-4">
-                  <label className="block text-sm font-semibold text-gray-700">
+                  <label className="block text-sm font-medium mb-2" style={{ color: "#111111" }}>
                     Alternative tradelines active
                   </label>
                   <p className="text-xs text-gray-500 mb-1">
@@ -970,7 +1091,7 @@ export default function WizardShell({ onTabChange }: Props) {
                 </div>
 
                 <div className="mb-4">
-                  <label className="block text-sm font-semibold text-gray-700">
+                  <label className="block text-sm font-medium mb-2" style={{ color: "#111111" }}>
                     Does the client have 12 months of verifiable rental history
                     from a landlord?
                   </label>
@@ -995,7 +1116,7 @@ export default function WizardShell({ onTabChange }: Props) {
             <SectionLabel label="Purchase Details" />
 
             <div className="mb-4">
-              <label className="block text-sm font-semibold text-gray-700 mb-1">
+              <label className="block text-sm font-medium mb-2" style={{ color: "#111111" }}>
                 Target Purchase Price
               </label>
               <MoneyInput
@@ -1008,7 +1129,7 @@ export default function WizardShell({ onTabChange }: Props) {
             {client.purchasePrice > 0 && (
               <>
                 <div className="mb-4">
-                  <label className="block text-sm font-semibold text-gray-700">
+                  <label className="block text-sm font-medium mb-2" style={{ color: "#111111" }}>
                     Property Type
                   </label>
                   <ThreeButtons
@@ -1039,7 +1160,7 @@ export default function WizardShell({ onTabChange }: Props) {
                 {client.propertyType !== "" && (
                   <>
                     <div className="mb-4">
-                      <label className="block text-sm font-semibold text-gray-700 mb-1">
+                      <label className="block text-sm font-medium mb-2" style={{ color: "#111111" }}>
                         Target Area
                       </label>
                       <select
@@ -1047,7 +1168,7 @@ export default function WizardShell({ onTabChange }: Props) {
                         onChange={(e) =>
                           update({ targetArea: e.target.value })
                         }
-                        className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:border-[#C8202A] focus:ring-1 focus:ring-[#C8202A] outline-none bg-white"
+                        className="w-full outline-none" style={{ border: "1.5px solid #E8E8E8", borderRadius: "10px", padding: "12px 16px", fontSize: "0.9375rem", color: "#111111", background: "#FFFFFF" }}
                       >
                         <option value="">Select area...</option>
                         <option value="Central Area">Central Area</option>
@@ -1082,7 +1203,7 @@ export default function WizardShell({ onTabChange }: Props) {
                       )}
 
                     <div className="mb-4 mt-4">
-                      <label className="block text-sm font-semibold text-gray-700">
+                      <label className="block text-sm font-medium mb-2" style={{ color: "#111111" }}>
                         HOA?
                       </label>
                       <YesNoButtons
@@ -1108,8 +1229,8 @@ export default function WizardShell({ onTabChange }: Props) {
                       )}
 
                     {client.hasHOA === "yes" && (
-                      <div className="border-l-2 border-[#C8202A] pl-4 ml-2 mb-4">
-                        <label className="block text-sm font-semibold text-gray-700 mb-1">
+                      <div className="pl-4 ml-2 mb-4 fade-in" style={{ borderLeft: "3px solid rgba(200,32,42,0.2)" }}>
+                        <label className="block text-sm font-medium mb-2" style={{ color: "#111111" }}>
                           Monthly HOA Amount
                         </label>
                         <MoneyInput
@@ -1121,7 +1242,7 @@ export default function WizardShell({ onTabChange }: Props) {
                     )}
 
                     <div className="mb-4">
-                      <label className="block text-sm font-semibold text-gray-700 mb-1">
+                      <label className="block text-sm font-medium mb-2" style={{ color: "#111111" }}>
                         Down Payment Available
                       </label>
                       <MoneyInput
@@ -1172,56 +1293,23 @@ export default function WizardShell({ onTabChange }: Props) {
               </p>
 
               {/* Client Snapshot */}
-              <div className="bg-[#f5f5f5] rounded-xl border border-gray-200 p-5 mb-5">
-                <h4 className="font-bold text-sm text-gray-700 mb-3">
+              <div style={{ background: "#F7F6F4", borderRadius: "12px", border: "1px solid #E8E8E8", padding: "20px", marginBottom: "24px" }}>
+                <h4 style={{ fontWeight: 600, fontSize: "0.6875rem", color: "#6B6B6B", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "14px" }}>
                   Client Snapshot
                 </h4>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  <div className="bg-white rounded-lg p-3 border border-gray-100">
-                    <div className="text-xs text-gray-500">Annual Income</div>
-                    <div className="text-lg font-bold">
-                      {fmt(client.annualIncome)}
+                  {[
+                    { label: "Annual Income", value: fmt(client.annualIncome), sub: client.hasCosigner === "yes" ? `+ Co-signer: ${fmt(client.cosignerIncome)}` : undefined },
+                    { label: "Monthly Debts", value: `${fmt(client.monthlyDebts)}/mo`, sub: client.hasCosigner === "yes" ? `+ Co-signer: ${fmt(client.cosignerDebts)}/mo` : undefined },
+                    { label: "Monthly Income", value: fmt(monthlyIncome), sub: `Total debts: ${fmt(totalDebts)}/mo` },
+                    { label: "Purchase Price", value: fmt(client.purchasePrice), sub: `Credit: ${client.creditScore} · Down: ${fmt(client.downPaymentAvailable)}` },
+                  ].map((item) => (
+                    <div key={item.label} style={{ background: "#FFFFFF", borderRadius: "10px", padding: "14px", border: "1px solid #E8E8E8" }}>
+                      <div style={{ fontSize: "0.6875rem", color: "#6B6B6B", marginBottom: "4px" }}>{item.label}</div>
+                      <div style={{ fontSize: "1.125rem", fontWeight: 700, color: "#111111" }}>{item.value}</div>
+                      {item.sub && <div style={{ fontSize: "0.6875rem", color: "#9B9B9B", marginTop: "2px" }}>{item.sub}</div>}
                     </div>
-                    {client.hasCosigner === "yes" && (
-                      <div className="text-xs text-gray-400">
-                        + Co-signer: {fmt(client.cosignerIncome)}
-                      </div>
-                    )}
-                  </div>
-                  <div className="bg-white rounded-lg p-3 border border-gray-100">
-                    <div className="text-xs text-gray-500">Monthly Debts</div>
-                    <div className="text-lg font-bold">
-                      {fmt(client.monthlyDebts)}/mo
-                    </div>
-                    {client.hasCosigner === "yes" && (
-                      <div className="text-xs text-gray-400">
-                        + Co-signer: {fmt(client.cosignerDebts)}/mo
-                      </div>
-                    )}
-                  </div>
-                  <div className="bg-white rounded-lg p-3 border border-gray-100">
-                    <div className="text-xs text-gray-500">
-                      Combined Monthly Income
-                    </div>
-                    <div className="text-lg font-bold">
-                      {fmt(monthlyIncome)}
-                    </div>
-                    <div className="text-xs text-gray-400">
-                      Total debts: {fmt(totalDebts)}/mo
-                    </div>
-                  </div>
-                  <div className="bg-white rounded-lg p-3 border border-gray-100">
-                    <div className="text-xs text-gray-500">
-                      Target Purchase Price
-                    </div>
-                    <div className="text-lg font-bold">
-                      {fmt(client.purchasePrice)}
-                    </div>
-                    <div className="text-xs text-gray-400">
-                      Credit: {client.creditScore} | Down:{" "}
-                      {fmt(client.downPaymentAvailable)}
-                    </div>
-                  </div>
+                  ))}
                 </div>
               </div>
 
@@ -1262,76 +1350,39 @@ export default function WizardShell({ onTabChange }: Props) {
 
               {/* Best Match */}
               {bestMatch && (
-                <div className="border-2 border-[#C8202A] rounded-xl p-5 mb-5 relative">
-                  <span className="absolute -top-3 left-4 bg-[#C8202A] text-white text-xs font-bold px-3 py-1 rounded-full">
+                <div style={{ border: "1px solid #E8E8E8", borderTop: "4px solid #C8202A", borderRadius: "16px", padding: "24px", marginBottom: "24px", background: "#FFFFFF", boxShadow: "0 2px 12px rgba(0,0,0,0.06)", position: "relative" }}>
+                  <span style={{ position: "absolute", top: "-1px", left: "24px", background: "#C8202A", color: "#FFFFFF", fontSize: "0.6875rem", fontWeight: 700, padding: "4px 12px", borderRadius: "0 0 8px 8px", textTransform: "uppercase", letterSpacing: "0.08em" }}>
                     Best Match
                   </span>
-                  <h4 className="text-xl font-bold mt-1">
+                  <h4 style={{ fontSize: "1.25rem", fontWeight: 700, color: "#111111", marginTop: "8px" }}>
                     {bestMatch.program.name}
                   </h4>
-                  <p className="text-sm text-gray-500 mb-3">
-                    {bestMatch.program.loanType} — {bestMatch.program.term}-year
-                    term
+                  <p style={{ fontSize: "0.875rem", color: "#6B6B6B", marginTop: "2px", marginBottom: "18px" }}>
+                    {bestMatch.program.loanType} — {bestMatch.program.term}-year term
                   </p>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
-                    <div className="bg-[#f5f5f5] rounded-lg p-3">
-                      <div className="text-xs text-gray-500">
-                        Est. Monthly Payment
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                    {[
+                      { label: "Est. Monthly Payment", value: fmt(bestMatch.totalMonthly), highlight: true },
+                      { label: "Down Payment", value: fmt(bestMatch.downPaymentRequired) },
+                      { label: "Financed Amount", value: fmt(bestMatch.loanAmount), sub: bestMatch.program.id === 4 ? "Includes ~$35K solar" : bestMatch.program.id === 3 ? "DPA covers down" : undefined },
+                    ].map((item) => (
+                      <div key={item.label} style={{ background: "#F7F6F4", borderRadius: "10px", padding: "14px" }}>
+                        <div style={{ fontSize: "0.6875rem", color: "#6B6B6B", marginBottom: "4px" }}>{item.label}</div>
+                        <div style={{ fontSize: "1.125rem", fontWeight: 700, color: item.highlight ? "#C8202A" : "#111111" }}>{item.value}</div>
+                        {item.sub && <div style={{ fontSize: "0.6875rem", color: "#9B9B9B" }}>{item.sub}</div>}
                       </div>
-                      <div className="text-lg font-bold">
-                        {fmt(bestMatch.totalMonthly)}
-                      </div>
-                    </div>
-                    <div className="bg-[#f5f5f5] rounded-lg p-3">
-                      <div className="text-xs text-gray-500">Down Payment</div>
-                      <div className="text-lg font-bold">
-                        {fmt(bestMatch.downPaymentRequired)}
-                      </div>
-                    </div>
-                    <div className="bg-[#f5f5f5] rounded-lg p-3">
-                      <div className="text-xs text-gray-500">
-                        Financed Amount
-                      </div>
-                      <div className="text-lg font-bold">
-                        {fmt(bestMatch.loanAmount)}
-                      </div>
-                      {bestMatch.program.id === 4 && (
-                        <div className="text-[10px] text-gray-400">
-                          Includes ~$35K solar
-                        </div>
-                      )}
-                      {bestMatch.program.id === 3 && (
-                        <div className="text-[10px] text-gray-400">
-                          DPA covers down payment
-                        </div>
-                      )}
-                    </div>
-                    <div className="bg-[#f5f5f5] rounded-lg p-3">
-                      <div className="text-xs text-gray-500">Est. DTI</div>
+                    ))}
+                    <div style={{ background: "#F7F6F4", borderRadius: "10px", padding: "14px" }}>
+                      <div style={{ fontSize: "0.6875rem", color: "#6B6B6B", marginBottom: "4px" }}>Est. DTI</div>
                       {(() => {
-                        const dti =
-                          monthlyIncome > 0
-                            ? ((bestMatch.totalMonthly + totalDebts) /
-                                monthlyIncome) *
-                              100
-                            : 0;
+                        const dti = monthlyIncome > 0 ? ((bestMatch.totalMonthly + totalDebts) / monthlyIncome) * 100 : 0;
                         return (
-                          <div
-                            className={`text-lg font-bold ${
-                              dti > bestMatch.program.maxDTI
-                                ? "text-red-600"
-                                : dti > 43
-                                ? "text-amber-600"
-                                : "text-green-600"
-                            }`}
-                          >
+                          <div style={{ fontSize: "1.125rem", fontWeight: 700, color: dti > bestMatch.program.maxDTI ? "#C8202A" : dti > 43 ? "#D97706" : "#16A34A" }}>
                             {pct(dti)}
                           </div>
                         );
                       })()}
-                      <div className="text-[10px] text-gray-400">
-                        Max: {bestMatch.program.maxDTI}%
-                      </div>
+                      <div style={{ fontSize: "0.6875rem", color: "#9B9B9B" }}>Max: {bestMatch.program.maxDTI}%</div>
                     </div>
                   </div>
 
@@ -1385,26 +1436,23 @@ export default function WizardShell({ onTabChange }: Props) {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <h5 className="text-sm font-bold text-green-700 mb-1">
-                        Pros
-                      </h5>
-                      <ul className="text-sm text-gray-700 space-y-1">
+                      <h5 style={{ fontSize: "0.75rem", fontWeight: 600, color: "#16A34A", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "10px" }}>Pros</h5>
+                      <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "7px" }}>
                         {bestMatch.program.pros.map((p, i) => (
-                          <li key={i} className="flex items-start gap-1.5">
-                            <span className="text-green-600 mt-0.5">✓</span>{" "}
+                          <li key={i} style={{ display: "flex", alignItems: "flex-start", gap: "8px", fontSize: "0.875rem", color: "#111111" }}>
+                            <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#16A34A", flexShrink: 0, marginTop: "6px" }} />
                             {p}
                           </li>
                         ))}
                       </ul>
                     </div>
                     <div>
-                      <h5 className="text-sm font-bold text-red-700 mb-1">
-                        Cons
-                      </h5>
-                      <ul className="text-sm text-gray-700 space-y-1">
+                      <h5 style={{ fontSize: "0.75rem", fontWeight: 600, color: "#6B6B6B", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "10px" }}>Cons</h5>
+                      <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "7px" }}>
                         {bestMatch.program.cons.map((c, i) => (
-                          <li key={i} className="flex items-start gap-1.5">
-                            <span className="text-red-500 mt-0.5">✗</span> {c}
+                          <li key={i} style={{ display: "flex", alignItems: "flex-start", gap: "8px", fontSize: "0.875rem", color: "#6B6B6B" }}>
+                            <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#9B9B9B", flexShrink: 0, marginTop: "6px" }} />
+                            {c}
                           </li>
                         ))}
                       </ul>
@@ -1414,107 +1462,57 @@ export default function WizardShell({ onTabChange }: Props) {
               )}
 
               {/* All Programs */}
-              <h4 className="text-lg font-bold mb-3">
+              <h4 style={{ fontSize: "1rem", fontWeight: 700, color: "#111111", marginBottom: "16px" }}>
                 All Programs — Detailed Breakdown
               </h4>
               <div className="space-y-4">
                 {sorted.map((result) => {
                   const isEligible = result.eligible && !result.conditional;
                   const isConditional = result.eligible && result.conditional;
-                  const status = isEligible
-                    ? "qualifies"
-                    : isConditional
-                    ? "conditional"
-                    : "disqualified";
-                  const statusColors: Record<string, string> = {
-                    qualifies: "bg-green-50 border-green-200 text-green-800",
-                    conditional:
-                      "bg-amber-50 border-amber-200 text-amber-800",
-                    disqualified: "bg-red-50 border-red-200 text-red-800",
+                  const status = isEligible ? "qualifies" : isConditional ? "conditional" : "disqualified";
+                  const statusStyles: Record<string, React.CSSProperties> = {
+                    qualifies: { background: "#F0FDF4", border: "1px solid #BBF7D0", borderLeft: "4px solid #16A34A", borderRadius: "12px", padding: "20px" },
+                    conditional: { background: "#FFFBEB", border: "1px solid #FDE68A", borderLeft: "4px solid #F59E0B", borderRadius: "12px", padding: "20px" },
+                    disqualified: { background: "#FFF5F5", border: "1px solid #FECACA", borderLeft: "4px solid #C8202A", borderRadius: "12px", padding: "20px" },
                   };
-                  const statusLabels: Record<string, string> = {
-                    qualifies: "✅ Qualifies",
-                    conditional: "⚠️ Conditional",
-                    disqualified: "❌ Disqualified",
+                  const statusBadges: Record<string, { label: string; bg: string; color: string }> = {
+                    qualifies: { label: "Qualifies", bg: "#DCFCE7", color: "#166534" },
+                    conditional: { label: "Conditional", bg: "#FEF9C3", color: "#854D0E" },
+                    disqualified: { label: "Disqualified", bg: "#FEE2E2", color: "#991B1B" },
                   };
-                  const programDTI =
-                    monthlyIncome > 0
-                      ? ((result.totalMonthly + totalDebts) / monthlyIncome) *
-                        100
-                      : 0;
-                  const priceExceedsSuggested =
-                    client.purchasePrice > result.suggestedMaxPrice &&
-                    result.suggestedMaxPrice > 0;
+                  const badge = statusBadges[status];
+                  const programDTI = monthlyIncome > 0 ? ((result.totalMonthly + totalDebts) / monthlyIncome) * 100 : 0;
+                  const priceExceedsSuggested = client.purchasePrice > result.suggestedMaxPrice && result.suggestedMaxPrice > 0;
 
                   return (
-                    <div
-                      key={result.program.id}
-                      className={`border rounded-xl p-4 ${statusColors[status]}`}
-                    >
-                      <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                    <div key={result.program.id} style={statusStyles[status]}>
+                      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "8px", marginBottom: "14px" }}>
                         <div>
-                          <span className="font-bold text-base">
-                            {result.program.name}
-                          </span>
-                          <span className="text-sm ml-2 opacity-75">
-                            {result.program.loanType} — {result.program.term}yr
-                          </span>
+                          <span style={{ fontWeight: 700, fontSize: "0.9375rem", color: "#111111" }}>{result.program.name}</span>
+                          <span style={{ fontSize: "0.8125rem", color: "#6B6B6B", marginLeft: "8px" }}>{result.program.loanType} — {result.program.term}yr</span>
                         </div>
-                        <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-white/50">
-                          {statusLabels[status]}
+                        <span style={{ fontSize: "0.6875rem", fontWeight: 700, padding: "3px 10px", borderRadius: "999px", background: badge.bg, color: badge.color, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                          {badge.label}
                         </span>
                       </div>
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-3">
-                        <div className="bg-white/60 rounded-lg p-2.5">
-                          <div className="text-[11px] text-gray-500 uppercase">
-                            Total Monthly
+                        {[
+                          { label: "Total Monthly", value: fmt(result.totalMonthly) },
+                          { label: "Financed Amount", value: fmt(result.loanAmount), sub: result.program.id === 4 ? "Incl. ~$35K solar" : result.program.id === 3 ? "DPA covers down" : undefined },
+                          { label: "Rate", value: `${result.effectiveRate.toFixed(2)}%` },
+                        ].map((item) => (
+                          <div key={item.label} style={{ background: "rgba(255,255,255,0.7)", borderRadius: "8px", padding: "10px 12px" }}>
+                            <div style={{ fontSize: "0.625rem", color: "#6B6B6B", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "3px" }}>{item.label}</div>
+                            <div style={{ fontSize: "1rem", fontWeight: 700, color: "#111111" }}>{item.value}</div>
+                            {item.sub && <div style={{ fontSize: "0.625rem", color: "#9B9B9B" }}>{item.sub}</div>}
                           </div>
-                          <div className="text-lg font-bold">
-                            {fmt(result.totalMonthly)}
-                          </div>
-                        </div>
-                        <div className="bg-white/60 rounded-lg p-2.5">
-                          <div className="text-[11px] text-gray-500 uppercase">
-                            Financed Amount
-                          </div>
-                          <div className="text-lg font-bold">
-                            {fmt(result.loanAmount)}
-                          </div>
-                          {(result.program.id === 4 ||
-                            result.program.id === 3) && (
-                            <div className="text-[10px] opacity-70">
-                              {result.program.id === 4
-                                ? "Includes ~$35K solar"
-                                : "DPA second loan covers down"}
-                            </div>
-                          )}
-                        </div>
-                        <div className="bg-white/60 rounded-lg p-2.5">
-                          <div className="text-[11px] text-gray-500 uppercase">
-                            Rate
-                          </div>
-                          <div className="text-lg font-bold">
-                            {result.effectiveRate.toFixed(2)}%
-                          </div>
-                        </div>
-                        <div className="bg-white/60 rounded-lg p-2.5">
-                          <div className="text-[11px] text-gray-500 uppercase">
-                            Est. DTI
-                          </div>
-                          <div
-                            className={`text-lg font-bold ${
-                              programDTI > result.program.maxDTI
-                                ? "text-red-700"
-                                : programDTI > 43
-                                ? "text-amber-700"
-                                : "text-green-700"
-                            }`}
-                          >
+                        ))}
+                        <div style={{ background: "rgba(255,255,255,0.7)", borderRadius: "8px", padding: "10px 12px" }}>
+                          <div style={{ fontSize: "0.625rem", color: "#6B6B6B", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "3px" }}>Est. DTI</div>
+                          <div style={{ fontSize: "1rem", fontWeight: 700, color: programDTI > result.program.maxDTI ? "#C8202A" : programDTI > 43 ? "#D97706" : "#16A34A" }}>
                             {pct(programDTI)}
                           </div>
-                          <div className="text-[10px] opacity-70">
-                            Max: {result.program.maxDTI}%
-                          </div>
+                          <div style={{ fontSize: "0.625rem", color: "#9B9B9B" }}>Max: {result.program.maxDTI}%</div>
                         </div>
                       </div>
                       {result.suggestedMaxPrice > 0 && (
@@ -1580,9 +1578,12 @@ export default function WizardShell({ onTabChange }: Props) {
                         </div>
                       )}
                       {result.reasons.length > 0 && (
-                        <div className="text-sm opacity-80">
+                        <div style={{ fontSize: "0.8125rem", color: "#6B6B6B", marginTop: "8px", display: "flex", flexDirection: "column", gap: "4px" }}>
                           {result.reasons.map((r, i) => (
-                            <div key={i}>• {r}</div>
+                            <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: "8px" }}>
+                              <span style={{ flexShrink: 0, marginTop: "1px" }}>·</span>
+                              {r}
+                            </div>
                           ))}
                         </div>
                       )}
@@ -1592,40 +1593,38 @@ export default function WizardShell({ onTabChange }: Props) {
               </div>
 
               {/* Next Steps */}
-              <div className="mt-5 bg-[#f5f5f5] rounded-xl p-5 border">
-                <h4 className="font-bold mb-2">Next Steps</h4>
+              <div style={{ marginTop: "24px", background: "#F7F6F4", borderRadius: "12px", border: "1px solid #E8E8E8", padding: "20px" }}>
+                <h4 style={{ fontWeight: 700, fontSize: "0.9375rem", color: "#111111", marginBottom: "8px" }}>Next Steps</h4>
                 {ccFlags.length > 0 ? (
-                  <p className="text-sm text-gray-700">
-                    Introduce the client to our lending partner at Cross Country
-                    Mortgage for specialized support with their file.
+                  <p style={{ fontSize: "0.875rem", color: "#6B6B6B", lineHeight: "1.6" }}>
+                    Introduce the client to our lending partner at Cross Country Mortgage for specialized support with their file.
                   </p>
                 ) : (
-                  <p className="text-sm text-gray-700">
+                  <p style={{ fontSize: "0.875rem", color: "#6B6B6B", lineHeight: "1.6" }}>
                     Guide the client through the next steps in the process.
                   </p>
                 )}
               </div>
 
               {/* Disclaimer */}
-              <div className="mt-4 text-xs text-gray-400 text-center">
+              <div style={{ marginTop: "20px", fontSize: "0.75rem", color: "#9B9B9B", textAlign: "center" }}>
                 The Rio Group — powered by AZ &amp; Associates
                 <br />
-                This is an estimate for informational purposes only. All figures
-                subject to lender approval.
+                All estimates for informational purposes only. Subject to lender approval.
               </div>
             </div>
 
             {/* Action Buttons */}
-            <div className="flex flex-wrap gap-3 mt-5 pt-5 border-t border-gray-100 no-print">
+            <div className="flex flex-wrap gap-3 mt-6 pt-6 no-print" style={{ borderTop: "1px solid #E8E8E8" }}>
               <button
                 onClick={() => handlePrint()}
-                className="px-6 py-2.5 rounded-lg text-sm font-semibold bg-[#C8202A] text-white hover:bg-red-700 transition-colors"
+                style={{ padding: "12px 28px", borderRadius: "10px", background: "#C8202A", color: "#FFFFFF", fontWeight: 600, fontSize: "0.9375rem", border: "none", cursor: "pointer" }}
               >
                 Print / Save PDF
               </button>
               <button
                 onClick={restart}
-                className="px-6 py-2.5 rounded-lg text-sm font-semibold border border-gray-300 text-gray-600 hover:bg-gray-50 transition-colors"
+                style={{ padding: "12px 24px", borderRadius: "10px", border: "1.5px solid #E8E8E8", background: "#FFFFFF", color: "#6B6B6B", fontWeight: 600, fontSize: "0.9375rem", cursor: "pointer" }}
               >
                 Start New Consultation
               </button>
