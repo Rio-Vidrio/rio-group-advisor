@@ -47,7 +47,7 @@ function FloatingCalc() {
     <div className="relative no-print">
       <button
         onClick={() => setOpen(o => !o)}
-        className="w-10 h-10 rounded-full bg-rio-red text-white shadow-lg flex items-center justify-center hover:bg-red-700 transition-colors text-lg"
+        className="w-10 h-10 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center hover:border-gray-300 hover:shadow transition-all text-lg"
         title="Quick Calculator"
         aria-label="Quick Calculator"
       >
