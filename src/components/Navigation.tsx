@@ -10,6 +10,7 @@ const tabs = [
   { id: "homeowner", label: "Existing Homeowner" },
   { id: "programs", label: "Programs" },
   { id: "rates", label: "Market Rates" },
+  { id: "calculators", label: "Calculators" },
   { id: "settings", label: "Settings" },
 ];
 
