@@ -313,9 +313,10 @@ function PathCard({
         <div style={{
           padding: "12px",
           fontSize: "0.875rem",
+          borderRadius: "0 8px 8px 0",
           ...(flagBox.color === "amber"
-            ? { background: "#FFFBEB", borderLeft: "4px solid #F59E0B", color: "#92400E", borderRadius: "0 8px 8px 0" }
-            : { background: "#FFF5F5", borderLeft: "4px solid #C8202A", color: "#7F1D1D", borderRadius: "0 8px 8px 0" })
+            ? { background: "#FFFBEB", borderLeft: "4px solid #F59E0B", color: "#92400E" }
+            : { background: "#FFF5F5", borderLeft: "4px solid #C8202A", color: "#7F1D1D" })
         }}>
           {flagBox.text}
         </div>
