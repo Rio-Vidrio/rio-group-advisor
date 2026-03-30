@@ -8,9 +8,9 @@ interface NavigationProps {
 const tabs = [
   { id: "wizard", label: "Client Wizard" },
   { id: "homeowner", label: "Existing Homeowner" },
+  { id: "calculators", label: "Calculators" },
   { id: "programs", label: "Programs" },
   { id: "rates", label: "Market Rates" },
-  { id: "calculators", label: "Calculators" },
   { id: "settings", label: "Settings" },
 ];
 
