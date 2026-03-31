@@ -653,13 +653,10 @@ function PaymentCalc() {
 
       {/* Results — screen only; print table above already shows all values */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4 no-print">
-        <ResultCard label="Monthly P&I" value={fmt(monthlyPI)} />
-        <ResultCard label="Monthly PITI" value={fmt(piti)} />
-        <ResultCard label="Total w/ HOA" value={fmt(total)} />
-        <ResultCard
-          label="Down Payment"
-          value={loanMode === "va" ? "$0" : fmt(downPayment)}
-        />
+        <ResultCard label="Monthly P&I" value={fmt(monthlyPI)} sub="Principal and Interest only — does not include taxes, insurance, or HOA" />
+        <ResultCard label="Monthly PITI" value={fmt(piti)} sub="Includes Principal, Interest, Taxes and Insurance" />
+        <ResultCard label="Total w/ HOA" value={fmt(total)} sub="PITI plus monthly HOA" />
+        <ResultCard label="Down Payment" value={loanMode === "va" ? "$0" : fmt(downPayment)} sub="Required funds at closing" />
       </div>
 
       {/* Loan summary strip */}
@@ -749,7 +746,7 @@ function DTICalc() {
           <div className={`text-xl font-bold ${dtiColor(totalDTI)}`}>{totalDTI.toFixed(1)}%</div>
         </div>
         <ResultCard label="Max Payment (45%)" value={fmt(Math.max(max45, 0))} sub="Front-End Ratio — Conventional programs and FHA housing payment vs income only" />
-        <ResultCard label="Max Payment (57%)" value={fmt(Math.max(max57, 0))} sub="Back-End Ratio — FHA only, includes all debts plus monthly housing payment" />
+        <ResultCard label="Max Payment (57%)" value={fmt(Math.min(Math.max(max57, 0), 4200))} sub={Math.max(max57, 0) > 4200 ? "Capped at FHA Maricopa County loan limit — max purchase price $578,000" : "Back-End Ratio — FHA only, includes all debts plus monthly housing payment"} />
       </div>
     </div>
   );
