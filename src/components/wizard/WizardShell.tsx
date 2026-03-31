@@ -311,12 +311,8 @@ export default function WizardShell({ onTabChange }: Props) {
   }, [canShowResults, client]);
 
   /* ---- DTI preview computation ---- */
-  const totalIncome =
-    client.annualIncome +
-    (client.hasCosigner === "yes" ? client.cosignerIncome : 0);
-  const totalDebts =
-    client.monthlyDebts +
-    (client.hasCosigner === "yes" ? client.cosignerDebts : 0);
+  const totalIncome = client.annualIncome;
+  const totalDebts = client.monthlyDebts;
   const monthlyIncome = totalIncome / 12;
   const maxPayment45 = monthlyIncome * 0.45 - totalDebts;
   const maxPayment57 = monthlyIncome * 0.57 - totalDebts;
@@ -746,52 +742,13 @@ export default function WizardShell({ onTabChange }: Props) {
                 placeholder="75000"
               />
               {client.hasCosigner === "yes" && (
-                <p className="text-xs text-gray-400 italic mt-1">Enter primary borrower income only — co-signer income entered separately below</p>
+                <p className="text-xs text-gray-400 italic mt-1">Include both client and co-signer income combined</p>
               )}
             </div>
 
-            {/* Co-signer income/debt fields — shown when co-signer selected at top */}
+            {/* Co-signer fields removed — income/debts entered as combined totals */}
             {client.annualIncome > 0 && (
               <>
-                {client.hasCosigner === "yes" && (
-                  <div className="pl-4 ml-2 space-y-4 mb-4 fade-in" style={{ borderLeft: "3px solid rgba(200,32,42,0.2)" }}>
-                    <div>
-                      <label className="block text-sm font-medium mb-2" style={{ color: "#111111" }}>
-                        Co-signer Annual Gross Income
-                      </label>
-                      <MoneyInput
-                        value={client.cosignerIncome}
-                        onChange={(v) => update({ cosignerIncome: v })}
-                      />
-                      <p className="text-xs text-gray-400 italic mt-1">Combined with client income for DTI qualification</p>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-2" style={{ color: "#111111" }}>
-                        Co-signer Monthly Debts
-                      </label>
-                      <MoneyInput
-                        value={client.cosignerDebts}
-                        onChange={(v) => update({ cosignerDebts: v })}
-                      />
-                      <p className="text-xs text-gray-400 italic mt-1">Combined with client debts for total DTI calculation</p>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-2" style={{ color: "#111111" }}>
-                        Co-signer Credit Score
-                      </label>
-                      <input
-                        type="number"
-                        value={client.cosignerCreditScore || ""}
-                        onChange={(e) =>
-                          update({ cosignerCreditScore: Number(e.target.value) })
-                        }
-                        className="w-full outline-none" style={{ border: "1.5px solid #E8E8E8", borderRadius: "10px", padding: "12px 16px", fontSize: "0.9375rem", color: "#111111", background: "#FFFFFF" }}
-                        placeholder="700"
-                      />
-                    </div>
-                  </div>
-                )}
-
                 {/* Self-employed */}
                 <div className="mb-4">
                   <label className="block text-sm font-medium mb-2" style={{ color: "#111111" }}>
@@ -977,7 +934,7 @@ export default function WizardShell({ onTabChange }: Props) {
                 placeholder="500"
               />
               {client.hasCosigner === "yes" && (
-                <p className="text-xs text-gray-400 italic mt-1">Include client debts only — co-signer debts entered separately above</p>
+                <p className="text-xs text-gray-400 italic mt-1">Include both client and co-signer debts combined</p>
               )}
               {!debtsTouched && (
                 <button
@@ -1359,8 +1316,8 @@ export default function WizardShell({ onTabChange }: Props) {
                 </h4>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   {[
-                    { label: "Annual Income", value: fmt(client.annualIncome), sub: client.hasCosigner === "yes" ? `+ Co-signer: ${fmt(client.cosignerIncome)}` : undefined },
-                    { label: "Monthly Debts", value: `${fmt(client.monthlyDebts)}/mo`, sub: client.hasCosigner === "yes" ? `+ Co-signer: ${fmt(client.cosignerDebts)}/mo` : undefined },
+                    { label: "Annual Income", value: fmt(client.annualIncome), sub: client.hasCosigner === "yes" ? "Combined w/ co-signer" : undefined },
+                    { label: "Monthly Debts", value: `${fmt(client.monthlyDebts)}/mo`, sub: client.hasCosigner === "yes" ? "Combined w/ co-signer" : undefined },
                     { label: "Monthly Income", value: fmt(monthlyIncome), sub: `Total debts: ${fmt(totalDebts)}/mo` },
                     { label: "Purchase Price", value: fmt(client.purchasePrice), sub: `Credit: ${client.creditScore} · Down: ${fmt(client.downPaymentAvailable)}` },
                   ].map((item) => (
