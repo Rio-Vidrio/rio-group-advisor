@@ -243,6 +243,16 @@ function ProgramCard({ programKey }: { programKey: ProgramKey }) {
           ))}
         </ul>
         <p style={{ marginTop: "8px", fontSize: "0.75rem", fontWeight: 600, color: "#111111" }}>{p.impact}</p>
+        {programKey === "fhaSolar" && (
+          <div style={{ marginTop: "8px", background: "#FFFBEB", border: "1px solid #FDE68A", borderRadius: "8px", padding: "6px 10px" }}>
+            <p style={{ fontSize: "0.6875rem", color: "#92400E", fontWeight: 500 }}>+~$200/month added to payment for solar — partially offset by electric savings</p>
+          </div>
+        )}
+        {programKey === "fhaDPA" && (
+          <div style={{ marginTop: "8px", background: "#FFFBEB", border: "1px solid #FDE68A", borderRadius: "8px", padding: "6px 10px" }}>
+            <p style={{ fontSize: "0.6875rem", color: "#92400E", fontWeight: 500 }}>+~$450/month added to payment for down payment assistance 2nd lien</p>
+          </div>
+        )}
       </div>
       <div style={{ padding: "8px 16px", borderTop: "1px solid #E8E8E8" }}>
         <p style={{ fontSize: "0.6875rem", color: "#9B9B9B", fontStyle: "italic" }}>{p.note}</p>
@@ -782,8 +792,7 @@ export default function ExistingHomeowner() {
                           icon: "✅",
                           text: (
                             <span>
-                              Must currently live in home (not{" "}
-                              <span style={{ fontWeight: 600 }}>vacating residence</span>
+                              Client must have already vacated the home — current address of application cannot match the property address{" "}
                               <VacatingTooltip />
                             </span>
                           ),

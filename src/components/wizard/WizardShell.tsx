@@ -198,6 +198,7 @@ function AlertBox({
 export default function WizardShell({ onTabChange }: Props) {
   const [client, setClient] = useState<ClientData>(defaultClientData);
   const [overrideHomeowner, setOverrideHomeowner] = useState(false);
+  const [showScheduleC, setShowScheduleC] = useState(false);
   const [debtsTouched, setDebtsTouched] = useState(false);
   const printRef = useRef<HTMLDivElement>(null);
   const handlePrint = useReactToPrint({ contentRef: printRef });
@@ -354,6 +355,60 @@ export default function WizardShell({ onTabChange }: Props) {
 
   return (
     <div>
+      {/* Schedule C Modal */}
+      {showScheduleC && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowScheduleC(false)}>
+          <div className="relative bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <button
+              onClick={() => setShowScheduleC(false)}
+              className="absolute top-3 right-3 w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-600 font-bold text-lg z-10"
+            >
+              ✕
+            </button>
+            <div className="p-6">
+              <h3 className="text-lg font-bold text-gray-900 mb-4">IRS Schedule C — Net Profit (Line 31)</h3>
+              <div className="relative border border-gray-200 rounded-lg overflow-hidden mb-4">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="https://www.irs.gov/pub/irs-pdf/f1040sc.pdf"
+                  alt="IRS Schedule C Form"
+                  style={{ display: "none" }}
+                />
+                <div className="bg-gray-50 p-8 text-center">
+                  <div className="inline-block border-2 border-gray-300 rounded-lg p-6 bg-white mb-4" style={{ maxWidth: "420px" }}>
+                    <p className="text-xs text-gray-400 uppercase tracking-wide mb-2">IRS Form 1040 — Schedule C</p>
+                    <p className="text-sm font-bold text-gray-800 mb-4">Profit or Loss From Business</p>
+                    <div className="space-y-2 text-left text-sm text-gray-600">
+                      <div className="flex justify-between border-b border-gray-100 pb-1"><span>Line 29: Tentative profit</span><span className="text-gray-400">$_____</span></div>
+                      <div className="flex justify-between border-b border-gray-100 pb-1"><span>Line 30: Business use of home</span><span className="text-gray-400">$_____</span></div>
+                      <div className="flex justify-between items-center py-2 px-3 rounded-lg" style={{ background: "#FFF5F5", border: "2px solid #C8202A" }}>
+                        <span className="font-bold text-gray-900">Line 31: Net profit (or loss)</span>
+                        <span className="font-bold text-[#C8202A]">← USE THIS</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-center gap-2 text-[#C8202A] font-bold text-sm">
+                    <span className="text-2xl">↑</span>
+                    <span>NET PROFIT — Use this number</span>
+                  </div>
+                </div>
+              </div>
+              <p className="text-xs text-gray-500">
+                Source: IRS Form 1040 Schedule C. Use the 2-year average of Line 31 for income qualification.
+              </p>
+              <a
+                href="https://www.irs.gov/pub/irs-pdf/f1040sc.pdf"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block mt-3 text-xs text-[#C8202A] underline font-medium"
+              >
+                Download full IRS Schedule C form (PDF) ↗
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Page header row */}
       <div className="flex items-center justify-between mb-6 no-print">
         <div>
@@ -751,6 +806,20 @@ export default function WizardShell({ onTabChange }: Props) {
 
                 {client.isSelfEmployed === "yes" && (
                   <div className="pl-4 ml-2 mb-4 fade-in" style={{ borderLeft: "3px solid rgba(200,32,42,0.2)" }}>
+                    {/* Schedule C info card */}
+                    <div className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 mb-4">
+                      <p className="text-sm text-blue-800">
+                        Use net income from <strong>Schedule C (Line 31)</strong> — take a 2-year average of the net profit figure. With Cross Country Mortgage, 1 year may be acceptable if the client has been in business 5 or more years.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => setShowScheduleC(true)}
+                        className="mt-2 px-3 py-1.5 text-xs font-semibold rounded-lg border border-[#C8202A] text-[#C8202A] hover:bg-[#C8202A]/5 transition-colors"
+                      >
+                        View Schedule C Sample
+                      </button>
+                    </div>
+
                     <label className="block text-sm font-medium mb-2" style={{ color: "#111111" }}>
                       Does the client reduce their net income on taxes to lower
                       tax liability?
@@ -1229,16 +1298,7 @@ export default function WizardShell({ onTabChange }: Props) {
                       )}
 
                     {client.hasHOA === "yes" && (
-                      <div className="pl-4 ml-2 mb-4 fade-in" style={{ borderLeft: "3px solid rgba(200,32,42,0.2)" }}>
-                        <label className="block text-sm font-medium mb-2" style={{ color: "#111111" }}>
-                          Monthly HOA Amount
-                        </label>
-                        <MoneyInput
-                          value={client.hoaAmount}
-                          onChange={(v) => update({ hoaAmount: v })}
-                          placeholder="100"
-                        />
-                      </div>
+                      <p className="text-xs text-gray-400 italic ml-2 mb-4">Enter HOA amount in the Payment Calculator if needed</p>
                     )}
 
                     <div className="mb-4">
@@ -1458,6 +1518,16 @@ export default function WizardShell({ onTabChange }: Props) {
                       </ul>
                     </div>
                   </div>
+                  {bestMatch.program.id === 4 && (
+                    <div className="mt-4 rounded-lg border border-amber-300 bg-amber-50 px-4 py-2.5">
+                      <p className="text-sm text-amber-800 font-medium">+~$200/month added to payment for solar — partially offset by electric savings</p>
+                    </div>
+                  )}
+                  {bestMatch.program.id === 3 && (
+                    <div className="mt-4 rounded-lg border border-amber-300 bg-amber-50 px-4 py-2.5">
+                      <p className="text-sm text-amber-800 font-medium">+~$450/month added to payment for down payment assistance 2nd lien</p>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -1575,6 +1645,16 @@ export default function WizardShell({ onTabChange }: Props) {
                               or reducing monthly debts.
                             </p>
                           )}
+                        </div>
+                      )}
+                      {result.program.id === 4 && (
+                        <div className="mt-3 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2">
+                          <p className="text-xs text-amber-800 font-medium">+~$200/month added to payment for solar — partially offset by electric savings</p>
+                        </div>
+                      )}
+                      {result.program.id === 3 && (
+                        <div className="mt-3 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2">
+                          <p className="text-xs text-amber-800 font-medium">+~$450/month added to payment for down payment assistance 2nd lien</p>
                         </div>
                       )}
                       {result.reasons.length > 0 && (

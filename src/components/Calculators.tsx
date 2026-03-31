@@ -249,12 +249,12 @@ function TaxInput({
         <label style={labelStyle}>{label || "Property Taxes"}</label>
         {assessorLink && (
           <a
-            href="https://mcassessor.maricopa.gov"
+            href="https://mymonsoon.com/"
             target="_blank"
             rel="noopener noreferrer"
             className="text-xs text-rio-red underline font-medium hover:text-rio-red/80"
           >
-            Look up on Maricopa County Assessor ↗
+            Look up on MyMonsoon ↗
           </a>
         )}
       </div>
@@ -1275,6 +1275,9 @@ function SellerNetCalc({ importedPayoff }: { importedPayoff: number | null }) {
   const [buyerAgentPct, setBuyerAgentPct] = useState(2.5);
   const [listingAgentPct, setListingAgentPct] = useState(3);
   const [clientName, setClientName] = useState("");
+  const [propertyAddress, setPropertyAddress] = useState("");
+  const [hasSecondLien, setHasSecondLien] = useState(false);
+  const [secondLienPayoff, setSecondLienPayoff] = useState(0);
 
   const todayStr = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
   const printRef = useRef<HTMLDivElement>(null);
@@ -1315,7 +1318,8 @@ function SellerNetCalc({ importedPayoff }: { importedPayoff: number | null }) {
   const listingAgentAmt = offerPrice * (listingAgentPct / 100);
   const titleFees       = offerPrice * 0.01;
 
-  const netProceeds = offerPrice - payoff - proratedTaxes - hoaDues
+  const secondLienAmt = hasSecondLien ? secondLienPayoff : 0;
+  const netProceeds = offerPrice - payoff - secondLienAmt - proratedTaxes - hoaDues
     - concessionsAmt - buyerAgentAmt - listingAgentAmt - titleFees;
   const isNegative = netProceeds < 0;
 
@@ -1343,6 +1347,7 @@ function SellerNetCalc({ importedPayoff }: { importedPayoff: number | null }) {
           <h1 className="text-xl font-bold mb-0.5 text-rio-black">Seller Net Proceeds Estimate</h1>
           <p className="text-xs text-gray-500 mb-1">{todayStr}</p>
           {clientName && <p className="text-xs text-gray-700">Client: <strong>{clientName}</strong></p>}
+          {propertyAddress && <p className="text-xs text-gray-700">Property: <strong>{propertyAddress}</strong></p>}
         </div>
 
         <h3 className="text-lg font-bold mb-5 no-print" style={{ color: "#111111", letterSpacing: "-0.01em" }}>Seller Net Proceeds Estimator</h3>
@@ -1357,6 +1362,20 @@ function SellerNetCalc({ importedPayoff }: { importedPayoff: number | null }) {
             value={clientName}
             onChange={(e) => setClientName(e.target.value)}
             placeholder="e.g. John & Jane Smith"
+            style={inputStyle}
+          />
+        </div>
+
+        {/* Property address — for print */}
+        <div className="mb-4 no-print">
+          <label style={labelStyle}>
+            Property Address <span className="text-xs text-gray-400 font-normal">(optional — for print)</span>
+          </label>
+          <input
+            type="text"
+            value={propertyAddress}
+            onChange={(e) => setPropertyAddress(e.target.value)}
+            placeholder="e.g. 123 Main St, Phoenix, AZ 85001"
             style={inputStyle}
           />
         </div>
@@ -1387,6 +1406,26 @@ function SellerNetCalc({ importedPayoff }: { importedPayoff: number | null }) {
               </button>
             )}
           </div>
+        </div>
+
+        {/* HELOC / 2nd Lien / DPA toggle */}
+        <div className="md:col-span-2">
+          <label style={labelStyle}>Does the seller have a second lien, HELOC, or DPA payoff?</label>
+          <div className="flex gap-2 mt-1">
+            <button
+              onClick={() => { setHasSecondLien(true); }}
+              style={{ padding: "8px 20px", borderRadius: "8px", fontSize: "0.875rem", border: hasSecondLien ? "1.5px solid #C8202A" : "1.5px solid #E8E8E8", background: "#FFFFFF", color: hasSecondLien ? "#C8202A" : "#6B6B6B", fontWeight: hasSecondLien ? 600 : 500, cursor: "pointer" }}
+            >Yes</button>
+            <button
+              onClick={() => { setHasSecondLien(false); setSecondLienPayoff(0); }}
+              style={{ padding: "8px 20px", borderRadius: "8px", fontSize: "0.875rem", border: !hasSecondLien ? "1.5px solid #C8202A" : "1.5px solid #E8E8E8", background: "#FFFFFF", color: !hasSecondLien ? "#C8202A" : "#6B6B6B", fontWeight: !hasSecondLien ? 600 : 500, cursor: "pointer" }}
+            >No</button>
+          </div>
+          {hasSecondLien && (
+            <div className="mt-3">
+              <MoneyInput label="HELOC / 2nd Lien / DPA Payoff Amount" value={secondLienPayoff} onChange={setSecondLienPayoff} placeholder="0" />
+            </div>
+          )}
         </div>
 
         {/* Annual taxes with assessor link */}
@@ -1478,6 +1517,7 @@ function SellerNetCalc({ importedPayoff }: { importedPayoff: number | null }) {
           <span className="text-sm font-bold text-gray-900">{fmt(offerPrice)}</span>
         </div>
         <DeductionRow label="Payoff Amount" value={payoff} />
+        {secondLienAmt > 0 && <DeductionRow label="HELOC / 2nd Lien / DPA Payoff" value={secondLienAmt} />}
         {closingDate && annualTaxes > 0 && (
           <DeductionRow
             label={`Prorated Property Taxes (${fmt(annualTaxes)}/yr ÷ 365 × ${daysFromJan1} days)`}
@@ -1532,8 +1572,6 @@ export default function Calculators() {
   const buyerTabs = [
     { id: "payment", label: "Monthly Payment" },
     { id: "dti", label: "DTI" },
-    { id: "maxprice", label: "Max Price" },
-    { id: "solar", label: "Solar Savings" },
     { id: "newbuild", label: "New Build vs Resale" },
   ];
 
