@@ -114,6 +114,13 @@ function ThreeButtons({
   );
 }
 
+function fmtComma(n: number): string {
+  return n ? n.toLocaleString("en-US") : "";
+}
+function parseComma(s: string): number {
+  return Number(s.replace(/,/g, "")) || 0;
+}
+
 function MoneyInput({
   value,
   onChange,
@@ -132,9 +139,10 @@ function MoneyInput({
         $
       </span>
       <input
-        type="number"
-        value={value || ""}
-        onChange={(e) => onChange(Number(e.target.value))}
+        type="text"
+        inputMode="numeric"
+        value={fmtComma(value)}
+        onChange={(e) => onChange(parseComma(e.target.value))}
         style={{
           width: "100%",
           border: "1.5px solid #E8E8E8",
@@ -156,7 +164,7 @@ function MoneyInput({
           e.currentTarget.style.borderColor = "#E8E8E8";
           e.currentTarget.style.boxShadow = "none";
         }}
-        placeholder={placeholder || "0"}
+        placeholder={placeholder ? Number(placeholder).toLocaleString("en-US") : "0"}
       />
     </div>
   );
@@ -541,18 +549,11 @@ export default function WizardShell({ onTabChange }: Props) {
             />
 
             {client.hasCosigner === "yes" && (
-              <div className="mt-4 space-y-3 fade-in">
+              <div className="mt-4 fade-in">
                 <div style={{ background: "#FFFBEB", borderLeft: "4px solid #F59E0B", borderRadius: "0 8px 8px 0", padding: "14px 16px" }}>
                   <p className="text-sm font-semibold" style={{ color: "#92400E", marginBottom: "4px" }}>Co-Signer Requirements</p>
                   <p className="text-sm" style={{ color: "#92400E" }}>
-                    All following answers should reflect the combined profile of both the client and co-signer.
-                    If either party triggers a condition, apply it to both. The lesser of the two credit scores
-                    will be used for program qualification.
-                  </p>
-                </div>
-                <div style={{ background: "#EFF6FF", borderLeft: "4px solid #3B82F6", borderRadius: "0 8px 8px 0", padding: "14px 16px" }}>
-                  <p className="text-sm" style={{ color: "#1E40AF" }}>
-                    From this point forward all questions apply to both borrowers equally. One answer covers both.
+                    All following answers reflect both borrowers combined. Income and debts are added together. The lesser of the two credit scores is used for qualification. If either party triggers a condition it applies to both.
                   </p>
                 </div>
               </div>
@@ -831,10 +832,9 @@ export default function WizardShell({ onTabChange }: Props) {
                       }
                     />
                     {client.reducesNetIncome === "yes" && (
-                      <AlertBox color="amber" title="⚠️ Complex income file">
+                      <AlertBox color="amber" title="High Write-Off Warning">
                         <p className="mt-1">
-                          Recommend Cross Country Mortgage partner for this
-                          client.
+                          If the client has significant write-offs that reduce their qualifying income, they may need to amend their tax returns to show higher net income. This type of file may be better suited for our preferred lending partner at Cross Country Mortgage who specializes in complex self-employed scenarios.
                         </p>
                       </AlertBox>
                     )}
@@ -854,9 +854,11 @@ export default function WizardShell({ onTabChange }: Props) {
                     }
                   />
                   {client.hasEmploymentGaps === "yes" && (
-                    <p className="text-xs text-gray-500 mt-2">
-                      Documentation may be required — this is OK and manageable.
-                    </p>
+                    <AlertBox color="amber" title="Employment Gap — Documentation Required">
+                      <p className="mt-1">
+                        This is OK and manageable. The lender will need to verify a combined 2 years of work history. Does not need to be the same company or industry.
+                      </p>
+                    </AlertBox>
                   )}
                 </div>
 
@@ -999,14 +1001,14 @@ export default function WizardShell({ onTabChange }: Props) {
                     <div style={{ fontSize: "1.25rem", fontWeight: 700, color: "#111111" }}>
                       ${maxPayment45 > 0 ? maxPayment45.toFixed(0) : "—"}
                     </div>
-                    <div style={{ fontSize: "0.6875rem", color: "#9B9B9B" }}>Front-End Guide</div>
+                    <div style={{ fontSize: "0.6875rem", color: "#9B9B9B", lineHeight: 1.3 }}>Front-End Ratio — Conventional programs and FHA housing payment vs income only</div>
                   </div>
                   <div style={{ background: "#FFFFFF", borderRadius: "10px", padding: "14px", border: "1px solid #E8E8E8" }}>
                     <div style={{ fontSize: "0.6875rem", color: "#6B6B6B", marginBottom: "4px" }}>Max Payment (57% DTI)</div>
                     <div style={{ fontSize: "1.25rem", fontWeight: 700, color: "#111111" }}>
                       ${maxPayment57 > 0 ? maxPayment57.toFixed(0) : "—"}
                     </div>
-                    <div style={{ fontSize: "0.6875rem", color: "#9B9B9B" }}>Back-End Guide</div>
+                    <div style={{ fontSize: "0.6875rem", color: "#9B9B9B", lineHeight: 1.3 }}>Back-End Ratio — FHA only, includes all debts plus monthly housing payment</div>
                   </div>
                 </div>
                 {estimatedPITI > 0 && (
@@ -1065,7 +1067,7 @@ export default function WizardShell({ onTabChange }: Props) {
 
             <div className="mb-4">
               <label className="block text-sm font-medium mb-2" style={{ color: "#111111" }}>
-                Credit Score (Primary Borrower)
+                {client.hasCosigner === "yes" ? "Credit Score (Enter the lower of the two — primary or co-borrower)" : "Credit Score (Primary Borrower)"}
               </label>
               <input
                 type="number"
@@ -1204,8 +1206,7 @@ export default function WizardShell({ onTabChange }: Props) {
                   <ThreeButtons
                     options={[
                       { label: "Single Family", value: "single-family" },
-                      { label: "Condo", value: "condo" },
-                      { label: "Townhome", value: "townhome" },
+                      { label: "Townhome/Condo", value: "condo" },
                       { label: "New Build", value: "new-build" },
                     ]}
                     value={client.propertyType}
@@ -1220,8 +1221,7 @@ export default function WizardShell({ onTabChange }: Props) {
                 {client.propertyType === "condo" && (
                   <AlertBox color="amber">
                     <p>
-                      ⚠️ Condo — conventional only, 660+ score required. FHA
-                      programs ineligible.
+                      ⚠️ Townhome/Condo — conventional financing only, 660+ score required. FHA programs are ineligible.
                     </p>
                   </AlertBox>
                 )}
@@ -1525,8 +1525,11 @@ export default function WizardShell({ onTabChange }: Props) {
                   )}
                   {bestMatch.program.id === 3 && (
                     <div className="mt-4 rounded-lg border border-amber-300 bg-amber-50 px-4 py-2.5">
-                      <p className="text-sm text-amber-800 font-medium">+~$450/month added to payment for down payment assistance 2nd lien</p>
+                      <p className="text-sm text-amber-800 font-medium">+~$200/month added to payment for down payment assistance 2nd lien</p>
                     </div>
+                  )}
+                  {bestMatch.program.loanType === "FHA" && (
+                    <p className="mt-3 text-xs text-gray-500">PMI required — FHA mortgage insurance premium applies</p>
                   )}
                 </div>
               )}
@@ -1654,8 +1657,11 @@ export default function WizardShell({ onTabChange }: Props) {
                       )}
                       {result.program.id === 3 && (
                         <div className="mt-3 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2">
-                          <p className="text-xs text-amber-800 font-medium">+~$450/month added to payment for down payment assistance 2nd lien</p>
+                          <p className="text-xs text-amber-800 font-medium">+~$200/month added to payment for down payment assistance 2nd lien</p>
                         </div>
+                      )}
+                      {result.program.loanType === "FHA" && (
+                        <p className="mt-2 text-xs text-gray-500">PMI required — FHA mortgage insurance premium applies</p>
                       )}
                       {result.reasons.length > 0 && (
                         <div style={{ fontSize: "0.8125rem", color: "#6B6B6B", marginTop: "8px", display: "flex", flexDirection: "column", gap: "4px" }}>
@@ -1675,15 +1681,19 @@ export default function WizardShell({ onTabChange }: Props) {
               {/* Next Steps */}
               <div style={{ marginTop: "24px", background: "#F7F6F4", borderRadius: "12px", border: "1px solid #E8E8E8", padding: "20px" }}>
                 <h4 style={{ fontWeight: 700, fontSize: "0.9375rem", color: "#111111", marginBottom: "8px" }}>Next Steps</h4>
-                {ccFlags.length > 0 ? (
-                  <p style={{ fontSize: "0.875rem", color: "#6B6B6B", lineHeight: "1.6" }}>
+                {ccFlags.length > 0 && (
+                  <p style={{ fontSize: "0.875rem", color: "#6B6B6B", lineHeight: "1.6", marginBottom: "10px" }}>
                     Introduce the client to our lending partner at Cross Country Mortgage for specialized support with their file.
                   </p>
-                ) : (
-                  <p style={{ fontSize: "0.875rem", color: "#6B6B6B", lineHeight: "1.6" }}>
-                    Guide the client through the next steps in the process.
-                  </p>
                 )}
+                <p style={{ fontSize: "0.875rem", color: "#6B6B6B", lineHeight: "1.6", marginBottom: "10px" }}>
+                  Get pre-qualified with your suggested lender. This is not a guarantee — credit, debts, and income must still be fully verified.
+                </p>
+                <div style={{ background: "#FFFBEB", borderLeft: "4px solid #F59E0B", borderRadius: "0 8px 8px 0", padding: "10px 14px" }}>
+                  <p style={{ fontSize: "0.8125rem", color: "#92400E", fontWeight: 500 }}>
+                    Important: Client must sign the Start Shopping Package prior to being connected with the lender due to liability requirements.
+                  </p>
+                </div>
               </div>
 
               {/* Disclaimer */}

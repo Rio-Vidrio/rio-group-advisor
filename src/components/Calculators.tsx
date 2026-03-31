@@ -119,6 +119,13 @@ const labelStyle: React.CSSProperties = {
   marginBottom: "7px",
 };
 
+function fmtComma(n: number): string {
+  return n ? n.toLocaleString("en-US") : "";
+}
+function parseComma(s: string): number {
+  return Number(s.replace(/,/g, "")) || 0;
+}
+
 function MoneyInput({
   label,
   value,
@@ -136,11 +143,12 @@ function MoneyInput({
       <div className="relative">
         <span style={{ position: "absolute", left: "14px", top: "50%", transform: "translateY(-50%)", color: "#9B9B9B", fontSize: "0.875rem" }}>$</span>
         <input
-          type="number"
-          value={value || ""}
-          onChange={(e) => onChange(Number(e.target.value))}
+          type="text"
+          inputMode="numeric"
+          value={fmtComma(value)}
+          onChange={(e) => onChange(parseComma(e.target.value))}
           style={{ ...inputStyle, paddingLeft: "28px" }}
-          placeholder={placeholder || "0"}
+          placeholder={placeholder ? Number(placeholder).toLocaleString("en-US") : "0"}
         />
       </div>
     </div>
@@ -287,11 +295,12 @@ function TaxInput({
           <div className="relative">
             <span style={{ position: "absolute", left: "14px", top: "50%", transform: "translateY(-50%)", color: "#9B9B9B", fontSize: "0.875rem" }}>$</span>
             <input
-              type="number"
-              value={taxDollars || ""}
-              onChange={(e) => onTaxDollarsChange(Number(e.target.value))}
+              type="text"
+              inputMode="numeric"
+              value={fmtComma(taxDollars)}
+              onChange={(e) => onTaxDollarsChange(parseComma(e.target.value))}
               style={{ ...inputStyle, paddingLeft: "28px" }}
-              placeholder="1800"
+              placeholder="1,800"
             />
           </div>
           <div style={{ fontSize: "0.6875rem", color: "#9B9B9B", marginTop: "4px" }}>= {derivedRate}% of {fmt(price)}</div>
@@ -333,12 +342,12 @@ type LoanMode = "conventional" | "fha" | "va";
 function PaymentCalc() {
   const [loanMode, setLoanMode] = useState<LoanMode>("conventional");
   const [rates, setRates] = useState<Rates>(defaultRates);
-  const [price, setPrice] = useState(350000);
+  const [price, setPrice] = useState(475000);
   const [downPct, setDownPct] = useState(3);
   const [rate, setRate] = useState(0);
   const [term, setTerm] = useState(30);
   const [tax, setTax] = useState(0.45);
-  const [taxDollars, setTaxDollars] = useState(Math.round(350000 * 0.0045));
+  const [taxDollars, setTaxDollars] = useState(Math.round(475000 * 0.0045));
   const [insurance, setInsurance] = useState(1350);
   const [hoa, setHoa] = useState(0);
   const [pmiRate, setPmiRate] = useState(0.55); // Conventional PMI — adjustable, default 0.55%
@@ -530,7 +539,7 @@ function PaymentCalc() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 no-print">
-        <MoneyInput label="Purchase Price" value={price} onChange={setPrice} placeholder="350000" />
+        <MoneyInput label="Purchase Price" value={price} onChange={setPrice} placeholder="475000" />
 
         {/* Down payment — hidden for VA */}
         {loanMode !== "va" ? (
@@ -799,7 +808,7 @@ function MaxPriceCalc() {
         <NumberInput label="Target DTI %" value={targetDTI} onChange={setTargetDTI} suffix="%" />
         <NumberInput label="Interest Rate %" value={rate} onChange={setRate} suffix="%" step="0.125" />
         <TaxInput
-          price={maxPrice || 350000}
+          price={maxPrice || 475000}
           taxDollars={taxDollars}
           onTaxDollarsChange={setTaxDollars}
           taxRate={tax}
@@ -1174,7 +1183,7 @@ function NewBuildCalc() {
 
 /* ── Calculator 6: Loan Payoff Estimator ── */
 function LoanPayoffCalc({ onPayoffCalculated }: { onPayoffCalculated: (amount: number) => void }) {
-  const [originalLoan, setOriginalLoan] = useState(350000);
+  const [originalLoan, setOriginalLoan] = useState(475000);
   const [interestRate, setInterestRate] = useState(6.5);
   const [firstPaymentDate, setFirstPaymentDate] = useState("");
 
@@ -1220,7 +1229,7 @@ function LoanPayoffCalc({ onPayoffCalculated }: { onPayoffCalculated: (amount: n
     <div>
       <h3 className="text-lg font-bold mb-5" style={{ color: "#111111", letterSpacing: "-0.01em" }}>Loan Payoff Estimator</h3>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-        <MoneyInput label="Original Loan Amount" value={originalLoan} onChange={setOriginalLoan} placeholder="350000" />
+        <MoneyInput label="Original Loan Amount" value={originalLoan} onChange={setOriginalLoan} placeholder="475000" />
         <NumberInput label="Original Interest Rate %" value={interestRate} onChange={setInterestRate} suffix="%" step="0.125" placeholder="6.5" />
         <div className="md:col-span-2">
           <label style={labelStyle}>Date of First Payment</label>
@@ -1390,9 +1399,10 @@ function SellerNetCalc({ importedPayoff }: { importedPayoff: number | null }) {
             <div className="relative flex-1">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">$</span>
               <input
-                type="number"
-                value={payoff || ""}
-                onChange={(e) => setPayoff(Number(e.target.value))}
+                type="text"
+                inputMode="numeric"
+                value={fmtComma(payoff)}
+                onChange={(e) => setPayoff(parseComma(e.target.value))}
                 style={{ ...inputStyle, paddingLeft: "28px" }}
                 placeholder="0"
               />

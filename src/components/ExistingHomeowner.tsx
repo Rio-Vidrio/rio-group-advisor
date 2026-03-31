@@ -58,7 +58,7 @@ const PROGRAMS = {
       "Most flexible on credit history",
       "Higher DTI tolerance (57%)",
     ],
-    impact: "+~$450/month vs standard FHA",
+    impact: "+~$200/month vs standard FHA",
     color: "blue" as const,
     note: "U.S. citizens and permanent residents only — No DACA",
   },
@@ -250,12 +250,15 @@ function ProgramCard({ programKey }: { programKey: ProgramKey }) {
         )}
         {programKey === "fhaDPA" && (
           <div style={{ marginTop: "8px", background: "#FFFBEB", border: "1px solid #FDE68A", borderRadius: "8px", padding: "6px 10px" }}>
-            <p style={{ fontSize: "0.6875rem", color: "#92400E", fontWeight: 500 }}>+~$450/month added to payment for down payment assistance 2nd lien</p>
+            <p style={{ fontSize: "0.6875rem", color: "#92400E", fontWeight: 500 }}>+~$200/month added to payment for down payment assistance 2nd lien</p>
           </div>
         )}
       </div>
       <div style={{ padding: "8px 16px", borderTop: "1px solid #E8E8E8" }}>
         <p style={{ fontSize: "0.6875rem", color: "#9B9B9B", fontStyle: "italic" }}>{p.note}</p>
+        {(programKey === "fhaDPA" || programKey === "fhaSolar") && (
+          <p style={{ fontSize: "0.6875rem", color: "#9B9B9B", marginTop: "4px" }}>PMI required — FHA mortgage insurance premium applies</p>
+        )}
       </div>
     </div>
   );

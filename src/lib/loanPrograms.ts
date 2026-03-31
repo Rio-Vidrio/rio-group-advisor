@@ -159,7 +159,7 @@ export const loanPrograms: LoanProgram[] = [
     itinOnly: false,
     homeownershipRestriction: "Can be previous homeowner. Current homeowner allowed only if: 25%+ equity, family size increased, and home is vacated/rented.",
     sellerCreditMax: "6% (FHA standard)",
-    notes: "Most flexible on credit history. ~$450/month higher payment than Program 1 equivalent.",
+    notes: "Most flexible on credit history. ~$200/month higher payment than Program 1 equivalent.",
     pros: [
       "Most flexible on credit history",
       "No tradeline requirements",
@@ -167,7 +167,7 @@ export const loanPrograms: LoanProgram[] = [
       "No money needed at closing",
     ],
     cons: [
-      "~$450/month higher payment than Program 1",
+      "~$200/month higher payment than Program 1",
       "Second loan must be repaid (10-year term)",
       "PMI adds to monthly cost",
       "No DACA",
