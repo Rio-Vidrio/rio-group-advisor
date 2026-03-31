@@ -325,7 +325,8 @@ export default function WizardShell({ onTabChange }: Props) {
           const pi = calculateMonthlyPayment(loan, rates.conventional, 30);
           const tax = (client.purchasePrice * 0.0045) / 12;
           const ins = 1350 / 12;
-          return pi + tax + ins;
+          const hoa = client.hasHOA === "yes" ? client.hoaAmount : 0;
+          return pi + tax + ins + hoa;
         })()
       : 0;
   const housingDTI =
@@ -734,7 +735,7 @@ export default function WizardShell({ onTabChange }: Props) {
             {/* Annual Income */}
             <div className="mb-4">
               <label className="block text-sm font-medium mb-2" style={{ color: "#111111" }}>
-                Annual Gross Income
+                {client.hasCosigner === "yes" ? "Combined Annual Gross Income" : "Annual Gross Income"}
               </label>
               <MoneyInput
                 value={client.annualIncome}
@@ -742,7 +743,7 @@ export default function WizardShell({ onTabChange }: Props) {
                 placeholder="75000"
               />
               {client.hasCosigner === "yes" && (
-                <p className="text-xs text-gray-400 italic mt-1">Include both client and co-signer income combined</p>
+                <p className="text-xs text-gray-400 mt-1">Include both client and co-signer income combined</p>
               )}
             </div>
 
@@ -923,7 +924,7 @@ export default function WizardShell({ onTabChange }: Props) {
 
             <div className="mb-4">
               <label className="block text-sm font-medium mb-2" style={{ color: "#111111" }}>
-                Total Monthly Debt Payments
+                {client.hasCosigner === "yes" ? "Combined Monthly Debt Payments" : "Total Monthly Debt Payments"}
               </label>
               <MoneyInput
                 value={client.monthlyDebts}
@@ -934,7 +935,7 @@ export default function WizardShell({ onTabChange }: Props) {
                 placeholder="500"
               />
               {client.hasCosigner === "yes" && (
-                <p className="text-xs text-gray-400 italic mt-1">Include both client and co-signer debts combined</p>
+                <p className="text-xs text-gray-400 mt-1">Include both client and co-signer debts combined</p>
               )}
               {!debtsTouched && (
                 <button
@@ -1024,7 +1025,7 @@ export default function WizardShell({ onTabChange }: Props) {
 
             <div className="mb-4">
               <label className="block text-sm font-medium mb-2" style={{ color: "#111111" }}>
-                {client.hasCosigner === "yes" ? "Credit Score (Enter the lower of the two — primary or co-borrower)" : "Credit Score (Primary Borrower)"}
+                {client.hasCosigner === "yes" ? "Credit Score (Lower of the Two)" : "Credit Score"}
               </label>
               <input
                 type="number"
@@ -1035,6 +1036,9 @@ export default function WizardShell({ onTabChange }: Props) {
                 className="w-full outline-none" style={{ border: "1.5px solid #E8E8E8", borderRadius: "10px", padding: "12px 16px", fontSize: "0.9375rem", color: "#111111", background: "#FFFFFF" }}
                 placeholder="680"
               />
+              {client.hasCosigner === "yes" && (
+                <p className="text-xs text-gray-400 mt-1">Enter the lower score between client and co-signer</p>
+              )}
             </div>
 
             {client.creditScore > 0 && client.creditScore < 580 && (
@@ -1150,7 +1154,7 @@ export default function WizardShell({ onTabChange }: Props) {
               <MoneyInput
                 value={client.purchasePrice}
                 onChange={(v) => update({ purchasePrice: v })}
-                placeholder="350000"
+                placeholder="450000"
               />
             </div>
 
@@ -1164,7 +1168,6 @@ export default function WizardShell({ onTabChange }: Props) {
                     options={[
                       { label: "Single Family", value: "single-family" },
                       { label: "Townhome/Condo", value: "condo" },
-                      { label: "New Build", value: "new-build" },
                     ]}
                     value={client.propertyType}
                     onChange={(v) =>
@@ -1255,7 +1258,17 @@ export default function WizardShell({ onTabChange }: Props) {
                       )}
 
                     {client.hasHOA === "yes" && (
-                      <p className="text-xs text-gray-400 italic ml-2 mb-4">Enter HOA amount in the Payment Calculator if needed</p>
+                      <div className="mb-4 mt-2">
+                        <label className="block text-sm font-medium mb-2" style={{ color: "#111111" }}>
+                          Monthly HOA Amount
+                        </label>
+                        <MoneyInput
+                          value={client.hoaAmount}
+                          onChange={(v) => update({ hoaAmount: v })}
+                          placeholder="100"
+                        />
+                        <p className="text-xs text-gray-400 italic mt-1">Average HOA in Phoenix Metro: $80–$120/month</p>
+                      </div>
                     )}
 
                     <div className="mb-4">

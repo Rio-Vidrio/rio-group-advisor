@@ -342,12 +342,12 @@ type LoanMode = "conventional" | "fha" | "va";
 function PaymentCalc() {
   const [loanMode, setLoanMode] = useState<LoanMode>("conventional");
   const [rates, setRates] = useState<Rates>(defaultRates);
-  const [price, setPrice] = useState(475000);
+  const [price, setPrice] = useState(450000);
   const [downPct, setDownPct] = useState(3);
   const [rate, setRate] = useState(0);
   const [term, setTerm] = useState(30);
   const [tax, setTax] = useState(0.45);
-  const [taxDollars, setTaxDollars] = useState(Math.round(475000 * 0.0045));
+  const [taxDollars, setTaxDollars] = useState(Math.round(450000 * 0.0045));
   const [insurance, setInsurance] = useState(1350);
   const [hoa, setHoa] = useState(0);
   const [pmiRate, setPmiRate] = useState(0.55); // Conventional PMI — adjustable, default 0.55%
@@ -539,7 +539,7 @@ function PaymentCalc() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 no-print">
-        <MoneyInput label="Purchase Price" value={price} onChange={setPrice} placeholder="475000" />
+        <MoneyInput label="Purchase Price" value={price} onChange={setPrice} placeholder="450000" />
 
         {/* Down payment — hidden for VA */}
         {loanMode !== "va" ? (
@@ -608,6 +608,13 @@ function PaymentCalc() {
           </div>
         )}
 
+        {/* FHA loan limit warning */}
+        {loanMode === "fha" && baseLoan > 578000 && (
+          <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-sm md:col-span-2">
+            <div className="font-semibold text-amber-800">⚠️ FHA loan limit for Maricopa County is $578,000. Maximum FHA purchase price at 3.5% down is approximately $598,964.</div>
+          </div>
+        )}
+
         {/* VA — disability toggle for funding fee */}
         {loanMode === "va" && (
           <div className="bg-green-50 border border-green-200 rounded-lg px-4 py-3 text-sm md:col-span-1">
@@ -647,24 +654,11 @@ function PaymentCalc() {
       {/* Results — screen only; print table above already shows all values */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4 no-print">
         <ResultCard label="Monthly P&I" value={fmt(monthlyPI)} />
-        <ResultCard
-          label="Monthly PITI"
-          value={fmt(piti)}
-          sub={
-            loanMode === "fha" ? `Incl. MIP ${fmt(monthlyMI)}/mo` :
-            loanMode === "conventional" && downPct < 20 ? `Incl. PMI ${fmt(monthlyMI)}/mo` :
-            undefined
-          }
-        />
+        <ResultCard label="Monthly PITI" value={fmt(piti)} />
         <ResultCard label="Total w/ HOA" value={fmt(total)} />
         <ResultCard
-          label={loanMode === "va" ? "Down Payment" : "Down Payment"}
+          label="Down Payment"
           value={loanMode === "va" ? "$0" : fmt(downPayment)}
-          sub={
-            fhaUpfrontMIP > 0 ? `+${fmt(fhaUpfrontMIP)} MIP in loan` :
-            vaFundingFee > 0   ? `+${fmt(vaFundingFee)} fee in loan` :
-            undefined
-          }
         />
       </div>
 
@@ -672,11 +666,7 @@ function PaymentCalc() {
       <div className="bg-rio-gray rounded-lg px-4 py-2.5 text-xs text-gray-600 border border-gray-200 no-print">
         <span className="font-semibold">Loan Summary: </span>
         Base loan {fmt(baseLoan)}
-        {fhaUpfrontMIP > 0 && <span> + upfront MIP {fmt(fhaUpfrontMIP)}</span>}
-        {vaFundingFee  > 0 && <span> + VA funding fee {fmt(vaFundingFee)}</span>}
         <span> = <strong>Total financed {fmt(totalLoan)}</strong></span>
-        {loanMode === "va" && <span className="ml-2 text-green-700">· No PMI</span>}
-        {loanMode === "fha" && <span className="ml-2 text-blue-700">· Annual MIP {fmt(monthlyMI * 12)}/yr</span>}
       </div>
 
         {/* Print-only footer */}
@@ -758,8 +748,8 @@ function DTICalc() {
           <div className="text-xs text-gray-500">Total DTI</div>
           <div className={`text-xl font-bold ${dtiColor(totalDTI)}`}>{totalDTI.toFixed(1)}%</div>
         </div>
-        <ResultCard label="Max Payment (45%)" value={fmt(Math.max(max45, 0))} sub="Conv / Prog 1 & 2" />
-        <ResultCard label="Max Payment (57%)" value={fmt(Math.max(max57, 0))} sub="FHA Programs" />
+        <ResultCard label="Max Payment (45%)" value={fmt(Math.max(max45, 0))} sub="Front-End Ratio — Conventional programs and FHA housing payment vs income only" />
+        <ResultCard label="Max Payment (57%)" value={fmt(Math.max(max57, 0))} sub="Back-End Ratio — FHA only, includes all debts plus monthly housing payment" />
       </div>
     </div>
   );
@@ -808,7 +798,7 @@ function MaxPriceCalc() {
         <NumberInput label="Target DTI %" value={targetDTI} onChange={setTargetDTI} suffix="%" />
         <NumberInput label="Interest Rate %" value={rate} onChange={setRate} suffix="%" step="0.125" />
         <TaxInput
-          price={maxPrice || 475000}
+          price={maxPrice || 450000}
           taxDollars={taxDollars}
           onTaxDollarsChange={setTaxDollars}
           taxRate={tax}
@@ -866,19 +856,19 @@ function NewBuildCalc() {
 
   useEffect(() => { setRates(getRates()); }, []);
 
-  const [nbPrice, setNbPrice] = useState(470000);
+  const [nbPrice, setNbPrice] = useState(450000);
   const [nbRate, setNbRate] = useState(3.75);
   const [nbHoa, setNbHoa] = useState(100);
   const [nbDownPct, setNbDownPct] = useState(3.5);
   const [nbTaxRate, setNbTaxRate] = useState(0.8); // First-year new build tax rate
-  const [nbTaxDollars, setNbTaxDollars] = useState(Math.round(470000 * 0.008));
+  const [nbTaxDollars, setNbTaxDollars] = useState(Math.round(450000 * 0.008));
 
-  const [rsPrice, setRsPrice] = useState(380000);
+  const [rsPrice, setRsPrice] = useState(450000);
   const [rsRate, setRsRate] = useState(0);
   const [rsHoa, setRsHoa] = useState(0);
   const [rsDownPct, setRsDownPct] = useState(3.5);
   const [rsTaxRate, setRsTaxRate] = useState(0.45);
-  const [rsTaxDollars, setRsTaxDollars] = useState(Math.round(380000 * 0.0045));
+  const [rsTaxDollars, setRsTaxDollars] = useState(Math.round(450000 * 0.0045));
 
   useEffect(() => { setRsRate(rates.fha); }, [rates]);
 
@@ -1103,16 +1093,16 @@ function NewBuildCalc() {
           : `New Build saves ${fmt(rs.total - nb.total)}/mo (${fmt((rs.total - nb.total) * 12)}/yr)`}
       </div>
 
-      {/* PITI breakdown */}
-      <div className="grid grid-cols-2 gap-4 mb-4">
-        <div className="space-y-2">
-          <ResultCard label="New Build P&I" value={fmt(nb.pi)} />
-          <ResultCard label="New Build PITI" value={fmt(nb.piti)} />
-        </div>
-        <div className="space-y-2">
-          <ResultCard label="Resale P&I" value={fmt(rs.pi)} />
-          <ResultCard label="Resale PITI" value={fmt(rs.piti)} />
-        </div>
+      {/* Side-by-side comparison cards */}
+      <div className="grid grid-cols-2 gap-3 mb-4">
+        <ResultCard label="NEW BUILD P&I" value={fmt(nb.pi)} sub="Principal and Interest only — does not include taxes, insurance, or HOA" />
+        <ResultCard label="RESALE P&I" value={fmt(rs.pi)} sub="Principal and Interest only — does not include taxes, insurance, or HOA" />
+        <ResultCard label="NEW BUILD PITI" value={fmt(nb.piti)} sub="Includes Principal, Interest, Taxes and Insurance" />
+        <ResultCard label="RESALE PITI" value={fmt(rs.piti)} sub="Includes Principal, Interest, Taxes and Insurance" />
+        <ResultCard label="NEW BUILD TOTAL w/ HOA" value={fmt(nb.total)} />
+        <ResultCard label="RESALE TOTAL w/ HOA" value={fmt(rs.total)} />
+        <ResultCard label="NEW BUILD DOWN PAYMENT" value={fmt(nb.down)} />
+        <ResultCard label="RESALE DOWN PAYMENT" value={fmt(rs.down)} />
       </div>
 
       {/* Key insight: max new build price to match resale payment */}
@@ -1183,7 +1173,7 @@ function NewBuildCalc() {
 
 /* ── Calculator 6: Loan Payoff Estimator ── */
 function LoanPayoffCalc({ onPayoffCalculated }: { onPayoffCalculated: (amount: number) => void }) {
-  const [originalLoan, setOriginalLoan] = useState(475000);
+  const [originalLoan, setOriginalLoan] = useState(450000);
   const [interestRate, setInterestRate] = useState(6.5);
   const [firstPaymentDate, setFirstPaymentDate] = useState("");
 
@@ -1229,7 +1219,7 @@ function LoanPayoffCalc({ onPayoffCalculated }: { onPayoffCalculated: (amount: n
     <div>
       <h3 className="text-lg font-bold mb-5" style={{ color: "#111111", letterSpacing: "-0.01em" }}>Loan Payoff Estimator</h3>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-        <MoneyInput label="Original Loan Amount" value={originalLoan} onChange={setOriginalLoan} placeholder="475000" />
+        <MoneyInput label="Original Loan Amount" value={originalLoan} onChange={setOriginalLoan} placeholder="450000" />
         <NumberInput label="Original Interest Rate %" value={interestRate} onChange={setInterestRate} suffix="%" step="0.125" placeholder="6.5" />
         <div className="md:col-span-2">
           <label style={labelStyle}>Date of First Payment</label>
@@ -1274,10 +1264,10 @@ function LoanPayoffCalc({ onPayoffCalculated }: { onPayoffCalculated: (amount: n
 
 /* ── Calculator 7: Seller Net Proceeds ── */
 function SellerNetCalc({ importedPayoff }: { importedPayoff: number | null }) {
-  const [offerPrice, setOfferPrice] = useState(400000);
+  const [offerPrice, setOfferPrice] = useState(450000);
   const [payoff, setPayoff] = useState(0);
   const [annualTaxes, setAnnualTaxes] = useState(2000);
-  const [taxRate, setTaxRate] = useState(Number(((2000 / 400000) * 100).toFixed(4)));
+  const [taxRate, setTaxRate] = useState(Number(((2000 / 450000) * 100).toFixed(4)));
   const [hoaDues, setHoaDues] = useState(0);
   const [closingDate, setClosingDate] = useState("");
   const [concessionsPct, setConcessionsPct] = useState(0);
@@ -1390,7 +1380,7 @@ function SellerNetCalc({ importedPayoff }: { importedPayoff: number | null }) {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 no-print">
-          <MoneyInput label="Purchase / Offer Price" value={offerPrice} onChange={setOfferPrice} placeholder="400000" />
+          <MoneyInput label="Purchase / Offer Price" value={offerPrice} onChange={setOfferPrice} placeholder="450000" />
 
         {/* Payoff with import button */}
         <div>
