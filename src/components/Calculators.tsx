@@ -5,7 +5,7 @@ import { useReactToPrint } from "react-to-print";
 import html2canvas from "html2canvas";
 import { calculateMonthlyPayment } from "@/lib/loanPrograms";
 import { getRates, Rates, defaultRates } from "@/lib/rateStore";
-import { TRG_LOGO_BLACK_B64, AZ_LOGO_BLACK_B64 } from "@/lib/printLogos";
+import { TRG_LOGO_BLACK_B64, AZ_LOGO_BLACK_B64, TRG_LOGO_WHITE_B64, AZ_LOGO_WHITE_B64 } from "@/lib/printLogos";
 
 /* ── Floating Quick Calculator ── */
 function FloatingCalc() {
@@ -473,14 +473,14 @@ function PaymentCalc() {
           <div style={{ background: "linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)", padding: "24px 28px", borderBottom: "3px solid #C8202A", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={TRG_LOGO_BLACK_B64} alt="The Rio Group" style={{ height: 44, width: "auto", filter: "invert(1)", display: "block" } as React.CSSProperties} />
+              <img src={TRG_LOGO_WHITE_B64} alt="The Rio Group" style={{ height: 44, width: "auto", display: "block" } as React.CSSProperties} />
               <div>
                 <div style={{ color: "#FFFFFF", fontSize: 11, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase" as const }}>The Rio Group</div>
                 <div style={{ color: "#999", fontSize: 9, fontWeight: 500, letterSpacing: "0.08em", textTransform: "uppercase" as const }}>Built Different</div>
               </div>
             </div>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={AZ_LOGO_BLACK_B64} alt="AZ & Associates" style={{ height: 36, width: "auto", filter: "invert(1)", display: "block" } as React.CSSProperties} />
+            <img src={AZ_LOGO_WHITE_B64} alt="AZ & Associates" style={{ height: 36, width: "auto", display: "block" } as React.CSSProperties} />
           </div>
 
           {/* Title bar */}
@@ -1428,14 +1428,14 @@ function SellerNetCalc({ importedPayoff }: { importedPayoff: number | null }) {
           <div style={{ background: "linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)", padding: "24px 28px", borderBottom: "3px solid #C8202A", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={TRG_LOGO_BLACK_B64} alt="The Rio Group" style={{ height: 44, width: "auto", filter: "invert(1)", display: "block" } as React.CSSProperties} />
+              <img src={TRG_LOGO_WHITE_B64} alt="The Rio Group" style={{ height: 44, width: "auto", display: "block" } as React.CSSProperties} />
               <div>
                 <div style={{ color: "#FFFFFF", fontSize: 11, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase" as const }}>The Rio Group</div>
                 <div style={{ color: "#999", fontSize: 9, fontWeight: 500, letterSpacing: "0.08em", textTransform: "uppercase" as const }}>Built Different</div>
               </div>
             </div>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={AZ_LOGO_BLACK_B64} alt="AZ & Associates" style={{ height: 36, width: "auto", filter: "invert(1)", display: "block" } as React.CSSProperties} />
+            <img src={AZ_LOGO_WHITE_B64} alt="AZ & Associates" style={{ height: 36, width: "auto", display: "block" } as React.CSSProperties} />
           </div>
 
           {/* Title bar */}
