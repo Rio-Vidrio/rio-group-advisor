@@ -468,47 +468,67 @@ function PaymentCalc() {
       <div ref={printRef} className="print-root">
 
         {/* ── SUMMARY CARD (used for print AND jpg export) ── */}
-        <div ref={summaryRef} id="summary-card" className="print-only" style={{ maxWidth: 680, background: "#FFFFFF", borderRadius: 12 }}>
+        <div ref={summaryRef} id="summary-card" className="print-only" style={{ maxWidth: 680, background: "#FFFFFF", borderRadius: 16, overflow: "hidden", boxShadow: "0 4px 24px rgba(0,0,0,0.08)" }}>
           {/* Header band */}
-          <div style={{ background: "#111111", padding: "20px 24px", borderRadius: "12px 12px 0 0", borderBottom: "3px solid #C8202A", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={TRG_LOGO_BLACK_B64} alt="The Rio Group" style={{ height: 44, width: "auto", filter: "invert(1)", display: "block" } as React.CSSProperties} />
-            <span style={{ color: "#FFFFFF", fontSize: 13, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase" as const }}>Monthly Payment Summary</span>
+          <div style={{ background: "linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)", padding: "24px 28px", borderBottom: "3px solid #C8202A", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={TRG_LOGO_BLACK_B64} alt="The Rio Group" style={{ height: 44, width: "auto", filter: "invert(1)", display: "block" } as React.CSSProperties} />
+              <div>
+                <div style={{ color: "#FFFFFF", fontSize: 11, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase" as const }}>The Rio Group</div>
+                <div style={{ color: "#999", fontSize: 9, fontWeight: 500, letterSpacing: "0.08em", textTransform: "uppercase" as const }}>Built Different</div>
+              </div>
+            </div>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={AZ_LOGO_BLACK_B64} alt="AZ & Associates" style={{ height: 36, width: "auto", filter: "invert(1)", display: "block" } as React.CSSProperties} />
           </div>
 
-          {/* Client info row */}
-          <div style={{ padding: "12px 24px", display: "flex", justifyContent: "space-between", alignItems: "baseline", borderBottom: "1px solid #E8E8E8" }}>
-            <div>
-              {clientName && <div style={{ fontWeight: 700, fontSize: 14, color: "#111" }}>{clientName}</div>}
-              {propertyAddress && <div style={{ fontSize: 12, color: "#6B6B6B" }}>{propertyAddress}</div>}
-              <div style={{ fontSize: 12, color: "#6B6B6B" }}>Loan Type: {loanMode === "conventional" ? "Conventional" : loanMode === "fha" ? "FHA" : "VA"}</div>
-            </div>
-            <div style={{ fontSize: 12, color: "#6B6B6B" }}>{todayStr}</div>
+          {/* Title bar */}
+          <div style={{ background: "#C8202A", padding: "10px 28px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <span style={{ color: "#FFFFFF", fontSize: 14, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase" as const }}>Monthly Payment Summary</span>
+            <span style={{ color: "rgba(255,255,255,0.8)", fontSize: 11 }}>{todayStr}</span>
           </div>
 
-          {/* Section label */}
-          <div style={{ padding: "16px 24px 8px", fontSize: 10, color: "#C8202A", fontWeight: 600, textTransform: "uppercase" as const, letterSpacing: "0.1em" }}>Payment Breakdown</div>
+          {/* Client info row */}
+          {(clientName || propertyAddress) && (
+            <div style={{ padding: "14px 28px", borderBottom: "1px solid #E8E8E8", background: "#FAFAF9" }}>
+              <div style={{ fontSize: 9, color: "#C8202A", fontWeight: 600, textTransform: "uppercase" as const, letterSpacing: "0.1em", marginBottom: 4 }}>Prepared For</div>
+              {clientName && <div style={{ fontWeight: 700, fontSize: 15, color: "#111" }}>{clientName}</div>}
+              {propertyAddress && <div style={{ fontSize: 12, color: "#6B6B6B", marginTop: 2 }}>{propertyAddress}</div>}
+            </div>
+          )}
+
+          {/* Loan type badge */}
+          <div style={{ padding: "14px 28px 6px", display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ background: "#C8202A", color: "#fff", fontSize: 10, fontWeight: 700, padding: "3px 10px", borderRadius: 4, textTransform: "uppercase" as const, letterSpacing: "0.06em" }}>
+              {loanMode === "conventional" ? "Conventional" : loanMode === "fha" ? "FHA" : "VA"}
+            </span>
+            <span style={{ fontSize: 11, color: "#9B9B9B" }}>{rate.toFixed(2)}% · {term} Year Fixed</span>
+          </div>
 
           {/* Breakdown table */}
-          <div style={{ margin: "0 16px 16px", border: "1px solid #E8E8E8", borderRadius: 12, overflow: "hidden" }}>
+          <div style={{ margin: "12px 20px 20px", border: "1px solid #E8E8E8", borderRadius: 12, overflow: "hidden" }}>
             {paymentRows.map((row, i) => (
-              <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "10px 16px", background: i % 2 === 0 ? "#FFFFFF" : "#F9F8F6", borderBottom: "1px solid #E8E8E8" }}>
+              <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "11px 18px", background: i % 2 === 0 ? "#FFFFFF" : "#FAFAF9", borderBottom: "1px solid #F0F0F0" }}>
                 <span style={{ fontSize: 13, color: "#6B6B6B" }}>{row.label}</span>
                 <span style={{ fontSize: 13, fontWeight: 600, color: "#111111" }}>{row.value}</span>
               </div>
             ))}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 16px", background: "#F0F0F0" }}>
-              <span style={{ fontWeight: 700, fontSize: 14, color: "#111111" }}>Total Monthly Payment</span>
-              <span style={{ fontSize: 22, fontWeight: 800, color: "#C8202A" }}>{fmt(total)}</span>
+          </div>
+
+          {/* Total payment highlight */}
+          <div style={{ margin: "0 20px 20px", background: "linear-gradient(135deg, #C8202A 0%, #a01a22 100%)", borderRadius: 12, padding: "18px 20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div>
+              <div style={{ color: "rgba(255,255,255,0.7)", fontSize: 10, fontWeight: 600, textTransform: "uppercase" as const, letterSpacing: "0.1em" }}>Total Monthly Payment</div>
+              <div style={{ color: "#fff", fontSize: 11, marginTop: 2 }}>Principal, Interest, Taxes, Insurance{hoa > 0 ? " & HOA" : ""}</div>
             </div>
+            <div style={{ color: "#FFFFFF", fontSize: 28, fontWeight: 800, fontVariantNumeric: "tabular-nums" }}>{fmt(total)}</div>
           </div>
 
           {/* Footer */}
-          <div style={{ borderTop: "2px solid #C8202A", padding: "10px 24px 14px", textAlign: "center" as const }}>
-            <div style={{ fontSize: 9, color: "#9B9B9B" }}>The Rio Group — Powered by AZ &amp; Associates</div>
-            <div style={{ fontSize: 8, color: "#ABABAB", marginTop: 2 }}>All figures are estimates for informational purposes only. Subject to lender approval.</div>
+          <div style={{ borderTop: "2px solid #C8202A", padding: "12px 28px 16px", textAlign: "center" as const, background: "#FAFAF9" }}>
+            <div style={{ fontSize: 10, color: "#6B6B6B", fontWeight: 500 }}>The Rio Group — Powered by AZ &amp; Associates</div>
+            <div style={{ fontSize: 8, color: "#ABABAB", marginTop: 3 }}>All figures are estimates for informational purposes only. Subject to lender approval and qualification.</div>
           </div>
         </div>
 
@@ -1403,53 +1423,66 @@ function SellerNetCalc({ importedPayoff }: { importedPayoff: number | null }) {
       <div ref={printRef} className="print-root">
 
         {/* ── SUMMARY CARD (used for print AND jpg export) ── */}
-        <div ref={summaryRef} id="seller-summary-card" className="print-only" style={{ maxWidth: 680, background: "#FFFFFF", borderRadius: 12 }}>
+        <div ref={summaryRef} id="seller-summary-card" className="print-only" style={{ maxWidth: 680, background: "#FFFFFF", borderRadius: 16, overflow: "hidden", boxShadow: "0 4px 24px rgba(0,0,0,0.08)" }}>
           {/* Header band */}
-          <div style={{ background: "#111111", padding: "20px 24px", borderRadius: "12px 12px 0 0", borderBottom: "3px solid #C8202A", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={TRG_LOGO_BLACK_B64} alt="The Rio Group" style={{ height: 44, width: "auto", filter: "invert(1)", display: "block" } as React.CSSProperties} />
-            <span style={{ color: "#FFFFFF", fontSize: 13, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase" as const }}>Seller Net Proceeds</span>
+          <div style={{ background: "linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)", padding: "24px 28px", borderBottom: "3px solid #C8202A", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={TRG_LOGO_BLACK_B64} alt="The Rio Group" style={{ height: 44, width: "auto", filter: "invert(1)", display: "block" } as React.CSSProperties} />
+              <div>
+                <div style={{ color: "#FFFFFF", fontSize: 11, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase" as const }}>The Rio Group</div>
+                <div style={{ color: "#999", fontSize: 9, fontWeight: 500, letterSpacing: "0.08em", textTransform: "uppercase" as const }}>Built Different</div>
+              </div>
+            </div>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={AZ_LOGO_BLACK_B64} alt="AZ & Associates" style={{ height: 36, width: "auto", filter: "invert(1)", display: "block" } as React.CSSProperties} />
           </div>
 
-          {/* Client info row */}
-          <div style={{ padding: "12px 24px", display: "flex", justifyContent: "space-between", alignItems: "baseline", borderBottom: "1px solid #E8E8E8" }}>
-            <div>
-              {clientName && <div style={{ fontWeight: 700, fontSize: 14, color: "#111" }}>{clientName}</div>}
-              {propertyAddress && <div style={{ fontSize: 12, color: "#6B6B6B" }}>{propertyAddress}</div>}
-              {closingDate && <div style={{ fontSize: 12, color: "#6B6B6B" }}>Closing Date: {parseLocalDate(closingDate).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</div>}
-            </div>
-            <div style={{ fontSize: 12, color: "#6B6B6B" }}>{todayStr}</div>
+          {/* Title bar */}
+          <div style={{ background: "#C8202A", padding: "10px 28px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <span style={{ color: "#FFFFFF", fontSize: 14, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase" as const }}>Seller Net Proceeds</span>
+            <span style={{ color: "rgba(255,255,255,0.8)", fontSize: 11 }}>{todayStr}</span>
           </div>
 
-          {/* Section label */}
-          <div style={{ padding: "16px 24px 8px", fontSize: 10, color: "#C8202A", fontWeight: 600, textTransform: "uppercase" as const, letterSpacing: "0.1em" }}>Net Proceeds Breakdown</div>
+          {/* Client info row */}
+          {(clientName || propertyAddress || closingDate) && (
+            <div style={{ padding: "14px 28px", borderBottom: "1px solid #E8E8E8", background: "#FAFAF9" }}>
+              <div style={{ fontSize: 9, color: "#C8202A", fontWeight: 600, textTransform: "uppercase" as const, letterSpacing: "0.1em", marginBottom: 4 }}>Prepared For</div>
+              {clientName && <div style={{ fontWeight: 700, fontSize: 15, color: "#111" }}>{clientName}</div>}
+              {propertyAddress && <div style={{ fontSize: 12, color: "#6B6B6B", marginTop: 2 }}>{propertyAddress}</div>}
+              {closingDate && <div style={{ fontSize: 12, color: "#6B6B6B", marginTop: 2 }}>Closing: {parseLocalDate(closingDate).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</div>}
+            </div>
+          )}
 
           {/* Breakdown table */}
-          <div style={{ margin: "0 16px 16px", border: "1px solid #E8E8E8", borderRadius: 12, overflow: "hidden" }}>
+          <div style={{ margin: "16px 20px 20px", border: "1px solid #E8E8E8", borderRadius: 12, overflow: "hidden" }}>
             {sellerRows.map((row, i) => (
-              <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "10px 16px", background: i % 2 === 0 ? "#FFFFFF" : "#F9F8F6", borderBottom: "1px solid #E8E8E8" }}>
+              <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "11px 18px", background: i % 2 === 0 ? "#FFFFFF" : "#FAFAF9", borderBottom: "1px solid #F0F0F0" }}>
                 <span style={{ fontSize: 13, color: "#6B6B6B" }}>{row.label}</span>
                 <span style={{ fontSize: 13, fontWeight: 600, color: row.isDeduction ? "#DC2626" : "#111111" }}>{row.value}</span>
               </div>
             ))}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 16px", background: isNegative ? "#FEF2F2" : "#F0F0F0" }}>
-              <span style={{ fontWeight: 700, fontSize: 14, color: "#111111" }}>Estimated Net Proceeds</span>
-              <span style={{ fontSize: 22, fontWeight: 800, color: isNegative ? "#DC2626" : "#C8202A" }}>{isNegative ? "−" : ""}{fmt(Math.abs(netProceeds))}</span>
+          </div>
+
+          {/* Net proceeds highlight */}
+          <div style={{ margin: "0 20px 20px", background: isNegative ? "linear-gradient(135deg, #DC2626 0%, #b91c1c 100%)" : "linear-gradient(135deg, #C8202A 0%, #a01a22 100%)", borderRadius: 12, padding: "18px 20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div>
+              <div style={{ color: "rgba(255,255,255,0.7)", fontSize: 10, fontWeight: 600, textTransform: "uppercase" as const, letterSpacing: "0.1em" }}>Estimated Net Proceeds</div>
+              <div style={{ color: "#fff", fontSize: 11, marginTop: 2 }}>After all deductions and commissions</div>
             </div>
+            <div style={{ color: "#FFFFFF", fontSize: 28, fontWeight: 800, fontVariantNumeric: "tabular-nums" }}>{isNegative ? "−" : ""}{fmt(Math.abs(netProceeds))}</div>
           </div>
 
           {isNegative && (
-            <div style={{ margin: "0 16px 12px", padding: "8px 12px", background: "#FEF2F2", border: "1px solid #FECACA", borderRadius: 8, fontSize: 11, color: "#991B1B", fontWeight: 600 }}>
+            <div style={{ margin: "0 20px 16px", padding: "10px 14px", background: "#FEF2F2", border: "1px solid #FECACA", borderRadius: 8, fontSize: 11, color: "#991B1B", fontWeight: 600 }}>
               ⚠ Estimated proceeds are negative — review payoff, concessions, and commission structure.
             </div>
           )}
 
           {/* Footer */}
-          <div style={{ borderTop: "2px solid #C8202A", padding: "10px 24px 14px", textAlign: "center" as const }}>
-            <div style={{ fontSize: 9, color: "#9B9B9B" }}>The Rio Group — Powered by AZ &amp; Associates</div>
-            <div style={{ fontSize: 8, color: "#ABABAB", marginTop: 2 }}>All figures are estimates for informational purposes only. Subject to lender approval.</div>
+          <div style={{ borderTop: "2px solid #C8202A", padding: "12px 28px 16px", textAlign: "center" as const, background: "#FAFAF9" }}>
+            <div style={{ fontSize: 10, color: "#6B6B6B", fontWeight: 500 }}>The Rio Group — Powered by AZ &amp; Associates</div>
+            <div style={{ fontSize: 8, color: "#ABABAB", marginTop: 3 }}>All figures are estimates for informational purposes only. Subject to lender approval and qualification.</div>
           </div>
         </div>
 

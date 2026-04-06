@@ -48,12 +48,14 @@ export default function SettingsPanel() {
     setLiveData(null);
     const live = await fetchLiveRates();
     if (live) {
-      setRates(live);
-      saveRates(live);
+      // Preserve program overrides when refreshing base rates
+      const merged = { ...live, program1Rate: rates.program1Rate, program2Rate: rates.program2Rate };
+      setRates(merged);
+      saveRates(merged);
       setLiveData(live);
       setManuallyEdited(false);
     } else {
-      setFetchError("Live rate fetch unavailable from this server. Rates update automatically each week via the scheduled refresh — enter rates manually to override.");
+      setFetchError("Could not fetch rates. Check your connection and try again.");
     }
     setFetching(false);
   };
@@ -142,6 +144,71 @@ export default function SettingsPanel() {
             Note: FHA = Conventional − 0.25% | VA = Conventional − 0.50% (industry approximations — override manually if needed)
           </div>
         </div>
+      </div>
+
+      {/* Program Rate Overrides */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <h3 className="text-lg font-bold mb-1">Program Rate Overrides</h3>
+        <p className="text-sm text-gray-500 mb-4">
+          Override the rate used for specific loan programs. Leave blank to use the default calculation (base rate + offset).
+        </p>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-1">
+              Program 1 — 1% Down, No PMI
+            </label>
+            <p className="text-xs text-gray-400 mb-2">
+              Default: Conventional rate ({rates.conventional}%)
+            </p>
+            <div className="relative">
+              <input
+                type="number"
+                step="0.125"
+                value={rates.program1Rate || ""}
+                onChange={(e) => {
+                  const val = e.target.value ? Number(e.target.value) : undefined;
+                  const updated = { ...rates, program1Rate: val, lastUpdated: new Date().toISOString() };
+                  setRates(updated);
+                  saveRates(updated);
+                  setManuallyEdited(true);
+                }}
+                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:border-rio-red focus:ring-1 focus:ring-rio-red outline-none font-semibold"
+                placeholder={rates.conventional.toFixed(3)}
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">%</span>
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-1">
+              Program 2 — $1K Down, 40yr
+            </label>
+            <p className="text-xs text-gray-400 mb-2">
+              Default: Conventional + 0.625% ({(rates.conventional + 0.625).toFixed(3)}%)
+            </p>
+            <div className="relative">
+              <input
+                type="number"
+                step="0.125"
+                value={rates.program2Rate || ""}
+                onChange={(e) => {
+                  const val = e.target.value ? Number(e.target.value) : undefined;
+                  const updated = { ...rates, program2Rate: val, lastUpdated: new Date().toISOString() };
+                  setRates(updated);
+                  saveRates(updated);
+                  setManuallyEdited(true);
+                }}
+                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:border-rio-red focus:ring-1 focus:ring-rio-red outline-none font-semibold"
+                placeholder={(rates.conventional + 0.625).toFixed(3)}
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">%</span>
+            </div>
+          </div>
+        </div>
+
+        <p className="text-xs text-gray-300 mt-3">
+          These rates feed directly into the Client Wizard program recommendations. Clear the field to revert to default calculation.
+        </p>
       </div>
 
       {/* Default Values */}

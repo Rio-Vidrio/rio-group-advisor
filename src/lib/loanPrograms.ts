@@ -579,9 +579,12 @@ export function evaluateEligibility(
       }
     }
 
-    // Calculate payment
+    // Calculate payment — check for manual program rate overrides first
     const baseRate = program.rateBase === "conventional" ? rates.conventional : rates.fha;
-    const rate = baseRate + program.rateOffset;
+    const rate =
+      program.id === 1 && (rates as Record<string, unknown>).program1Rate ? (rates as Record<string, unknown>).program1Rate as number :
+      program.id === 2 && (rates as Record<string, unknown>).program2Rate ? (rates as Record<string, unknown>).program2Rate as number :
+      baseRate + program.rateOffset;
     const hoa = client.hasHOA === "yes" ? client.hoaAmount : 0;
 
     // Helper: compute total monthly for a given purchase price under this program

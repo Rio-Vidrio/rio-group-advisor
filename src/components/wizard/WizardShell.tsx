@@ -780,8 +780,7 @@ export default function WizardShell({ onTabChange }: Props) {
                     </div>
 
                     <label className="block text-sm font-medium mb-2" style={{ color: "#111111" }}>
-                      Does the client reduce their net income on taxes to lower
-                      tax liability?
+                      Did the client have large write-offs over the last 2 years to decrease their tax liability?
                     </label>
                     <YesNoButtons
                       value={client.reducesNetIncome}

@@ -168,16 +168,32 @@ export default function MarketRates() {
     setRefreshing(true);
     setRefreshMsg("");
     try {
-      const res = await fetch("/api/fred-current", { cache: "no-store" });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      if (data.error || !data.conventional) throw new Error(data.detail || data.error || "No rate returned");
+      // Try live FRED API first (works on Vercel)
+      let data: { conventional?: number; fha?: number; va?: number; lastUpdated?: string; asOf?: string; error?: string; detail?: string } | null = null;
+      try {
+        const res = await fetch("/api/fred-current", { cache: "no-store" });
+        if (res.ok) {
+          const json = await res.json();
+          if (!json.error && json.conventional) data = json;
+        }
+      } catch { /* fall through */ }
+
+      // Fallback: static rate-history.json
+      if (!data) {
+        const res = await fetch("/rate-history.json", { cache: "no-store" });
+        if (!res.ok) throw new Error("Could not fetch rates");
+        const file = await res.json();
+        const points = file["3months"] || file["6months"] || file["1year"] || file["2years"];
+        if (!points?.length) throw new Error("No rate data available");
+        const latest = points[points.length - 1];
+        data = { conventional: latest.conventional, fha: latest.fha, va: latest.va, lastUpdated: new Date().toISOString(), asOf: latest.date };
+      }
 
       const updated: Rates = {
-        conventional: data.conventional,
-        fha: data.fha,
-        va:  data.va,
-        lastUpdated: data.lastUpdated,
+        conventional: data.conventional!,
+        fha: data.fha!,
+        va:  data.va!,
+        lastUpdated: data.lastUpdated || new Date().toISOString(),
       };
       saveRates(updated);
       setRates(updated);
@@ -346,6 +362,15 @@ export default function MarketRates() {
         {dataLoaded && (
           <p style={{ fontSize: "0.75rem", color: "#9B9B9B", marginTop: "12px", textAlign: "center" }}>
             FHA and VA derived from Freddie Mac conventional PMMS (−0.25% / −0.50%). Override below if needed.
+            <br />
+            <a
+              href="https://fred.stlouisfed.org/series/MORTGAGE30US"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ color: "#C8202A", textDecoration: "underline", fontWeight: 500 }}
+            >
+              View source data on FRED ↗
+            </a>
           </p>
         )}
       </div>

@@ -8,6 +8,8 @@ export interface Rates {
   fha: number;
   va: number;
   lastUpdated: string;
+  program1Rate?: number; // 1% Down override — if set, used instead of conventional + offset
+  program2Rate?: number; // $1K Down override — if set, used instead of conventional + offset
 }
 
 export interface Settings {
@@ -65,19 +67,39 @@ export interface LiveRateResponse extends Rates {
 }
 
 export async function fetchLiveRates(): Promise<LiveRateResponse | null> {
+  // Try the server-side FRED proxy first (works on Vercel)
   try {
-    // Call our own server-side API route — no CORS issues
     const res = await fetch("/api/rates", { cache: "no-store" });
+    if (res.ok) {
+      const data = await res.json();
+      if (!data.error && data.conventional) {
+        return {
+          conventional: data.conventional,
+          fha: data.fha,
+          va: data.va,
+          lastUpdated: data.lastUpdated,
+          source: data.source,
+          asOf: data.asOf,
+        };
+      }
+    }
+  } catch { /* fall through to static fallback */ }
+
+  // Fallback: use the static rate-history.json (works on localhost & Vercel)
+  try {
+    const res = await fetch("/rate-history.json", { cache: "no-store" });
     if (!res.ok) return null;
-    const data = await res.json();
-    if (data.error || !data.conventional) return null;
+    const file = await res.json();
+    const points = file["3months"] || file["6months"] || file["1year"] || file["2years"];
+    if (!points?.length) return null;
+    const latest = points[points.length - 1];
     return {
-      conventional: data.conventional,
-      fha: data.fha,
-      va: data.va,
-      lastUpdated: data.lastUpdated,
-      source: data.source,
-      asOf: data.asOf,
+      conventional: latest.conventional,
+      fha: latest.fha,
+      va: latest.va,
+      lastUpdated: new Date().toISOString(),
+      source: "Freddie Mac PMMS (cached)",
+      asOf: latest.date,
     };
   } catch {
     return null;
