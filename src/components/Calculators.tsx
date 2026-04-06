@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useReactToPrint } from "react-to-print";
+import html2canvas from "html2canvas";
 import { calculateMonthlyPayment } from "@/lib/loanPrograms";
 import { getRates, Rates, defaultRates } from "@/lib/rateStore";
 import { TRG_LOGO_BLACK_B64, AZ_LOGO_BLACK_B64 } from "@/lib/printLogos";
@@ -421,62 +422,93 @@ function PaymentCalc() {
     loanMode === "conventional" ? rates.conventional :
     loanMode === "fha"          ? rates.fha : rates.va;
 
+  const summaryRef = useRef<HTMLDivElement>(null);
+  const [imgLoading, setImgLoading] = useState(false);
+
+  const downloadJPG = async () => {
+    const el = summaryRef.current;
+    if (!el) return;
+    setImgLoading(true);
+    // Temporarily show the print-only summary card so html2canvas can capture it
+    el.style.display = "block";
+    el.style.position = "fixed";
+    el.style.left = "-9999px";
+    try {
+      const canvas = await html2canvas(el, { scale: 2, backgroundColor: "#ffffff", useCORS: true, logging: false });
+      const link = document.createElement("a");
+      link.download = "Rio-Group-Payment-Summary.jpg";
+      link.href = canvas.toDataURL("image/jpeg", 0.95);
+      link.click();
+    } finally {
+      el.style.display = "";
+      el.style.position = "";
+      el.style.left = "";
+      setImgLoading(false);
+    }
+  };
+
+  const paymentRows = ([
+    { label: "Purchase Price", value: fmt(price) },
+    loanMode !== "va"
+      ? { label: `Down Payment (${downPct}%)`, value: fmt(downPayment) }
+      : { label: "Down Payment", value: "$0 — VA No Down" },
+    { label: "Loan Amount", value: fmt(baseLoan) },
+    { label: "Interest Rate", value: `${rate.toFixed(2)}%` },
+    { label: "Loan Term", value: `${term} years` },
+    { label: "Monthly P&I", value: fmt(monthlyPI) },
+    { label: "Monthly Property Tax", value: fmt(monthlyTax) },
+    { label: "Monthly Insurance", value: fmt(monthlyIns) },
+    hoa > 0 ? { label: "Monthly HOA", value: fmt(hoa) } : null,
+    loanMode === "conventional" && downPct < 20 ? { label: `Monthly PMI (${pmiRate}%/yr)`, value: fmt(monthlyMI) } : null,
+    loanMode === "fha" ? { label: "Monthly MIP (0.55%/yr)", value: fmt(monthlyMI) } : null,
+  ] as ({ label: string; value: string } | null)[]).filter((r): r is { label: string; value: string } => r !== null);
+
   return (
     <div>
       <div ref={printRef} className="print-root">
 
-        {/* ── PRINT-ONLY HEADER ── (hidden on screen) */}
-        <div className="print-only mb-4">
-          <div className="flex justify-between items-center pb-3 mb-3 border-b-2 border-[#C8202A]">
+        {/* ── SUMMARY CARD (used for print AND jpg export) ── */}
+        <div ref={summaryRef} id="summary-card" className="print-only" style={{ maxWidth: 680, background: "#FFFFFF", borderRadius: 12 }}>
+          {/* Header band */}
+          <div style={{ background: "#111111", padding: "20px 24px", borderRadius: "12px 12px 0 0", borderBottom: "3px solid #C8202A", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={TRG_LOGO_BLACK_B64} alt="The Rio Group"
-              style={{height:52,width:"auto",display:"block",printColorAdjust:"exact",WebkitPrintColorAdjust:"exact"} as React.CSSProperties} />
+            <img src={TRG_LOGO_BLACK_B64} alt="The Rio Group" style={{ height: 44, width: "auto", filter: "invert(1)", display: "block" } as React.CSSProperties} />
+            <span style={{ color: "#FFFFFF", fontSize: 13, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase" as const }}>Monthly Payment Summary</span>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={AZ_LOGO_BLACK_B64} alt="AZ & Associates"
-              style={{height:40,width:"auto",display:"block",printColorAdjust:"exact",WebkitPrintColorAdjust:"exact"} as React.CSSProperties} />
+            <img src={AZ_LOGO_BLACK_B64} alt="AZ & Associates" style={{ height: 36, width: "auto", filter: "invert(1)", display: "block" } as React.CSSProperties} />
           </div>
-          <h1 className="text-xl font-bold mb-0.5 text-rio-black">Monthly Payment Summary</h1>
-          <p className="text-sm text-gray-500 mb-1">{todayStr}</p>
-          {clientName      && <p className="text-sm text-gray-700">Client: <strong>{clientName}</strong></p>}
-          {propertyAddress && <p className="text-sm text-gray-700">Property: <strong>{propertyAddress}</strong></p>}
-          <p className="text-sm text-gray-700 mt-1">
-            Loan Type: <strong>{loanMode === "conventional" ? "Conventional" : loanMode === "fha" ? "FHA" : "VA"}</strong>
-          </p>
-        </div>
 
-        {/* ── PRINT-ONLY breakdown detail table ── */}
-        <div className="print-only mb-6 border border-gray-200 rounded-lg overflow-hidden">
-          {([
-            { label: "Purchase Price",               value: fmt(price)                                              },
-            loanMode !== "va"
-              ? { label: `Down Payment (${downPct}%)`, value: `${fmt(downPayment)}`                                }
-              : { label: "Down Payment",               value: "$0 — VA No Down Payment Required"                   },
-            { label: "Loan Amount",                  value: fmt(baseLoan)                                          },
-            { label: "Interest Rate",                value: `${rate.toFixed(2)}%`                                  },
-            { label: "Loan Term",                    value: `${term} years`                                        },
-            { label: "Monthly Principal & Interest", value: fmt(monthlyPI)                                         },
-            { label: "Monthly Property Tax",         value: fmt(monthlyTax)                                        },
-            { label: "Monthly Insurance",            value: fmt(monthlyIns)                                        },
-            hoa > 0
-              ? { label: "Monthly HOA",              value: fmt(hoa) }
-              : null,
-            loanMode === "conventional" && downPct < 20
-              ? { label: `Monthly PMI (${pmiRate}%/yr)`, value: fmt(monthlyMI) }
-              : null,
-            loanMode === "fha"
-              ? { label: "Monthly MIP (0.55%/yr)", value: fmt(monthlyMI) }
-              : null,
-          ] as ({ label: string; value: string } | null)[])
-            .filter((r): r is { label: string; value: string } => r !== null)
-            .map((row, i) => (
-              <div key={i} className={`flex justify-between px-4 py-1.5 border-b border-gray-100 ${i % 2 === 0 ? "bg-gray-50" : "bg-white"}`}>
-                <span className="text-sm text-gray-600">{row.label}</span>
-                <span className="text-sm font-semibold text-rio-black">{row.value}</span>
+          {/* Client info row */}
+          <div style={{ padding: "12px 24px", display: "flex", justifyContent: "space-between", alignItems: "baseline", borderBottom: "1px solid #E8E8E8" }}>
+            <div>
+              {clientName && <div style={{ fontWeight: 700, fontSize: 14, color: "#111" }}>{clientName}</div>}
+              {propertyAddress && <div style={{ fontSize: 12, color: "#6B6B6B" }}>{propertyAddress}</div>}
+              <div style={{ fontSize: 12, color: "#6B6B6B" }}>Loan Type: {loanMode === "conventional" ? "Conventional" : loanMode === "fha" ? "FHA" : "VA"}</div>
+            </div>
+            <div style={{ fontSize: 12, color: "#6B6B6B" }}>{todayStr}</div>
+          </div>
+
+          {/* Section label */}
+          <div style={{ padding: "16px 24px 8px", fontSize: 10, color: "#C8202A", fontWeight: 600, textTransform: "uppercase" as const, letterSpacing: "0.1em" }}>Payment Breakdown</div>
+
+          {/* Breakdown table */}
+          <div style={{ margin: "0 16px 16px", border: "1px solid #E8E8E8", borderRadius: 12, overflow: "hidden" }}>
+            {paymentRows.map((row, i) => (
+              <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "10px 16px", background: i % 2 === 0 ? "#FFFFFF" : "#F9F8F6", borderBottom: "1px solid #E8E8E8" }}>
+                <span style={{ fontSize: 13, color: "#6B6B6B" }}>{row.label}</span>
+                <span style={{ fontSize: 13, fontWeight: 600, color: "#111111" }}>{row.value}</span>
               </div>
             ))}
-          <div className="flex justify-between items-center px-4 py-4 bg-red-50 border-t-2 border-[#C8202A]">
-            <span className="font-bold text-base text-rio-black">Total Monthly Payment</span>
-            <span className="text-3xl font-extrabold text-rio-red">{fmt(total)}</span>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 16px", background: "#F0F0F0" }}>
+              <span style={{ fontWeight: 700, fontSize: 14, color: "#111111" }}>Total Monthly Payment</span>
+              <span style={{ fontSize: 22, fontWeight: 800, color: "#C8202A" }}>{fmt(total)}</span>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div style={{ borderTop: "2px solid #C8202A", padding: "10px 24px 14px", textAlign: "center" as const }}>
+            <div style={{ fontSize: 9, color: "#9B9B9B" }}>The Rio Group — Powered by AZ &amp; Associates</div>
+            <div style={{ fontSize: 8, color: "#ABABAB", marginTop: 2 }}>All figures are estimates for informational purposes only. Subject to lender approval.</div>
           </div>
         </div>
 
@@ -666,20 +698,25 @@ function PaymentCalc() {
         <span> = <strong>Total financed {fmt(totalLoan)}</strong></span>
       </div>
 
-        {/* Print-only footer */}
-        <div className="print-only mt-3 pt-3 border-t border-gray-200 text-center text-xs text-gray-400">
-          The Rio Group — Powered by AZ &amp; Associates. All figures are estimates for informational purposes only. Subject to lender approval and qualification.
-        </div>
       </div>{/* end printRef */}
 
-      {/* Print button — outside printRef, won't appear on print */}
+      {/* Two download buttons — outside printRef */}
       <div className="flex flex-wrap items-center justify-between gap-3 mt-6 pt-6 border-t border-gray-100 no-print">
-        <button
-          onClick={() => handlePrint()}
-          style={{ padding: "12px 28px", borderRadius: "10px", background: "#C8202A", color: "#FFFFFF", fontWeight: 600, fontSize: "0.9375rem", border: "none", cursor: "pointer" }}
-        >
-          Print / Save PDF
-        </button>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <button
+            onClick={() => handlePrint()}
+            style={{ padding: "12px 28px", borderRadius: "10px", background: "#C8202A", color: "#FFFFFF", fontWeight: 600, fontSize: "0.9375rem", border: "none", cursor: "pointer" }}
+          >
+            Save PDF
+          </button>
+          <button
+            onClick={downloadJPG}
+            disabled={imgLoading}
+            style={{ padding: "12px 28px", borderRadius: "10px", background: "#111111", color: "#FFFFFF", fontWeight: 600, fontSize: "0.9375rem", border: "none", cursor: "pointer", opacity: imgLoading ? 0.6 : 1 }}
+          >
+            {imgLoading ? "Saving…" : "Save as Image"}
+          </button>
+        </div>
         <FloatingCalc />
       </div>
     </div>
@@ -1277,6 +1314,8 @@ function SellerNetCalc({ importedPayoff }: { importedPayoff: number | null }) {
 
   const todayStr = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
   const printRef = useRef<HTMLDivElement>(null);
+  const summaryRef = useRef<HTMLDivElement>(null);
+  const [imgLoading, setImgLoading] = useState(false);
   const handlePrint = useReactToPrint({
     contentRef: printRef,
     pageStyle: `
@@ -1293,6 +1332,27 @@ function SellerNetCalc({ importedPayoff }: { importedPayoff: number | null }) {
       });
     }),
   });
+
+  const downloadJPG = async () => {
+    const el = summaryRef.current;
+    if (!el) return;
+    setImgLoading(true);
+    el.style.display = "block";
+    el.style.position = "fixed";
+    el.style.left = "-9999px";
+    try {
+      const canvas = await html2canvas(el, { scale: 2, backgroundColor: "#ffffff", useCORS: true, logging: false });
+      const link = document.createElement("a");
+      link.download = "Rio-Group-Seller-Net-Proceeds.jpg";
+      link.href = canvas.toDataURL("image/jpeg", 0.95);
+      link.click();
+    } finally {
+      el.style.display = "";
+      el.style.position = "";
+      el.style.left = "";
+      setImgLoading(false);
+    }
+  };
 
   const parseLocalDate = (s: string) => {
     const [y, m, d] = s.split("-").map(Number);
@@ -1319,6 +1379,18 @@ function SellerNetCalc({ importedPayoff }: { importedPayoff: number | null }) {
     - concessionsAmt - buyerAgentAmt - listingAgentAmt - titleFees;
   const isNegative = netProceeds < 0;
 
+  const sellerRows = ([
+    { label: "Purchase / Offer Price", value: fmt(offerPrice), isDeduction: false },
+    { label: "Payoff Amount", value: `− ${fmt(payoff)}`, isDeduction: true },
+    secondLienAmt > 0 ? { label: "HELOC / 2nd Lien / DPA Payoff", value: `− ${fmt(secondLienAmt)}`, isDeduction: true } : null,
+    closingDate && annualTaxes > 0 ? { label: `Prorated Property Taxes (${daysFromJan1} days)`, value: `− ${fmt(proratedTaxes)}`, isDeduction: true } : null,
+    hoaDues > 0 ? { label: "HOA Dues at Closing", value: `− ${fmt(hoaDues)}`, isDeduction: true } : null,
+    { label: `Seller Concessions (${concessionsPct.toFixed(1)}%)`, value: `− ${fmt(concessionsAmt)}`, isDeduction: true },
+    { label: `Buyer's Agent Commission (${buyerAgentPct.toFixed(2)}%)`, value: `− ${fmt(buyerAgentAmt)}`, isDeduction: true },
+    { label: `Listing Agent Commission (${listingAgentPct.toFixed(2)}%)`, value: `− ${fmt(listingAgentAmt)}`, isDeduction: true },
+    { label: "Title Fees (1%)", value: `− ${fmt(titleFees)}`, isDeduction: true },
+  ] as ({ label: string; value: string; isDeduction: boolean } | null)[]).filter((r): r is { label: string; value: string; isDeduction: boolean } => r !== null);
+
   const DeductionRow = ({ label, value }: { label: string; value: number }) => (
     <div className="flex justify-between items-center py-2 border-b border-gray-100">
       <span className="text-sm text-gray-600">{label}</span>
@@ -1330,20 +1402,55 @@ function SellerNetCalc({ importedPayoff }: { importedPayoff: number | null }) {
     <div>
       <div ref={printRef} className="print-root">
 
-        {/* ── PRINT-ONLY HEADER ── */}
-        <div className="print-only mb-4">
-          <div className="flex justify-between items-center pb-3 mb-3 border-b-2 border-[#C8202A]">
+        {/* ── SUMMARY CARD (used for print AND jpg export) ── */}
+        <div ref={summaryRef} id="seller-summary-card" className="print-only" style={{ maxWidth: 680, background: "#FFFFFF", borderRadius: 12 }}>
+          {/* Header band */}
+          <div style={{ background: "#111111", padding: "20px 24px", borderRadius: "12px 12px 0 0", borderBottom: "3px solid #C8202A", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={TRG_LOGO_BLACK_B64} alt="The Rio Group"
-              style={{height:52,width:"auto",display:"block",printColorAdjust:"exact",WebkitPrintColorAdjust:"exact"} as React.CSSProperties} />
+            <img src={TRG_LOGO_BLACK_B64} alt="The Rio Group" style={{ height: 44, width: "auto", filter: "invert(1)", display: "block" } as React.CSSProperties} />
+            <span style={{ color: "#FFFFFF", fontSize: 13, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase" as const }}>Seller Net Proceeds</span>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={AZ_LOGO_BLACK_B64} alt="AZ & Associates"
-              style={{height:40,width:"auto",display:"block",printColorAdjust:"exact",WebkitPrintColorAdjust:"exact"} as React.CSSProperties} />
+            <img src={AZ_LOGO_BLACK_B64} alt="AZ & Associates" style={{ height: 36, width: "auto", filter: "invert(1)", display: "block" } as React.CSSProperties} />
           </div>
-          <h1 className="text-xl font-bold mb-0.5 text-rio-black">Seller Net Proceeds Estimate</h1>
-          <p className="text-xs text-gray-500 mb-1">{todayStr}</p>
-          {clientName && <p className="text-xs text-gray-700">Client: <strong>{clientName}</strong></p>}
-          {propertyAddress && <p className="text-xs text-gray-700">Property: <strong>{propertyAddress}</strong></p>}
+
+          {/* Client info row */}
+          <div style={{ padding: "12px 24px", display: "flex", justifyContent: "space-between", alignItems: "baseline", borderBottom: "1px solid #E8E8E8" }}>
+            <div>
+              {clientName && <div style={{ fontWeight: 700, fontSize: 14, color: "#111" }}>{clientName}</div>}
+              {propertyAddress && <div style={{ fontSize: 12, color: "#6B6B6B" }}>{propertyAddress}</div>}
+              {closingDate && <div style={{ fontSize: 12, color: "#6B6B6B" }}>Closing Date: {parseLocalDate(closingDate).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</div>}
+            </div>
+            <div style={{ fontSize: 12, color: "#6B6B6B" }}>{todayStr}</div>
+          </div>
+
+          {/* Section label */}
+          <div style={{ padding: "16px 24px 8px", fontSize: 10, color: "#C8202A", fontWeight: 600, textTransform: "uppercase" as const, letterSpacing: "0.1em" }}>Net Proceeds Breakdown</div>
+
+          {/* Breakdown table */}
+          <div style={{ margin: "0 16px 16px", border: "1px solid #E8E8E8", borderRadius: 12, overflow: "hidden" }}>
+            {sellerRows.map((row, i) => (
+              <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "10px 16px", background: i % 2 === 0 ? "#FFFFFF" : "#F9F8F6", borderBottom: "1px solid #E8E8E8" }}>
+                <span style={{ fontSize: 13, color: "#6B6B6B" }}>{row.label}</span>
+                <span style={{ fontSize: 13, fontWeight: 600, color: row.isDeduction ? "#DC2626" : "#111111" }}>{row.value}</span>
+              </div>
+            ))}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 16px", background: isNegative ? "#FEF2F2" : "#F0F0F0" }}>
+              <span style={{ fontWeight: 700, fontSize: 14, color: "#111111" }}>Estimated Net Proceeds</span>
+              <span style={{ fontSize: 22, fontWeight: 800, color: isNegative ? "#DC2626" : "#C8202A" }}>{isNegative ? "−" : ""}{fmt(Math.abs(netProceeds))}</span>
+            </div>
+          </div>
+
+          {isNegative && (
+            <div style={{ margin: "0 16px 12px", padding: "8px 12px", background: "#FEF2F2", border: "1px solid #FECACA", borderRadius: 8, fontSize: 11, color: "#991B1B", fontWeight: 600 }}>
+              ⚠ Estimated proceeds are negative — review payoff, concessions, and commission structure.
+            </div>
+          )}
+
+          {/* Footer */}
+          <div style={{ borderTop: "2px solid #C8202A", padding: "10px 24px 14px", textAlign: "center" as const }}>
+            <div style={{ fontSize: 9, color: "#9B9B9B" }}>The Rio Group — Powered by AZ &amp; Associates</div>
+            <div style={{ fontSize: 8, color: "#ABABAB", marginTop: 2 }}>All figures are estimates for informational purposes only. Subject to lender approval.</div>
+          </div>
         </div>
 
         <h3 className="text-lg font-bold mb-5 no-print" style={{ color: "#111111", letterSpacing: "-0.01em" }}>Seller Net Proceeds Estimator</h3>
@@ -1542,19 +1649,25 @@ function SellerNetCalc({ importedPayoff }: { importedPayoff: number | null }) {
         )}
       </div>{/* end breakdown card */}
 
-      {/* Print-only footer */}
-      <div className="print-only mt-3 pt-3 border-t border-gray-200 text-center text-xs text-gray-400">
-        The Rio Group — Powered by AZ &amp; Associates. All figures are estimates for informational purposes only. Subject to lender approval and qualification.
-      </div>
     </div>{/* end printRef */}
 
+      {/* Two download buttons — outside printRef */}
       <div className="flex flex-wrap items-center justify-between gap-3 mt-6 pt-6 border-t border-gray-100 no-print">
-        <button
-          onClick={() => handlePrint()}
-          style={{ padding: "12px 28px", borderRadius: "10px", background: "#C8202A", color: "#FFFFFF", fontWeight: 600, fontSize: "0.9375rem", border: "none", cursor: "pointer" }}
-        >
-          Print / Save PDF
-        </button>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <button
+            onClick={() => handlePrint()}
+            style={{ padding: "12px 28px", borderRadius: "10px", background: "#C8202A", color: "#FFFFFF", fontWeight: 600, fontSize: "0.9375rem", border: "none", cursor: "pointer" }}
+          >
+            Save PDF
+          </button>
+          <button
+            onClick={downloadJPG}
+            disabled={imgLoading}
+            style={{ padding: "12px 28px", borderRadius: "10px", background: "#111111", color: "#FFFFFF", fontWeight: 600, fontSize: "0.9375rem", border: "none", cursor: "pointer", opacity: imgLoading ? 0.6 : 1 }}
+          >
+            {imgLoading ? "Saving…" : "Save as Image"}
+          </button>
+        </div>
         <FloatingCalc />
       </div>
     </div>
