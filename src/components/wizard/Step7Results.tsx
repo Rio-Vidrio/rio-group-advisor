@@ -366,7 +366,7 @@ export default function Step7Results({ client, results, ccFlags, onRestart }: Pr
           onClick={() => handlePrint()}
           className="px-6 py-2.5 rounded-lg text-sm font-semibold bg-rio-red text-white hover:bg-red-700 transition-colors"
         >
-          Print / Save PDF
+          Save PDF
         </button>
         <button
           onClick={onRestart}

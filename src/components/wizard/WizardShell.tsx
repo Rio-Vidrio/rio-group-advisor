@@ -1719,7 +1719,7 @@ export default function WizardShell({ onTabChange }: Props) {
                 onClick={() => handlePrint()}
                 style={{ padding: "12px 28px", borderRadius: "10px", background: "#C8202A", color: "#FFFFFF", fontWeight: 600, fontSize: "0.9375rem", border: "none", cursor: "pointer" }}
               >
-                Print / Save PDF
+                Save PDF
               </button>
               <button
                 onClick={restart}
