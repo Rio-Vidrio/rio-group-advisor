@@ -551,6 +551,12 @@ export default function SelfEmployedWizard({ onTabChange }: SelfEmployedWizardPr
                 </div>
               </div>
 
+              {businessType === "S-Corp / LLC" && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 text-sm text-blue-800 mb-4 fade-in">
+                  For S-Corp and LLC owners use net income from Schedule C or K-1 distributions plus any W2 salary paid from the business. For simplicity enter total net qualifying income in the income fields below.
+                </div>
+              )}
+
               {/* Credit score alerts */}
               {creditBlocked && (
                 <div className="bg-red-50 border-2 border-red-300 rounded-xl px-5 py-4 mb-4 fade-in">
