@@ -538,7 +538,7 @@ export default function SelfEmployedWizard({ onTabChange }: SelfEmployedWizardPr
                 <div>
                   <label style={labelStyle}>Business Type</label>
                   <div className="flex flex-wrap gap-2">
-                    {["Sole Proprietor", "S-Corp / LLC", "Partnership"].map((t) => (
+                    {["Sole Proprietor", "S-Corp / LLC"].map((t) => (
                       <button key={t} onClick={() => setBusinessType(t)}
                         style={{ padding: "8px 16px", borderRadius: 8, fontSize: "0.8125rem",
                           border: businessType === t ? "1.5px solid #C8202A" : "1.5px solid #E8E8E8",
@@ -551,9 +551,15 @@ export default function SelfEmployedWizard({ onTabChange }: SelfEmployedWizardPr
                 </div>
               </div>
 
+              {businessType === "Sole Proprietor" && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 text-sm text-blue-800 mb-4 fade-in">
+                  <strong>Sole Proprietor</strong> — Files a Schedule C on their personal tax return (Form 1040). This is the most common structure for independent contractors, freelancers, and single-owner businesses with no formal entity filing. Ask the client: &quot;Do you file a Schedule C with your taxes?&quot; If yes, this is the right selection.
+                </div>
+              )}
+
               {businessType === "S-Corp / LLC" && (
                 <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 text-sm text-blue-800 mb-4 fade-in">
-                  For S-Corp and LLC owners use net income from Schedule C or K-1 distributions plus any W2 salary paid from the business. For simplicity enter total net qualifying income in the income fields below.
+                  <strong>S-Corp / LLC</strong> — The business is a separate legal entity that files its own tax return. The owner typically receives a W2 salary from the business plus K-1 distributions. Ask the client: &quot;Does your business have its own EIN and file a separate return?&quot; If yes, use this. For income, combine W2 salary + K-1 distributions and enter the total net qualifying income below.
                 </div>
               )}
 
