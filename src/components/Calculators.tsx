@@ -5,7 +5,7 @@ import { useReactToPrint } from "react-to-print";
 import html2canvas from "html2canvas";
 import { calculateMonthlyPayment } from "@/lib/loanPrograms";
 import { getRates, Rates, defaultRates } from "@/lib/rateStore";
-import { TRG_LOGO_BLACK_B64, AZ_LOGO_BLACK_B64, TRG_LOGO_WHITE_B64, AZ_LOGO_WHITE_B64 } from "@/lib/printLogos";
+import { TRG_LOGO_WHITE_B64, AZ_LOGO_WHITE_B64 } from "@/lib/printLogos";
 
 /* ── Floating Quick Calculator ── */
 function FloatingCalc() {
@@ -362,6 +362,8 @@ function PaymentCalc() {
     pageStyle: `
       @page { margin: 0.5in; size: letter portrait; }
       body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .no-print { display: none !important; height: 0 !important; margin: 0 !important; padding: 0 !important; overflow: hidden !important; }
+      .print-root { padding: 0 !important; }
     `,
     onBeforePrint: () => new Promise<void>((resolve) => {
       const imgs = printRef.current?.querySelectorAll("img") ?? [];
@@ -928,11 +930,37 @@ function NewBuildCalc() {
 
   const todayStr = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
   const printRef = useRef<HTMLDivElement>(null);
+  const summaryRef = useRef<HTMLDivElement>(null);
+  const [imgLoading, setImgLoading] = useState(false);
+
+  const downloadJPG = async () => {
+    const el = summaryRef.current;
+    if (!el) return;
+    setImgLoading(true);
+    el.style.display = "block";
+    el.style.position = "fixed";
+    el.style.left = "-9999px";
+    try {
+      const canvas = await html2canvas(el, { scale: 2, backgroundColor: "#ffffff", useCORS: true, logging: false });
+      const link = document.createElement("a");
+      link.download = "Rio-Group-NewBuild-vs-Resale.jpg";
+      link.href = canvas.toDataURL("image/jpeg", 0.95);
+      link.click();
+    } finally {
+      el.style.display = "";
+      el.style.position = "";
+      el.style.left = "";
+      setImgLoading(false);
+    }
+  };
+
   const handlePrint = useReactToPrint({
     contentRef: printRef,
     pageStyle: `
       @page { margin: 0.5in; size: letter portrait; }
       body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .no-print { display: none !important; height: 0 !important; margin: 0 !important; padding: 0 !important; overflow: hidden !important; }
+      .print-root { padding: 0 !important; }
     `,
     onBeforePrint: () => new Promise<void>((resolve) => {
       const imgs = printRef.current?.querySelectorAll("img") ?? [];
@@ -993,73 +1021,93 @@ function NewBuildCalc() {
     <div>
       <div ref={printRef} className="print-root">
 
-        {/* ── PRINT-ONLY HEADER ── */}
-        <div className="print-only mb-4">
-          <div className="flex justify-between items-center pb-3 mb-3 border-b-2 border-[#C8202A]">
+        {/* ── SUMMARY CARD (used for print AND jpg export) ── */}
+        <div ref={summaryRef} id="nb-vs-resale-summary" className="print-only" style={{ maxWidth: 680, background: "#FFFFFF", borderRadius: 16, overflow: "hidden", boxShadow: "0 4px 24px rgba(0,0,0,0.08)" }}>
+          {/* Header band */}
+          <div style={{ background: "linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)", padding: "24px 28px", borderBottom: "3px solid #C8202A", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={TRG_LOGO_WHITE_B64} alt="The Rio Group" style={{ height: 44, width: "auto", display: "block" } as React.CSSProperties} />
+              <div>
+                <div style={{ color: "#FFFFFF", fontSize: 11, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase" as const }}>The Rio Group</div>
+                <div style={{ color: "#999", fontSize: 9, fontWeight: 500, letterSpacing: "0.08em", textTransform: "uppercase" as const }}>Built Different</div>
+              </div>
+            </div>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={TRG_LOGO_BLACK_B64} alt="The Rio Group"
-              style={{height:52,width:"auto",display:"block",printColorAdjust:"exact",WebkitPrintColorAdjust:"exact"} as React.CSSProperties} />
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={AZ_LOGO_BLACK_B64} alt="AZ & Associates"
-              style={{height:40,width:"auto",display:"block",printColorAdjust:"exact",WebkitPrintColorAdjust:"exact"} as React.CSSProperties} />
+            <img src={AZ_LOGO_WHITE_B64} alt="AZ & Associates" style={{ height: 36, width: "auto", display: "block" } as React.CSSProperties} />
           </div>
-          <h1 className="text-xl font-bold mb-0.5 text-rio-black">New Build vs. Resale Comparison</h1>
-          <p className="text-xs text-gray-500">{todayStr}</p>
-        </div>
 
-        {/* ── PRINT-ONLY side-by-side summary ── */}
-        <div className="print-only mb-6">
-          <div className="grid grid-cols-2 gap-4 mb-4">
-            <div className="border border-blue-200 rounded-lg p-4 bg-blue-50">
-              <div className="font-bold text-blue-800 mb-3">New Build</div>
-              {[
-                { label: "Purchase Price",  value: fmt(nbPrice) },
-                { label: `Down (${nbDownPct}%)`, value: fmt(nb.down) },
-                { label: "Loan Amount",     value: fmt(nb.loan) },
-                { label: "Rate (buydown)",  value: `${nbRate}%` },
-                { label: "Tax Rate",        value: `${nbTaxRate}%` },
-                { label: "Monthly HOA",     value: fmt(nbHoa) },
-                { label: "P&I",             value: fmt(nb.pi) },
-                { label: "PITI",            value: fmt(nb.piti) },
-              ].map((r, i) => (
-                <div key={i} className="flex justify-between text-sm py-1 border-b border-blue-100">
-                  <span className="text-blue-700">{r.label}</span>
-                  <span className="font-semibold text-blue-900">{r.value}</span>
+          {/* Title bar */}
+          <div style={{ background: "#C8202A", padding: "10px 28px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <span style={{ color: "#FFFFFF", fontSize: 14, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase" as const }}>New Build vs. Resale Comparison</span>
+            <span style={{ color: "rgba(255,255,255,0.8)", fontSize: 11 }}>{todayStr}</span>
+          </div>
+
+          {/* Side-by-side comparison */}
+          <div style={{ padding: "20px 28px 0" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+              {/* New Build column */}
+              <div style={{ border: "1px solid #BFDBFE", borderRadius: 12, padding: 16, background: "#EFF6FF" }}>
+                <div style={{ fontWeight: 700, color: "#1E40AF", marginBottom: 12, fontSize: 13, textTransform: "uppercase" as const, letterSpacing: "0.05em" }}>New Build</div>
+                {[
+                  { label: "Purchase Price",  value: fmt(nbPrice) },
+                  { label: `Down (${nbDownPct}%)`, value: fmt(nb.down) },
+                  { label: "Loan Amount",     value: fmt(nb.loan) },
+                  { label: "Rate (buydown)",  value: `${nbRate}%` },
+                  { label: "Tax Rate",        value: `${nbTaxRate}%` },
+                  { label: "Monthly HOA",     value: fmt(nbHoa) },
+                  { label: "P&I",             value: fmt(nb.pi) },
+                  { label: "PITI",            value: fmt(nb.piti) },
+                ].map((r, i) => (
+                  <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: 12, padding: "5px 0", borderBottom: "1px solid #DBEAFE" }}>
+                    <span style={{ color: "#1D4ED8" }}>{r.label}</span>
+                    <span style={{ fontWeight: 600, color: "#1E3A8A" }}>{r.value}</span>
+                  </div>
+                ))}
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, fontWeight: 700, marginTop: 8, paddingTop: 8, color: "#1E3A8A" }}>
+                  <span>Total Monthly</span><span>{fmt(nb.total)}</span>
                 </div>
-              ))}
-              <div className="flex justify-between text-base font-bold mt-2 pt-2 text-blue-900">
-                <span>Total Monthly</span><span>{fmt(nb.total)}</span>
               </div>
-            </div>
-            <div className="border border-green-200 rounded-lg p-4 bg-green-50">
-              <div className="font-bold text-green-800 mb-3">Resale</div>
-              {[
-                { label: "Purchase Price",  value: fmt(rsPrice) },
-                { label: `Down (${rsDownPct}%)`, value: fmt(rs.down) },
-                { label: "Loan Amount",     value: fmt(rs.loan) },
-                { label: "Rate (market)",   value: `${rsRate.toFixed(2)}%` },
-                { label: "Tax Rate",        value: `${rsTaxRate}%` },
-                { label: "Monthly HOA",     value: rsHoa > 0 ? fmt(rsHoa) : "None" },
-                { label: "P&I",             value: fmt(rs.pi) },
-                { label: "PITI",            value: fmt(rs.piti) },
-              ].map((r, i) => (
-                <div key={i} className="flex justify-between text-sm py-1 border-b border-green-100">
-                  <span className="text-green-700">{r.label}</span>
-                  <span className="font-semibold text-green-900">{r.value}</span>
+              {/* Resale column */}
+              <div style={{ border: "1px solid #BBF7D0", borderRadius: 12, padding: 16, background: "#F0FDF4" }}>
+                <div style={{ fontWeight: 700, color: "#166534", marginBottom: 12, fontSize: 13, textTransform: "uppercase" as const, letterSpacing: "0.05em" }}>Resale</div>
+                {[
+                  { label: "Purchase Price",  value: fmt(rsPrice) },
+                  { label: `Down (${rsDownPct}%)`, value: fmt(rs.down) },
+                  { label: "Loan Amount",     value: fmt(rs.loan) },
+                  { label: "Rate (market)",   value: `${rsRate.toFixed(2)}%` },
+                  { label: "Tax Rate",        value: `${rsTaxRate}%` },
+                  { label: "Monthly HOA",     value: rsHoa > 0 ? fmt(rsHoa) : "None" },
+                  { label: "P&I",             value: fmt(rs.pi) },
+                  { label: "PITI",            value: fmt(rs.piti) },
+                ].map((r, i) => (
+                  <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: 12, padding: "5px 0", borderBottom: "1px solid #DCFCE7" }}>
+                    <span style={{ color: "#15803D" }}>{r.label}</span>
+                    <span style={{ fontWeight: 600, color: "#14532D" }}>{r.value}</span>
+                  </div>
+                ))}
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, fontWeight: 700, marginTop: 8, paddingTop: 8, color: "#14532D" }}>
+                  <span>Total Monthly</span><span>{fmt(rs.total)}</span>
                 </div>
-              ))}
-              <div className="flex justify-between text-base font-bold mt-2 pt-2 text-green-900">
-                <span>Total Monthly</span><span>{fmt(rs.total)}</span>
               </div>
             </div>
           </div>
-          <div className="bg-rio-red/5 border-2 border-rio-red rounded-xl px-5 py-4 text-sm text-gray-700">
-            <strong className="text-rio-red">Monthly Difference: </strong>
-            {nb.total > rs.total
-              ? `Resale saves ${fmt(nb.total - rs.total)}/mo (${fmt((nb.total - rs.total) * 12)}/yr)`
-              : `New Build saves ${fmt(rs.total - nb.total)}/mo (${fmt((rs.total - nb.total) * 12)}/yr)`}
-            <br />
-            <strong>Payment-equivalent:</strong> {fmt(nbPrice)} new build at {nbRate}% = same payment as a {fmt(equivalentResalePrice)} resale at {rsRate.toFixed(2)}%
+
+          {/* Difference strip */}
+          <div style={{ margin: "16px 28px", background: "linear-gradient(135deg, #C8202A 0%, #a01820 100%)", borderRadius: 12, padding: "14px 20px", color: "#FFFFFF" }}>
+            <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4 }}>
+              Monthly Difference: {nb.total > rs.total
+                ? `Resale saves ${fmt(nb.total - rs.total)}/mo (${fmt((nb.total - rs.total) * 12)}/yr)`
+                : `New Build saves ${fmt(rs.total - nb.total)}/mo (${fmt((rs.total - nb.total) * 12)}/yr)`}
+            </div>
+            <div style={{ fontSize: 11, opacity: 0.9 }}>
+              Payment-equivalent: {fmt(nbPrice)} new build at {nbRate}% = same payment as a {fmt(equivalentResalePrice)} resale at {rsRate.toFixed(2)}%
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div style={{ padding: "12px 28px 16px", borderTop: "1px solid #E8E8E8", textAlign: "center" as const, fontSize: 9, color: "#999" }}>
+            The Rio Group — Powered by AZ &amp; Associates. All figures are estimates for informational purposes only.
           </div>
         </div>
 
@@ -1123,7 +1171,7 @@ function NewBuildCalc() {
       </div>
 
       {/* Highlighted total monthly payment comparison */}
-      <div className="grid grid-cols-2 gap-4 mb-4">
+      <div className="grid grid-cols-2 gap-4 mb-4 no-print">
         <div className="bg-blue-50 border-2 border-blue-400 rounded-xl p-4 text-center">
           <div className="text-xs text-blue-600 font-semibold uppercase tracking-wide">New Build Monthly</div>
           <div className="text-3xl font-bold text-blue-900 mt-1">{fmt(nb.total)}</div>
@@ -1137,7 +1185,7 @@ function NewBuildCalc() {
       </div>
 
       {/* Monthly difference */}
-      <div className={`rounded-lg px-4 py-3 text-center text-sm font-semibold mb-4 ${
+      <div className={`rounded-lg px-4 py-3 text-center text-sm font-semibold mb-4 no-print ${
         nb.total > rs.total
           ? "bg-green-50 border border-green-300 text-green-800"
           : "bg-blue-50 border border-blue-300 text-blue-800"
@@ -1148,7 +1196,7 @@ function NewBuildCalc() {
       </div>
 
       {/* Side-by-side comparison cards */}
-      <div className="grid grid-cols-2 gap-3 mb-4">
+      <div className="grid grid-cols-2 gap-3 mb-4 no-print">
         <ResultCard label="NEW BUILD P&I" value={fmt(nb.pi)} sub="Principal and Interest only — does not include taxes, insurance, or HOA" />
         <ResultCard label="RESALE P&I" value={fmt(rs.pi)} sub="Principal and Interest only — does not include taxes, insurance, or HOA" />
         <ResultCard label="NEW BUILD PITI" value={fmt(nb.piti)} sub="Includes Principal, Interest, Taxes and Insurance" />
@@ -1160,7 +1208,7 @@ function NewBuildCalc() {
       </div>
 
       {/* Key insight: max new build price to match resale payment */}
-      <div className="bg-rio-red/5 border-2 border-rio-red rounded-xl px-5 py-4 mb-4">
+      <div className="bg-rio-red/5 border-2 border-rio-red rounded-xl px-5 py-4 mb-4 no-print">
         <h4 className="font-bold text-rio-red text-sm mb-2">New Build Price Suggestion</h4>
         <p className="text-sm text-gray-700">
           To match the resale payment of <strong>{fmt(rs.total)}/mo</strong>, the client could purchase a new build up to{" "}
@@ -1177,12 +1225,12 @@ function NewBuildCalc() {
         ) : null}
       </div>
 
-      <div className="bg-rio-gray border border-gray-200 rounded-lg px-4 py-3 text-sm mb-4">
+      <div className="bg-rio-gray border border-gray-200 rounded-lg px-4 py-3 text-sm mb-4 no-print">
         <strong>Payment-equivalent price:</strong> A {fmt(nbPrice)} new build at {nbRate}% = same payment as a{" "}
         <strong>{fmt(equivalentResalePrice)}</strong> resale at {rsRate.toFixed(2)}%
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 no-print">
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm">
             <h4 className="font-bold text-blue-800 mb-1">New Build Notes</h4>
             <ul className="text-blue-700 space-y-1">
@@ -1206,11 +1254,6 @@ function NewBuildCalc() {
             </ul>
           </div>
         </div>
-
-        {/* Print-only footer */}
-        <div className="print-only mt-3 pt-3 border-t border-gray-200 text-center text-xs text-gray-400">
-          The Rio Group — Powered by AZ &amp; Associates. All figures are estimates for informational purposes only. Subject to lender approval and qualification.
-        </div>
       </div>{/* end printRef */}
 
       <div className="flex flex-wrap gap-3 mt-6 pt-6 border-t border-gray-100 no-print">
@@ -1218,7 +1261,14 @@ function NewBuildCalc() {
           onClick={() => handlePrint()}
           style={{ padding: "12px 28px", borderRadius: "10px", background: "#C8202A", color: "#FFFFFF", fontWeight: 600, fontSize: "0.9375rem", border: "none", cursor: "pointer" }}
         >
-          Print / Save PDF
+          Save PDF
+        </button>
+        <button
+          onClick={downloadJPG}
+          disabled={imgLoading}
+          style={{ padding: "12px 28px", borderRadius: "10px", background: "#111111", color: "#FFFFFF", fontWeight: 600, fontSize: "0.9375rem", border: "none", cursor: "pointer", opacity: imgLoading ? 0.6 : 1 }}
+        >
+          {imgLoading ? "Saving…" : "Save as Image"}
         </button>
       </div>
     </div>
@@ -1341,6 +1391,8 @@ function SellerNetCalc({ importedPayoff }: { importedPayoff: number | null }) {
     pageStyle: `
       @page { margin: 0.5in; size: letter portrait; }
       body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .no-print { display: none !important; height: 0 !important; margin: 0 !important; padding: 0 !important; overflow: hidden !important; }
+      .print-root { padding: 0 !important; }
     `,
     onBeforePrint: () => new Promise<void>((resolve) => {
       const imgs = printRef.current?.querySelectorAll("img") ?? [];
@@ -1645,8 +1697,8 @@ function SellerNetCalc({ importedPayoff }: { importedPayoff: number | null }) {
         </div>
         </div>{/* end no-print inputs grid */}
 
-        {/* Line-by-line breakdown */}
-      <div className="bg-white border border-gray-200 rounded-xl p-5">
+        {/* Line-by-line breakdown (screen only) */}
+      <div className="bg-white border border-gray-200 rounded-xl p-5 no-print">
         <h4 className="font-bold text-gray-800 mb-3 text-sm uppercase tracking-wide">Net Proceeds Breakdown</h4>
 
         <div className="flex justify-between items-center py-2 border-b border-gray-100">
