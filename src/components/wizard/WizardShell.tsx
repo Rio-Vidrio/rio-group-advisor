@@ -1,7 +1,7 @@
 "use client";
 import { useState, useRef, useMemo } from "react";
-import Image from "next/image";
 import { useReactToPrint } from "react-to-print";
+import { TRG_LOGO_BLACK_B64, AZ_LOGO_BLACK_B64 } from "@/lib/printLogos";
 import {
   ClientData,
   defaultClientData,
@@ -209,7 +209,14 @@ export default function WizardShell({ onTabChange }: Props) {
   const [showScheduleC, setShowScheduleC] = useState(false);
   const [debtsTouched, setDebtsTouched] = useState(false);
   const printRef = useRef<HTMLDivElement>(null);
-  const handlePrint = useReactToPrint({ contentRef: printRef });
+  const handlePrint = useReactToPrint({
+    contentRef: printRef,
+    pageStyle: `
+      @page { margin: 0.5in; size: letter portrait; }
+      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .no-print { display: none !important; }
+    `,
+  });
 
   /* ---- update with cascade clearing ---- */
   const update = (partial: Partial<ClientData>) => {
@@ -1298,19 +1305,27 @@ export default function WizardShell({ onTabChange }: Props) {
             <SectionLabel label="Recommendations" />
 
             <div ref={printRef} className="print-container">
-              {/* Print Header */}
-              <div className="print-only mb-6 text-center">
-                <Image
-                  src="/rio-landscape.png"
-                  alt="The Rio Group"
-                  width={200}
-                  height={60}
-                  className="mx-auto mb-2"
-                />
-                <p className="text-sm text-gray-500">
-                  Prepared for {client.firstName} {client.lastName} |{" "}
-                  {client.date}
-                </p>
+              {/* Print Header — base64 logos for reliable print */}
+              <div className="print-only mb-6">
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingBottom: 12, borderBottom: "3px solid #C8202A", marginBottom: 12 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={TRG_LOGO_BLACK_B64} alt="The Rio Group" style={{ height: 44, width: "auto", display: "block" }} />
+                    <div>
+                      <div style={{ color: "#111", fontSize: 11, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase" as const }}>The Rio Group</div>
+                      <div style={{ color: "#999", fontSize: 9, fontWeight: 500, letterSpacing: "0.08em", textTransform: "uppercase" as const }}>Built Different</div>
+                    </div>
+                  </div>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={AZ_LOGO_BLACK_B64} alt="AZ & Associates" style={{ height: 36, width: "auto", display: "block" }} />
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div>
+                    <div style={{ fontSize: 9, color: "#C8202A", fontWeight: 600, textTransform: "uppercase" as const, letterSpacing: "0.1em", marginBottom: 4 }}>Prepared For</div>
+                    <div style={{ fontWeight: 700, fontSize: 15, color: "#111" }}>{client.firstName} {client.lastName}</div>
+                  </div>
+                  <div style={{ fontSize: 12, color: "#999" }}>{client.date}</div>
+                </div>
               </div>
 
               <h3 className="text-xl font-bold mb-1">
@@ -1632,6 +1647,31 @@ export default function WizardShell({ onTabChange }: Props) {
                       {result.program.loanType === "FHA" && (
                         <p className="mt-2 text-xs text-gray-500">PMI required — FHA mortgage insurance premium applies</p>
                       )}
+                      {/* Pros / Cons */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
+                        <div>
+                          <h5 style={{ fontSize: "0.6875rem", fontWeight: 600, color: "#16A34A", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "6px" }}>Pros</h5>
+                          <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "4px" }}>
+                            {result.program.pros.map((p, i) => (
+                              <li key={i} style={{ display: "flex", alignItems: "flex-start", gap: "6px", fontSize: "0.8125rem", color: "#111" }}>
+                                <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#16A34A", flexShrink: 0, marginTop: 5 }} />
+                                {p}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                        <div>
+                          <h5 style={{ fontSize: "0.6875rem", fontWeight: 600, color: "#6B6B6B", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "6px" }}>Cons</h5>
+                          <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "4px" }}>
+                            {result.program.cons.map((c, i) => (
+                              <li key={i} style={{ display: "flex", alignItems: "flex-start", gap: "6px", fontSize: "0.8125rem", color: "#6B6B6B" }}>
+                                <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#9B9B9B", flexShrink: 0, marginTop: 5 }} />
+                                {c}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
                       {result.reasons.length > 0 && (
                         <div style={{ fontSize: "0.8125rem", color: "#6B6B6B", marginTop: "8px", display: "flex", flexDirection: "column", gap: "4px" }}>
                           {result.reasons.map((r, i) => (
