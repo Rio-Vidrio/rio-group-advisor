@@ -5,7 +5,7 @@ import { useReactToPrint } from "react-to-print";
 import html2canvas from "html2canvas";
 import { calculateMonthlyPayment } from "@/lib/loanPrograms";
 import { getRates, Rates, defaultRates } from "@/lib/rateStore";
-import { TRG_LOGO_WHITE_B64, AZ_LOGO_WHITE_B64 } from "@/lib/printLogos";
+import { TRG_LOGO_BLACK_B64, AZ_LOGO_BLACK_B64 } from "@/lib/printLogos";
 
 /* ── Floating Quick Calculator ── */
 function FloatingCalc() {
@@ -471,24 +471,24 @@ function PaymentCalc() {
 
         {/* ── SUMMARY CARD (used for print AND jpg export) ── */}
         <div ref={summaryRef} id="summary-card" className="print-only" style={{ maxWidth: 680, background: "#FFFFFF", borderRadius: 16, overflow: "hidden", boxShadow: "0 4px 24px rgba(0,0,0,0.08)" }}>
-          {/* Header band */}
-          <div style={{ background: "linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)", padding: "24px 28px", borderBottom: "3px solid #C8202A", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          {/* Header band — black logos on white for reliable printing */}
+          <div style={{ padding: "20px 28px", borderBottom: "3px solid #C8202A", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={TRG_LOGO_WHITE_B64} alt="The Rio Group" style={{ height: 44, width: "auto", display: "block" } as React.CSSProperties} />
+              <img src={TRG_LOGO_BLACK_B64} alt="The Rio Group" style={{ height: 44, width: "auto", display: "block" } as React.CSSProperties} />
               <div>
-                <div style={{ color: "#FFFFFF", fontSize: 11, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase" as const }}>The Rio Group</div>
+                <div style={{ color: "#111", fontSize: 11, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase" as const }}>The Rio Group</div>
                 <div style={{ color: "#999", fontSize: 9, fontWeight: 500, letterSpacing: "0.08em", textTransform: "uppercase" as const }}>Built Different</div>
               </div>
             </div>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={AZ_LOGO_WHITE_B64} alt="AZ & Associates" style={{ height: 36, width: "auto", display: "block" } as React.CSSProperties} />
+            <img src={AZ_LOGO_BLACK_B64} alt="AZ & Associates" style={{ height: 36, width: "auto", display: "block" } as React.CSSProperties} />
           </div>
 
           {/* Title bar */}
-          <div style={{ background: "#C8202A", padding: "10px 28px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ color: "#FFFFFF", fontSize: 14, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase" as const }}>Monthly Payment Summary</span>
-            <span style={{ color: "rgba(255,255,255,0.8)", fontSize: 11 }}>{todayStr}</span>
+          <div style={{ borderBottom: "2px solid #C8202A", padding: "10px 28px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <span style={{ color: "#C8202A", fontSize: 14, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase" as const }}>Monthly Payment Summary</span>
+            <span style={{ color: "#999", fontSize: 11 }}>{todayStr}</span>
           </div>
 
           {/* Client info row */}
@@ -519,16 +519,16 @@ function PaymentCalc() {
           </div>
 
           {/* Total payment highlight */}
-          <div style={{ margin: "0 20px 20px", background: "linear-gradient(135deg, #C8202A 0%, #a01a22 100%)", borderRadius: 12, padding: "18px 20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ margin: "0 20px 20px", border: "2px solid #C8202A", borderRadius: 12, padding: "18px 20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div>
-              <div style={{ color: "rgba(255,255,255,0.7)", fontSize: 10, fontWeight: 600, textTransform: "uppercase" as const, letterSpacing: "0.1em" }}>Total Monthly Payment</div>
-              <div style={{ color: "#fff", fontSize: 11, marginTop: 2 }}>Principal, Interest, Taxes, Insurance{hoa > 0 ? " & HOA" : ""}</div>
+              <div style={{ color: "#C8202A", fontSize: 10, fontWeight: 600, textTransform: "uppercase" as const, letterSpacing: "0.1em" }}>Total Monthly Payment</div>
+              <div style={{ color: "#666", fontSize: 11, marginTop: 2 }}>Principal, Interest, Taxes, Insurance{hoa > 0 ? " & HOA" : ""}</div>
             </div>
-            <div style={{ color: "#FFFFFF", fontSize: 28, fontWeight: 800, fontVariantNumeric: "tabular-nums" }}>{fmt(total)}</div>
+            <div style={{ color: "#C8202A", fontSize: 28, fontWeight: 800, fontVariantNumeric: "tabular-nums" }}>{fmt(total)}</div>
           </div>
 
           {/* Footer */}
-          <div style={{ borderTop: "2px solid #C8202A", padding: "12px 28px 16px", textAlign: "center" as const, background: "#FAFAF9" }}>
+          <div style={{ borderTop: "2px solid #C8202A", padding: "12px 28px 16px", textAlign: "center" as const }}>
             <div style={{ fontSize: 10, color: "#6B6B6B", fontWeight: 500 }}>The Rio Group — Powered by AZ &amp; Associates</div>
             <div style={{ fontSize: 8, color: "#ABABAB", marginTop: 3 }}>All figures are estimates for informational purposes only. Subject to lender approval and qualification.</div>
           </div>
@@ -928,6 +928,9 @@ function NewBuildCalc() {
 
   useEffect(() => { setRsRate(rates.fha); }, [rates]);
 
+  const [clientName, setClientName] = useState("");
+  const [propertyAddress, setPropertyAddress] = useState("");
+
   const todayStr = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
   const printRef = useRef<HTMLDivElement>(null);
   const summaryRef = useRef<HTMLDivElement>(null);
@@ -943,7 +946,7 @@ function NewBuildCalc() {
     try {
       const canvas = await html2canvas(el, { scale: 2, backgroundColor: "#ffffff", useCORS: true, logging: false });
       const link = document.createElement("a");
-      link.download = "Rio-Group-NewBuild-vs-Resale.jpg";
+      link.download = `Rio-Group-NewBuild-vs-Resale${clientName ? `-${clientName.replace(/\s+/g, "-")}` : ""}.jpg`;
       link.href = canvas.toDataURL("image/jpeg", 0.95);
       link.click();
     } finally {
@@ -1023,25 +1026,34 @@ function NewBuildCalc() {
 
         {/* ── SUMMARY CARD (used for print AND jpg export) ── */}
         <div ref={summaryRef} id="nb-vs-resale-summary" className="print-only" style={{ maxWidth: 680, background: "#FFFFFF", borderRadius: 16, overflow: "hidden", boxShadow: "0 4px 24px rgba(0,0,0,0.08)" }}>
-          {/* Header band */}
-          <div style={{ background: "linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)", padding: "24px 28px", borderBottom: "3px solid #C8202A", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          {/* Header band — black logos on white so they always print */}
+          <div style={{ padding: "20px 28px", borderBottom: "3px solid #C8202A", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={TRG_LOGO_WHITE_B64} alt="The Rio Group" style={{ height: 44, width: "auto", display: "block" } as React.CSSProperties} />
+              <img src={TRG_LOGO_BLACK_B64} alt="The Rio Group" style={{ height: 44, width: "auto", display: "block" } as React.CSSProperties} />
               <div>
-                <div style={{ color: "#FFFFFF", fontSize: 11, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase" as const }}>The Rio Group</div>
+                <div style={{ color: "#111", fontSize: 11, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase" as const }}>The Rio Group</div>
                 <div style={{ color: "#999", fontSize: 9, fontWeight: 500, letterSpacing: "0.08em", textTransform: "uppercase" as const }}>Built Different</div>
               </div>
             </div>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={AZ_LOGO_WHITE_B64} alt="AZ & Associates" style={{ height: 36, width: "auto", display: "block" } as React.CSSProperties} />
+            <img src={AZ_LOGO_BLACK_B64} alt="AZ & Associates" style={{ height: 36, width: "auto", display: "block" } as React.CSSProperties} />
           </div>
 
           {/* Title bar */}
-          <div style={{ background: "#C8202A", padding: "10px 28px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ color: "#FFFFFF", fontSize: 14, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase" as const }}>New Build vs. Resale Comparison</span>
-            <span style={{ color: "rgba(255,255,255,0.8)", fontSize: 11 }}>{todayStr}</span>
+          <div style={{ borderBottom: "2px solid #C8202A", padding: "10px 28px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <span style={{ color: "#C8202A", fontSize: 14, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase" as const }}>New Build vs. Resale Comparison</span>
+            <span style={{ color: "#999", fontSize: 11 }}>{todayStr}</span>
           </div>
+
+          {/* Client info row */}
+          {(clientName || propertyAddress) && (
+            <div style={{ padding: "14px 28px", borderBottom: "1px solid #E8E8E8", background: "#FAFAF9" }}>
+              <div style={{ fontSize: 9, color: "#C8202A", fontWeight: 600, textTransform: "uppercase" as const, letterSpacing: "0.1em", marginBottom: 4 }}>Prepared For</div>
+              {clientName && <div style={{ fontWeight: 700, fontSize: 15, color: "#111" }}>{clientName}</div>}
+              {propertyAddress && <div style={{ fontSize: 12, color: "#6B6B6B", marginTop: 2 }}>{propertyAddress}</div>}
+            </div>
+          )}
 
           {/* Side-by-side comparison */}
           <div style={{ padding: "20px 28px 0" }}>
@@ -1094,13 +1106,13 @@ function NewBuildCalc() {
           </div>
 
           {/* Difference strip */}
-          <div style={{ margin: "16px 28px", background: "linear-gradient(135deg, #C8202A 0%, #a01820 100%)", borderRadius: 12, padding: "14px 20px", color: "#FFFFFF" }}>
-            <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4 }}>
+          <div style={{ margin: "16px 28px", border: "2px solid #C8202A", borderRadius: 12, padding: "14px 20px" }}>
+            <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4, color: "#C8202A" }}>
               Monthly Difference: {nb.total > rs.total
                 ? `Resale saves ${fmt(nb.total - rs.total)}/mo (${fmt((nb.total - rs.total) * 12)}/yr)`
                 : `New Build saves ${fmt(rs.total - nb.total)}/mo (${fmt((rs.total - nb.total) * 12)}/yr)`}
             </div>
-            <div style={{ fontSize: 11, opacity: 0.9 }}>
+            <div style={{ fontSize: 11, color: "#666" }}>
               Payment-equivalent: {fmt(nbPrice)} new build at {nbRate}% = same payment as a {fmt(equivalentResalePrice)} resale at {rsRate.toFixed(2)}%
             </div>
           </div>
@@ -1112,6 +1124,34 @@ function NewBuildCalc() {
         </div>
 
         <h3 className="text-lg font-bold mb-5 no-print" style={{ color: "#111111", letterSpacing: "-0.01em" }}>New Build vs. Resale Comparison</h3>
+
+        {/* Client info for print */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5 pb-5 border-b border-gray-100 no-print">
+          <div>
+            <label style={labelStyle}>
+              Client Name <span className="text-xs text-gray-400 font-normal">(optional — for print)</span>
+            </label>
+            <input
+              type="text"
+              value={clientName}
+              onChange={(e) => setClientName(e.target.value)}
+              placeholder="e.g. John & Jane Smith"
+              style={inputStyle}
+            />
+          </div>
+          <div>
+            <label style={labelStyle}>
+              Property Address <span className="text-xs text-gray-400 font-normal">(optional — for print)</span>
+            </label>
+            <input
+              type="text"
+              value={propertyAddress}
+              onChange={(e) => setPropertyAddress(e.target.value)}
+              placeholder="e.g. 1234 W Main St, Chandler AZ"
+              style={inputStyle}
+            />
+          </div>
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 no-print">
           {/* New Build inputs */}
@@ -1476,24 +1516,24 @@ function SellerNetCalc({ importedPayoff }: { importedPayoff: number | null }) {
 
         {/* ── SUMMARY CARD (used for print AND jpg export) ── */}
         <div ref={summaryRef} id="seller-summary-card" className="print-only" style={{ maxWidth: 680, background: "#FFFFFF", borderRadius: 16, overflow: "hidden", boxShadow: "0 4px 24px rgba(0,0,0,0.08)" }}>
-          {/* Header band */}
-          <div style={{ background: "linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)", padding: "24px 28px", borderBottom: "3px solid #C8202A", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          {/* Header band — black logos on white for reliable printing */}
+          <div style={{ padding: "20px 28px", borderBottom: "3px solid #C8202A", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={TRG_LOGO_WHITE_B64} alt="The Rio Group" style={{ height: 44, width: "auto", display: "block" } as React.CSSProperties} />
+              <img src={TRG_LOGO_BLACK_B64} alt="The Rio Group" style={{ height: 44, width: "auto", display: "block" } as React.CSSProperties} />
               <div>
-                <div style={{ color: "#FFFFFF", fontSize: 11, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase" as const }}>The Rio Group</div>
+                <div style={{ color: "#111", fontSize: 11, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase" as const }}>The Rio Group</div>
                 <div style={{ color: "#999", fontSize: 9, fontWeight: 500, letterSpacing: "0.08em", textTransform: "uppercase" as const }}>Built Different</div>
               </div>
             </div>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={AZ_LOGO_WHITE_B64} alt="AZ & Associates" style={{ height: 36, width: "auto", display: "block" } as React.CSSProperties} />
+            <img src={AZ_LOGO_BLACK_B64} alt="AZ & Associates" style={{ height: 36, width: "auto", display: "block" } as React.CSSProperties} />
           </div>
 
           {/* Title bar */}
-          <div style={{ background: "#C8202A", padding: "10px 28px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ color: "#FFFFFF", fontSize: 14, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase" as const }}>Seller Net Proceeds</span>
-            <span style={{ color: "rgba(255,255,255,0.8)", fontSize: 11 }}>{todayStr}</span>
+          <div style={{ borderBottom: "2px solid #C8202A", padding: "10px 28px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <span style={{ color: "#C8202A", fontSize: 14, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase" as const }}>Seller Net Proceeds</span>
+            <span style={{ color: "#999", fontSize: 11 }}>{todayStr}</span>
           </div>
 
           {/* Client info row */}
@@ -1517,22 +1557,22 @@ function SellerNetCalc({ importedPayoff }: { importedPayoff: number | null }) {
           </div>
 
           {/* Net proceeds highlight */}
-          <div style={{ margin: "0 20px 20px", background: isNegative ? "linear-gradient(135deg, #DC2626 0%, #b91c1c 100%)" : "linear-gradient(135deg, #C8202A 0%, #a01a22 100%)", borderRadius: 12, padding: "18px 20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ margin: "0 20px 20px", border: `2px solid ${isNegative ? "#DC2626" : "#C8202A"}`, borderRadius: 12, padding: "18px 20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div>
-              <div style={{ color: "rgba(255,255,255,0.7)", fontSize: 10, fontWeight: 600, textTransform: "uppercase" as const, letterSpacing: "0.1em" }}>Estimated Net Proceeds</div>
-              <div style={{ color: "#fff", fontSize: 11, marginTop: 2 }}>After all deductions and commissions</div>
+              <div style={{ color: isNegative ? "#DC2626" : "#C8202A", fontSize: 10, fontWeight: 600, textTransform: "uppercase" as const, letterSpacing: "0.1em" }}>Estimated Net Proceeds</div>
+              <div style={{ color: "#666", fontSize: 11, marginTop: 2 }}>After all deductions and commissions</div>
             </div>
-            <div style={{ color: "#FFFFFF", fontSize: 28, fontWeight: 800, fontVariantNumeric: "tabular-nums" }}>{isNegative ? "−" : ""}{fmt(Math.abs(netProceeds))}</div>
+            <div style={{ color: isNegative ? "#DC2626" : "#C8202A", fontSize: 28, fontWeight: 800, fontVariantNumeric: "tabular-nums" }}>{isNegative ? "−" : ""}{fmt(Math.abs(netProceeds))}</div>
           </div>
 
           {isNegative && (
-            <div style={{ margin: "0 20px 16px", padding: "10px 14px", background: "#FEF2F2", border: "1px solid #FECACA", borderRadius: 8, fontSize: 11, color: "#991B1B", fontWeight: 600 }}>
+            <div style={{ margin: "0 20px 16px", padding: "10px 14px", border: "1px solid #FECACA", borderRadius: 8, fontSize: 11, color: "#991B1B", fontWeight: 600 }}>
               ⚠ Estimated proceeds are negative — review payoff, concessions, and commission structure.
             </div>
           )}
 
           {/* Footer */}
-          <div style={{ borderTop: "2px solid #C8202A", padding: "12px 28px 16px", textAlign: "center" as const, background: "#FAFAF9" }}>
+          <div style={{ borderTop: "2px solid #C8202A", padding: "12px 28px 16px", textAlign: "center" as const }}>
             <div style={{ fontSize: 10, color: "#6B6B6B", fontWeight: 500 }}>The Rio Group — Powered by AZ &amp; Associates</div>
             <div style={{ fontSize: 8, color: "#ABABAB", marginTop: 3 }}>All figures are estimates for informational purposes only. Subject to lender approval and qualification.</div>
           </div>
