@@ -287,6 +287,25 @@
     page-break-inside: avoid !important;
     break-inside: avoid !important;
   }
+
+  /* Wizard print container — compact for multi-program output */
+  .print-container {
+    font-size: 10px;
+    padding: 0;
+  }
+  .print-container .space-y-4 > * {
+    padding: 12px !important;
+    margin-bottom: 8px !important;
+  }
+  .print-container .grid {
+    gap: 6px !important;
+  }
+  .print-container h3 {
+    font-size: 14px !important;
+  }
+  .print-container h4 {
+    font-size: 11px !important;
+  }
 }
 
 .print-only { display: none; }
