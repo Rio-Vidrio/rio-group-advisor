@@ -753,23 +753,42 @@ function DTICalc() {
   const [cosignerDebts, setCosignerDebts] = useState(0);
   const [housing, setHousing] = useState(2000);
   const [hasCosigner, setHasCosigner] = useState(false);
+  const [creditScore, setCreditScore] = useState(700);
 
   const totalMonthlyIncome = (income + cosignerIncome) / 12;
   const totalDebts = debts + cosignerDebts;
   const housingDTI = totalMonthlyIncome > 0 ? (housing / totalMonthlyIncome) * 100 : 0;
   const totalDTI = totalMonthlyIncome > 0 ? ((housing + totalDebts) / totalMonthlyIncome) * 100 : 0;
-  const max45 = totalMonthlyIncome * 0.45 - totalDebts;
-  const max57 = totalMonthlyIncome * 0.57 - totalDebts;
 
-  const dtiColor = (v: number) =>
-    v > 50 ? "text-red-600" : v > 43 ? "text-amber-600" : "text-green-600";
+  /* FHA limits: front-end 45.9%, back-end 56.9% */
+  const fhaFrontMax = 45.9;
+  const fhaBackMax = 56.9;
+  const maxFHAFront = totalMonthlyIncome * (fhaFrontMax / 100);
+  const maxFHABack = totalMonthlyIncome * (fhaBackMax / 100) - totalDebts;
+  const maxFHA = Math.min(maxFHAFront, maxFHABack);
+
+  /* Conventional limits: 49.9% with 700+ credit, 45% otherwise */
+  const convMaxDTI = creditScore >= 700 ? 49.9 : 45;
+  const maxConv = totalMonthlyIncome * (convMaxDTI / 100) - totalDebts;
+
+  /* Status checks */
+  const fhaFrontOK = housingDTI <= fhaFrontMax;
+  const fhaBackOK = totalDTI <= fhaBackMax;
+  const fhaOK = fhaFrontOK && fhaBackOK;
+  const convOK = totalDTI <= convMaxDTI;
+
+  const dtiColor = (v: number, limit: number) =>
+    v > limit ? "text-red-600" : v > limit - 5 ? "text-amber-600" : "text-green-600";
 
   return (
     <div>
       <h3 className="text-lg font-bold mb-5" style={{ color: "#111111", letterSpacing: "-0.01em" }}>DTI Calculator</h3>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
         <MoneyInput label="Annual Gross Income" value={income} onChange={setIncome} />
         <MoneyInput label="Monthly Debts" value={debts} onChange={setDebts} />
+        <NumberInput label="Credit Score" value={creditScore} onChange={setCreditScore} placeholder="700" />
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
         <MoneyInput label="Proposed Monthly Housing Payment" value={housing} onChange={setHousing} />
         <div className="flex items-end">
           <button
@@ -795,17 +814,66 @@ function DTICalc() {
           <MoneyInput label="Co-signer Debts" value={cosignerDebts} onChange={setCosignerDebts} />
         </div>
       )}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+
+      {/* DTI Ratio Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
         <div className="bg-rio-gray rounded-lg p-4 border">
           <div className="text-xs text-gray-500">Housing DTI</div>
-          <div className={`text-xl font-bold ${dtiColor(housingDTI)}`}>{housingDTI.toFixed(1)}%</div>
+          <div className={`text-xl font-bold ${dtiColor(housingDTI, fhaFrontMax)}`}>{housingDTI.toFixed(1)}%</div>
+          <div className="text-xs text-gray-400 mt-1">FHA front-end limit: {fhaFrontMax}%</div>
         </div>
         <div className="bg-rio-gray rounded-lg p-4 border">
           <div className="text-xs text-gray-500">Total DTI</div>
-          <div className={`text-xl font-bold ${dtiColor(totalDTI)}`}>{totalDTI.toFixed(1)}%</div>
+          <div className={`text-xl font-bold ${dtiColor(totalDTI, convMaxDTI)}`}>{totalDTI.toFixed(1)}%</div>
+          <div className="text-xs text-gray-400 mt-1">Conv limit: {convMaxDTI}%</div>
         </div>
-        <ResultCard label="Max Payment (45%)" value={fmt(Math.max(max45, 0))} sub="Front-End Ratio — Conventional programs and FHA housing payment vs income only" />
-        <ResultCard label="Max Payment (57%)" value={fmt(Math.min(Math.max(max57, 0), 4200))} sub={Math.max(max57, 0) > 4200 ? "Capped at FHA Maricopa County loan limit — max purchase price $578,000" : "Back-End Ratio — FHA only, includes all debts plus monthly housing payment"} />
+        <ResultCard label={`Max Payment — Conventional (${convMaxDTI}%)`} value={fmt(Math.max(maxConv, 0))} sub={creditScore >= 700 ? "700+ credit — expanded to 49.9% DTI" : "Under 700 credit — capped at 45% DTI"} />
+        <ResultCard label="Max Payment — FHA (56.9%)" value={fmt(Math.min(Math.max(maxFHA, 0), 4200))} sub={Math.max(maxFHA, 0) > 4200 ? "Capped at FHA Maricopa County loan limit" : "Back-end ratio includes all debts plus housing"} />
+      </div>
+
+      {/* Qualification Status */}
+      {housing > 0 && totalMonthlyIncome > 0 && (
+        <div className="space-y-2">
+          {/* Conventional status */}
+          {convOK ? (
+            <div className="bg-green-50 border border-green-200 rounded-lg px-4 py-3 text-sm text-green-800">
+              <strong>Conventional:</strong> Total DTI of {totalDTI.toFixed(1)}% is within the {convMaxDTI}% limit{creditScore >= 700 ? " (expanded for 700+ credit)" : ""}. This payment works.
+            </div>
+          ) : (
+            <div className="bg-red-50 border border-red-300 rounded-lg px-4 py-3 text-sm text-red-800">
+              <strong>Conventional: Exceeds limit.</strong> Total DTI of {totalDTI.toFixed(1)}% exceeds the {convMaxDTI}% maximum{creditScore < 700 ? ". Credit score under 700 caps conventional at 45%" : ""}. Max housing payment at this income: {fmt(Math.max(maxConv, 0))}/mo.
+              {creditScore < 700 && totalDTI <= 49.9 && <span className="block mt-1 text-amber-700 font-medium">If credit improves to 700+, conventional expands to 49.9% — this payment would qualify.</span>}
+            </div>
+          )}
+
+          {/* FHA status */}
+          {fhaOK ? (
+            <div className="bg-green-50 border border-green-200 rounded-lg px-4 py-3 text-sm text-green-800">
+              <strong>FHA:</strong> Housing DTI {housingDTI.toFixed(1)}% (max {fhaFrontMax}%) and total DTI {totalDTI.toFixed(1)}% (max {fhaBackMax}%) both within limits. This payment works for FHA.
+            </div>
+          ) : (
+            <div className="bg-red-50 border border-red-300 rounded-lg px-4 py-3 text-sm text-red-800">
+              <strong>FHA: Exceeds limit.</strong>
+              {!fhaFrontOK && <span> Housing DTI of {housingDTI.toFixed(1)}% exceeds the {fhaFrontMax}% front-end maximum.</span>}
+              {!fhaBackOK && <span> Total DTI of {totalDTI.toFixed(1)}% exceeds the {fhaBackMax}% back-end maximum.</span>}
+              <span> Max FHA housing payment at this income: {fmt(Math.max(maxFHA, 0))}/mo.</span>
+            </div>
+          )}
+
+          {/* Suggestion if both fail */}
+          {!convOK && !fhaOK && (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-sm text-amber-800">
+              <strong>Suggestion:</strong> This payment does not qualify under conventional or FHA at current income and debts. Options: lower the purchase price, increase income (add a co-signer), or reduce monthly debts by {fmt(Math.ceil((housing + totalDebts) - totalMonthlyIncome * (fhaBackMax / 100)))} to fit FHA limits.
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Reference Notes */}
+      <div className="mt-4 pt-4 border-t border-gray-100">
+        <p className="text-xs text-gray-400 leading-relaxed">
+          <strong>DTI Limits:</strong> FHA allows {fhaFrontMax}% front-end (housing only) and {fhaBackMax}% back-end (housing + debts). Conventional allows {creditScore >= 700 ? "49.9%" : "45%"} total DTI{creditScore >= 700 ? " with 700+ credit score" : " (expands to 49.9% with 700+ credit)"}. VA has no front-end limit; back-end guideline is 41% but can be exceeded with residual income.
+        </p>
       </div>
     </div>
   );
@@ -1858,13 +1926,13 @@ export default function Calculators() {
       </div>
 
       <div style={{ background: "#FFFFFF", borderRadius: "16px", border: "1px solid #E8E8E8", boxShadow: "0 2px 12px rgba(0,0,0,0.06)", padding: "32px" }}>
-        {active === "payment"    && <PaymentCalc />}
-        {active === "dti"        && <DTICalc />}
-        {active === "maxprice"   && <MaxPriceCalc />}
-        {active === "solar"      && <SolarCalc />}
-        {active === "newbuild"   && <NewBuildCalc />}
-        {active === "payoff"     && <LoanPayoffCalc onPayoffCalculated={(amt) => { setPayoffAmount(amt); }} />}
-        {active === "sellernet"  && <SellerNetCalc importedPayoff={payoffAmount} />}
+        <div style={{ display: active === "payment"  ? "block" : "none" }}><PaymentCalc /></div>
+        <div style={{ display: active === "dti"      ? "block" : "none" }}><DTICalc /></div>
+        <div style={{ display: active === "maxprice" ? "block" : "none" }}><MaxPriceCalc /></div>
+        <div style={{ display: active === "solar"    ? "block" : "none" }}><SolarCalc /></div>
+        <div style={{ display: active === "newbuild" ? "block" : "none" }}><NewBuildCalc /></div>
+        <div style={{ display: active === "payoff"   ? "block" : "none" }}><LoanPayoffCalc onPayoffCalculated={(amt) => { setPayoffAmount(amt); }} /></div>
+        <div style={{ display: active === "sellernet"? "block" : "none" }}><SellerNetCalc importedPayoff={payoffAmount} /></div>
       </div>
     </div>
   );
