@@ -120,9 +120,10 @@ export const loanPrograms: LoanProgram[] = [
       "More flexible on tradelines",
     ],
     cons: [
-      "Higher rate (+0.625% over market)",
-      "More interest paid over life of loan",
-      "Still requires clean credit (no lates, no collections)",
+      "Higher rate than market but offset with no PMI",
+      "Requires clean credit history (no lates, no collections)",
+      "Requires cleaner income file",
+      "Must negotiate full 3% concessions to limit out-of-pocket to minimum",
       "3-year homeownership restriction",
     ],
     bestFor: "Buyers without rental history, DACA clients",
