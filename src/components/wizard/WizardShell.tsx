@@ -1508,7 +1508,7 @@ export default function WizardShell({ onTabChange }: Props) {
                 All Programs — Detailed Breakdown
               </h4>
               <div className="space-y-4">
-                {sorted.map((result) => {
+                {sorted.filter((result) => !bestMatch || result.program.id !== bestMatch.program.id).map((result) => {
                   const isEligible = result.eligible && !result.conditional;
                   const isConditional = result.eligible && result.conditional;
                   const status = isEligible ? "qualifies" : isConditional ? "conditional" : "disqualified";
