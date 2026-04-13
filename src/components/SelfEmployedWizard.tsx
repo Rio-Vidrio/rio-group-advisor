@@ -65,41 +65,36 @@ function SectionLabel({ label }: { label: string }) {
   return <div className="section-label mb-3">{label}</div>;
 }
 
-/* ── Schedule C Modal (reuse from main wizard) ── */
-function ScheduleCModal({ open, onClose }: { open: boolean; onClose: () => void }) {
-  if (!open) return null;
+/* ── Inline Schedule C Reference ── */
+function ScheduleCInline() {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
-      <div className="relative bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-        <button onClick={onClose} className="absolute top-3 right-3 w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-600 font-bold text-lg z-10">✕</button>
-        <div className="p-6">
-          <h3 className="text-lg font-bold text-gray-900 mb-4">IRS Schedule C — Net Profit (Line 31)</h3>
-          <div className="relative border border-gray-200 rounded-lg overflow-hidden mb-4">
-            <div className="bg-gray-50 p-8 text-center">
-              <div className="inline-block border-2 border-gray-300 rounded-lg p-6 bg-white mb-4" style={{ maxWidth: "420px" }}>
-                <p className="text-xs text-gray-400 uppercase tracking-wide mb-2">IRS Form 1040 — Schedule C</p>
-                <p className="text-sm font-bold text-gray-800 mb-4">Profit or Loss From Business</p>
-                <div className="space-y-2 text-left text-sm text-gray-600">
-                  <div className="flex justify-between border-b border-gray-100 pb-1"><span>Line 29: Tentative profit</span><span className="text-gray-400">$_____</span></div>
-                  <div className="flex justify-between border-b border-gray-100 pb-1"><span>Line 30: Business use of home</span><span className="text-gray-400">$_____</span></div>
-                  <div className="flex justify-between items-center py-2 px-3 rounded-lg" style={{ background: "#FFF5F5", border: "2px solid #C8202A" }}>
-                    <span className="font-bold text-gray-900">Line 31: Net profit (or loss)</span>
-                    <span className="font-bold text-[#C8202A]">← USE THIS</span>
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center justify-center gap-2 text-[#C8202A] font-bold text-sm">
-                <span className="text-2xl">↑</span>
-                <span>NET PROFIT — Use this number</span>
-              </div>
+    <div className="bg-gray-50 border border-gray-200 rounded-xl overflow-hidden">
+      <div className="px-5 py-3 border-b border-gray-200 bg-white">
+        <h4 className="text-sm font-bold text-gray-900">Where to Find Your Income — IRS Schedule C</h4>
+        <p className="text-xs text-gray-500 mt-0.5">Use Line 31 from your federal tax return (Form 1040 Schedule C)</p>
+      </div>
+      <div className="p-5">
+        <div className="inline-block border-2 border-gray-300 rounded-lg p-5 bg-white w-full max-w-md">
+          <p className="text-xs text-gray-400 uppercase tracking-wide mb-1.5">IRS Form 1040 — Schedule C</p>
+          <p className="text-sm font-bold text-gray-800 mb-3">Profit or Loss From Business</p>
+          <div className="space-y-1.5 text-sm text-gray-600">
+            <div className="flex justify-between border-b border-gray-100 pb-1"><span>Line 29: Tentative profit</span><span className="text-gray-400">$_____</span></div>
+            <div className="flex justify-between border-b border-gray-100 pb-1"><span>Line 30: Business use of home</span><span className="text-gray-400">$_____</span></div>
+            <div className="flex justify-between items-center py-2 px-3 rounded-lg" style={{ background: "#FFF5F5", border: "2px solid #C8202A" }}>
+              <span className="font-bold text-gray-900">Line 31: Net profit (or loss)</span>
+              <span className="font-bold text-[#C8202A]">← USE THIS</span>
             </div>
           </div>
-          <p className="text-xs text-gray-500">Source: IRS Form 1040 Schedule C. Use the 2-year average of Line 31 for income qualification.</p>
-          <a href="https://www.irs.gov/pub/irs-pdf/f1040sc.pdf" target="_blank" rel="noopener noreferrer"
-            className="inline-block mt-3 text-xs text-[#C8202A] underline font-medium">
-            Download full IRS Schedule C form (PDF) ↗
-          </a>
         </div>
+        <div className="flex items-center gap-2 text-[#C8202A] font-bold text-xs mt-3">
+          <span className="text-lg">↑</span>
+          <span>Enter this number for each tax year below</span>
+        </div>
+        <p className="text-xs text-gray-400 mt-3">For S-Corp / LLC owners: use net income from K-1 distributions plus any W2 salary paid from the business. Enter total net qualifying income below.</p>
+        <a href="https://www.irs.gov/pub/irs-pdf/f1040sc.pdf" target="_blank" rel="noopener noreferrer"
+          className="inline-block mt-2 text-xs text-[#C8202A] underline font-medium">
+          Download full IRS Schedule C form (PDF) ↗
+        </a>
       </div>
     </div>
   );
@@ -109,11 +104,16 @@ function ScheduleCModal({ open, onClose }: { open: boolean; onClose: () => void 
 /*  SELF-EMPLOYED WIZARD                                                      */
 /* ════════════════════════════════════════════════════════════════════════════ */
 
-export default function SelfEmployedWizard() {
+interface SelfEmployedWizardProps {
+  onTabChange?: (tab: string) => void;
+}
+
+export default function SelfEmployedWizard({ onTabChange }: SelfEmployedWizardProps) {
   const [rates, setRates] = useState<Rates>(defaultRates);
   useEffect(() => { setRates(getRates()); }, []);
 
   const convRate = rates.conventional || 6.25;
+  const fhaRate = rates.fha || 5.75;
   const bsRate = convRate + 1.5;
 
   /* ── Step 1: Client Info ── */
@@ -135,11 +135,9 @@ export default function SelfEmployedWizard() {
   const [prevYearIncome, setPrevYearIncome] = useState(0);
   const [recentYearIncome, setRecentYearIncome] = useState(0);
   const [cosignerW2, setCosignerW2] = useState(0);
-  const [showScheduleC, setShowScheduleC] = useState(false);
 
   /* ── Step 4: Purchase Details ── */
   const [purchasePrice, setPurchasePrice] = useState(450000);
-  const [downPayment, setDownPayment] = useState(0);
 
   /* ── Tax Amendment Simulator ── */
   const [simOpen, setSimOpen] = useState(false);
@@ -162,6 +160,7 @@ export default function SelfEmployedWizard() {
       @page { margin: 0.5in; size: letter portrait; }
       body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
       .no-print { display: none !important; height: 0 !important; margin: 0 !important; padding: 0 !important; overflow: hidden !important; }
+      .print-only { display: block !important; }
     `,
   });
 
@@ -204,71 +203,104 @@ export default function SelfEmployedWizard() {
   const step4Complete = step3Complete && purchasePrice > 0 && !creditBlocked;
 
   /* Payment calculations */
-  const calcPayment = (price: number, rate: number, termYears: number) => {
-    const loan = price * 0.9; // 10% down
+  const calcPayment = (loanAmt: number, rate: number, termYears: number) => {
     const r = rate / 100 / 12;
     const n = termYears * 12;
-    return r > 0 ? (loan * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1) : loan / n;
+    return r > 0 ? (loanAmt * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1) : loanAmt / n;
   };
 
   const taxRate = 0.0045;
   const insuranceAnnual = 1350;
-  const pmiRate = 0.0045;
+  const fhaMipUpfront = 0.0175; // 1.75% financed into loan
+  const fhaMipAnnual = 0.0055; // 0.55% annual MIP
 
-  const down10Pct = purchasePrice * 0.1;
-  const loan90 = purchasePrice * 0.9;
+  // FHA Full Doc — 3.5% down
+  const fhaDown = purchasePrice * 0.035;
+  const fhaBaseLoan = purchasePrice - fhaDown;
+  const fhaLoanWithMip = fhaBaseLoan * (1 + fhaMipUpfront); // UFMIP financed
+  const fhaPI = calcPayment(fhaLoanWithMip, fhaRate, 30);
+  const fhaTax = purchasePrice * taxRate / 12;
+  const fhaIns = insuranceAnnual / 12;
+  const fhaMipMonthly = fhaBaseLoan * fhaMipAnnual / 12;
+  const fhaPITI = fhaPI + fhaTax + fhaIns + fhaMipMonthly;
 
-  // Full doc
-  const fdPI = calcPayment(purchasePrice, convRate, 30);
-  const fdTax = purchasePrice * taxRate / 12;
-  const fdIns = insuranceAnnual / 12;
-  const fdPMI = loan90 * pmiRate / 12;
-  const fdPITI = fdPI + fdTax + fdIns + fdPMI;
+  // Bank statement — 10% down, no PMI
+  const bsDown = purchasePrice * 0.1;
+  const bsLoan = purchasePrice * 0.9;
+  const bsPI = calcPayment(bsLoan, bsRate, 30);
+  const bsTax = purchasePrice * taxRate / 12;
+  const bsIns = insuranceAnnual / 12;
+  const bsPITI = bsPI + bsTax + bsIns;
 
-  // Bank statement
-  const bsPI = calcPayment(purchasePrice, bsRate, 30);
-  const bsTax = fdTax;
-  const bsIns = fdIns;
-  const bsPITI = bsPI + bsTax + bsIns; // no PMI
-
-  // Qualification check — full doc at 45% DTI
+  // Qualification check — full doc (FHA) at 45% DTI
   const maxMonthlyPayment = combinedMonthly * 0.45 - totalDebts;
-  const fdQualifies = step3Complete && maxMonthlyPayment >= fdPITI;
-  const bsQualifies = step3Complete && effectiveCredit >= 680 && downPayment >= down10Pct * 0.95; // 5% tolerance
+  const fdQualifies = step3Complete && maxMonthlyPayment >= fhaPITI;
 
-  // Income needed for full doc
-  const incomeNeededMonthly = (fdPITI + totalDebts) / 0.45;
+  // Income needed for full doc (FHA)
+  const incomeNeededMonthly = (fhaPITI + totalDebts) / 0.45;
   const avgNeededAnnual = incomeNeededMonthly * 12;
   const recentYearNeeded = avgNeededAnnual * 2 - prevYearIncome;
   const additionalIncome = Math.max(0, recentYearNeeded - recentYearIncome);
   const additionalTax = additionalIncome * 0.25;
 
   // Payment difference
-  const paymentDiff = bsPITI - fdPITI;
-  const pmiSavings = fdPMI;
-  const netDiff = paymentDiff - pmiSavings;
+  const paymentDiff = bsPITI - fhaPITI;
+  const mipSavings = fhaMipMonthly; // bank statement saves the MIP
+  const netDiff = paymentDiff - mipSavings;
 
   // Recommendation
   const recommendFullDoc = fdQualifies && !creditBlocked;
   const recommendBankStatement = !fdQualifies && !creditBlocked;
-  const neitherWorks = !fdQualifies && !bsQualifies && !creditBlocked;
 
   // Max qualifying prices
-  const calcMaxPrice = (rate: number, hasPMI: boolean) => {
+  const calcMaxPriceFHA = () => {
     let lo = 0, hi = 2000000;
     for (let i = 0; i < 50; i++) {
       const mid = (lo + hi) / 2;
-      const pi = calcPayment(mid, rate, 30);
+      const baseLoan = mid * 0.965;
+      const loanMip = baseLoan * (1 + fhaMipUpfront);
+      const pi = calcPayment(loanMip, fhaRate, 30);
       const tax = mid * taxRate / 12;
       const ins = insuranceAnnual / 12;
-      const pmi = hasPMI ? mid * 0.9 * pmiRate / 12 : 0;
-      const total = pi + tax + ins + pmi;
-      if (total + totalDebts < combinedMonthly * 0.45) lo = mid; else hi = mid;
+      const mip = baseLoan * fhaMipAnnual / 12;
+      if (pi + tax + ins + mip + totalDebts < combinedMonthly * 0.45) lo = mid; else hi = mid;
     }
     return Math.floor(lo);
   };
-  const maxPriceFD = step3Complete ? calcMaxPrice(convRate, true) : 0;
-  const maxPriceBS = step3Complete ? calcMaxPrice(bsRate, false) : 0;
+  const calcMaxPriceBS = () => {
+    let lo = 0, hi = 2000000;
+    for (let i = 0; i < 50; i++) {
+      const mid = (lo + hi) / 2;
+      const pi = calcPayment(mid * 0.9, bsRate, 30);
+      const tax = mid * taxRate / 12;
+      const ins = insuranceAnnual / 12;
+      if (pi + tax + ins + totalDebts < combinedMonthly * 0.45) lo = mid; else hi = mid;
+    }
+    return Math.floor(lo);
+  };
+  const maxPriceFD = step3Complete ? calcMaxPriceFHA() : 0;
+  const maxPriceBS = step3Complete ? calcMaxPriceBS() : 0;
+  const neitherWorks = !fdQualifies && maxPriceBS < purchasePrice && !creditBlocked;
+
+  /* ── Go to Client Wizard with prefilled data ── */
+  const goToClientWizard = () => {
+    const prefill = {
+      firstName,
+      lastName,
+      date: clientDate,
+      annualIncome: twoYearAvg,
+      monthlyDebts,
+      creditScore,
+      isSelfEmployed: "yes" as const,
+      hasCosigner: hasCosigner === "yes" ? "yes" as const : "no" as const,
+      cosignerIncome: hasCosigner === "yes" ? cosignerIncome : 0,
+      cosignerDebts: hasCosigner === "yes" ? cosignerDebts : 0,
+      cosignerCreditScore: hasCosigner === "yes" ? cosignerCredit : 0,
+    };
+    window.dispatchEvent(new CustomEvent("prefill-wizard", { detail: prefill }));
+    onTabChange?.("wizard");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   /* ── Tax Amendment Simulator Calcs ── */
   const simAvg = (simPrevIncome + simRecentIncome) / 2;
@@ -277,20 +309,24 @@ export default function SelfEmployedWizard() {
     let lo = 0, hi = 2000000;
     for (let i = 0; i < 50; i++) {
       const mid = (lo + hi) / 2;
-      const pi = calcPayment(mid, convRate, 30);
+      const baseLoan = mid * 0.965;
+      const loanMip = baseLoan * (1 + fhaMipUpfront);
+      const pi = calcPayment(loanMip, fhaRate, 30);
       const tax = mid * taxRate / 12;
       const ins = insuranceAnnual / 12;
-      const pmi = mid * 0.9 * pmiRate / 12;
-      if (pi + tax + ins + pmi + simDebts < simMonthly * 0.45) lo = mid; else hi = mid;
+      const mip = baseLoan * fhaMipAnnual / 12;
+      if (pi + tax + ins + mip + simDebts < simMonthly * 0.45) lo = mid; else hi = mid;
     }
     return Math.floor(lo);
   })();
   const simIncomeNeededMonthly = (() => {
-    const pi = calcPayment(simPrice, convRate, 30);
+    const baseLoan = simPrice * 0.965;
+    const loanMip = baseLoan * (1 + fhaMipUpfront);
+    const pi = calcPayment(loanMip, fhaRate, 30);
     const tax = simPrice * taxRate / 12;
     const ins = insuranceAnnual / 12;
-    const pmi = simPrice * 0.9 * pmiRate / 12;
-    return (pi + tax + ins + pmi + simDebts) / 0.45;
+    const mip = baseLoan * fhaMipAnnual / 12;
+    return (pi + tax + ins + mip + simDebts) / 0.45;
   })();
   const simAvgNeeded = simIncomeNeededMonthly * 12;
   const simRecentNeeded = simAvgNeeded * 2 - simPrevIncome;
@@ -359,13 +395,13 @@ export default function SelfEmployedWizard() {
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                 <div style={{ border: fdQualifies ? "2px solid #C8202A" : "1px solid #E8E8E8", borderRadius: 12, padding: 14, position: "relative" }}>
                   {fdQualifies && <span style={{ position: "absolute", top: -1, left: 16, background: "#C8202A", color: "#fff", fontSize: 9, fontWeight: 700, padding: "2px 8px", borderRadius: "0 0 6px 6px", textTransform: "uppercase" }}>Recommended</span>}
-                  <div style={{ fontWeight: 700, fontSize: 12, color: "#111", marginTop: fdQualifies ? 12 : 0, marginBottom: 8 }}>Full Doc Traditional</div>
+                  <div style={{ fontWeight: 700, fontSize: 12, color: "#111", marginTop: fdQualifies ? 12 : 0, marginBottom: 8 }}>FHA Full Doc</div>
                   {[
-                    { l: "Down (10%)", v: fmt(down10Pct) },
-                    { l: "Rate", v: `${convRate.toFixed(2)}%` },
-                    { l: "PMI", v: `${fmt(fdPMI)}/mo` },
-                    { l: "Monthly P&I", v: fmt(fdPI) },
-                    { l: "Monthly PITI+PMI", v: fmt(fdPITI) },
+                    { l: "Down (3.5%)", v: fmt(fhaDown) },
+                    { l: "Rate", v: `${fhaRate.toFixed(2)}%` },
+                    { l: "MIP", v: `${fmt(fhaMipMonthly)}/mo` },
+                    { l: "Monthly P&I", v: fmt(fhaPI) },
+                    { l: "Monthly PITI+MIP", v: fmt(fhaPITI) },
                     { l: "Qualifies", v: fdQualifies ? "Yes" : "No" },
                   ].map((r, i) => (
                     <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: 11, padding: "3px 0", borderBottom: "1px solid #F0F0F0" }}>
@@ -378,9 +414,9 @@ export default function SelfEmployedWizard() {
                   {!fdQualifies && <span style={{ position: "absolute", top: -1, left: 16, background: "#C8202A", color: "#fff", fontSize: 9, fontWeight: 700, padding: "2px 8px", borderRadius: "0 0 6px 6px", textTransform: "uppercase" }}>Recommended</span>}
                   <div style={{ fontWeight: 700, fontSize: 12, color: "#111", marginTop: !fdQualifies ? 12 : 0, marginBottom: 8 }}>Bank Statement Loan</div>
                   {[
-                    { l: "Down (10%)", v: fmt(down10Pct) },
+                    { l: "Down (10%)", v: fmt(bsDown) },
                     { l: "Rate", v: `${bsRate.toFixed(2)}%` },
-                    { l: "PMI", v: "None" },
+                    { l: "PMI/MIP", v: "None" },
                     { l: "Monthly P&I", v: fmt(bsPI) },
                     { l: "Monthly PITI", v: fmt(bsPITI) },
                     { l: "Qualifies", v: "Yes" },
@@ -395,7 +431,7 @@ export default function SelfEmployedWizard() {
               {/* Summary */}
               <div style={{ border: "2px solid #C8202A", borderRadius: 10, padding: "12px 16px", marginTop: 12 }}>
                 <div style={{ fontSize: 11, color: "#C8202A", fontWeight: 700, marginBottom: 4 }}>
-                  Bank statement is {fmt(Math.abs(paymentDiff))}/mo {paymentDiff > 0 ? "more" : "less"} than full doc. No PMI saves {fmt(pmiSavings)}/mo. Net difference: {fmt(Math.abs(netDiff))}/mo.
+                  FHA requires {fmt(fhaDown)} down (3.5%). Bank statement requires {fmt(bsDown)} down (10%). Monthly difference: {fmt(Math.abs(paymentDiff))}/mo.
                 </div>
                 {!fdQualifies && additionalTax > 0 && (
                   <div style={{ fontSize: 10, color: "#666", marginTop: 4 }}>Bank statement avoids estimated {fmt(additionalTax)} in additional tax liability.</div>
@@ -409,9 +445,9 @@ export default function SelfEmployedWizard() {
             <div style={{ padding: "0 28px 16px" }}>
               <div style={{ fontSize: 11, fontWeight: 600, color: "#C8202A", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>Recommendation</div>
               <div style={{ fontSize: 12, color: "#111", lineHeight: 1.6 }}>
-                {recommendFullDoc && "Full doc traditional path is recommended. Lower rate and qualifying income supports this purchase price."}
+                {recommendFullDoc && `FHA full doc path recommended. Lower rate and 3.5% down payment. May qualify for DPA programs — see Client Wizard for full program matching.`}
                 {recommendBankStatement && `Bank statement loan recommended. Current 2-year average does not qualify for full doc at this price. Bank statement avoids tax exposure.`}
-                {neitherWorks && `Target price of ${fmt(purchasePrice)} is not achievable with current income. Max full doc: ${fmt(maxPriceFD)}. Max bank statement: ${fmt(maxPriceBS)}.`}
+                {neitherWorks && `Target price of ${fmt(purchasePrice)} is not achievable with current income. Max FHA: ${fmt(maxPriceFD)}. Max bank statement: ${fmt(maxPriceBS)}.`}
               </div>
             </div>
           )}
@@ -502,7 +538,7 @@ export default function SelfEmployedWizard() {
                 <div>
                   <label style={labelStyle}>Business Type</label>
                   <div className="flex flex-wrap gap-2">
-                    {["Sole Proprietor", "S-Corp", "LLC", "Partnership"].map((t) => (
+                    {["Sole Proprietor", "S-Corp / LLC", "Partnership"].map((t) => (
                       <button key={t} onClick={() => setBusinessType(t)}
                         style={{ padding: "8px 16px", borderRadius: 8, fontSize: "0.8125rem",
                           border: businessType === t ? "1.5px solid #C8202A" : "1.5px solid #E8E8E8",
@@ -514,12 +550,6 @@ export default function SelfEmployedWizard() {
                   </div>
                 </div>
               </div>
-
-              {(businessType === "S-Corp" || businessType === "LLC") && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 text-sm text-blue-800 mb-4 fade-in">
-                  For S-Corp and LLC owners use net income from Schedule C or K-1 distributions plus any W2 salary paid from the business. For simplicity enter total net qualifying income in the income fields below.
-                </div>
-              )}
 
               {/* Credit score alerts */}
               {creditBlocked && (
@@ -563,19 +593,15 @@ export default function SelfEmployedWizard() {
           {/* ── STEP 3: Income Entry ── */}
           {step2Complete && !creditBlocked && (<>
             <SectionConnector />
-            <SectionLabel label="Tax Return Income — Schedule C Line 31" />
+            <SectionLabel label="Tax Return Income" />
             <div className="card fade-in mb-2">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
-                <MoneyInput label="Previous Year Net Income" value={prevYearIncome} onChange={setPrevYearIncome} />
-                <MoneyInput label="Most Recent Year Net Income" value={recentYearIncome} onChange={setRecentYearIncome} />
+              {/* Inline Schedule C reference */}
+              <ScheduleCInline />
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5 mb-3">
+                <MoneyInput label="Previous Year Net Income (Line 31)" value={prevYearIncome} onChange={setPrevYearIncome} />
+                <MoneyInput label="Most Recent Year Net Income (Line 31)" value={recentYearIncome} onChange={setRecentYearIncome} />
               </div>
-              <button type="button" onClick={() => setShowScheduleC(true)}
-                className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-[#C8202A] text-[#C8202A] hover:bg-[#C8202A]/5 transition-colors">
-                View Schedule C Sample
-              </button>
-              <p className="text-xs text-gray-400 mt-2">
-                Use Line 31 net profit from Schedule C. For S-Corp use W2 salary plus K-1 distributions. For LLC taxed as S-Corp use same approach.
-              </p>
 
               {hasCosigner === "yes" && (
                 <div className="mt-4">
@@ -603,26 +629,31 @@ export default function SelfEmployedWizard() {
             <div className="card fade-in mb-2">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <MoneyInput label="Target Purchase Price" value={purchasePrice} onChange={setPurchasePrice} placeholder="450000" />
-                <MoneyInput label="Available Down Payment" value={downPayment} onChange={setDownPayment} placeholder="45000" />
-              </div>
-              <p className="text-xs text-gray-400 mb-4">Minimum 10% down required ({fmt(down10Pct)})</p>
-
-              {downPayment > 0 && downPayment < down10Pct * 0.95 && (
-                <div className="bg-red-50 border border-red-300 rounded-lg px-4 py-3 text-sm text-red-700 mb-4">
-                  Down payment of {fmt(downPayment)} is below the 10% minimum of {fmt(down10Pct)} required for this program.
+                <div className="flex items-end">
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-sm text-gray-600 w-full">
+                    <div className="text-xs text-gray-400 mb-1">Down Payment Comparison</div>
+                    <div>FHA (3.5%): <strong>{fmt(fhaDown)}</strong> &nbsp;|&nbsp; Bank Stmt (10%): <strong>{fmt(bsDown)}</strong></div>
+                  </div>
                 </div>
-              )}
+              </div>
 
               {/* Full doc qualification */}
               {fdQualifies ? (
                 <div className="bg-green-50 border border-green-200 rounded-xl px-5 py-4 mb-4 fade-in">
-                  <h4 className="font-bold text-green-800 mb-1">Full Doc Path Works</h4>
-                  <p className="text-sm text-green-700">Full doc path works at this price. Minimum 10% down required.</p>
+                  <h4 className="font-bold text-green-800 mb-1">Full Doc Path Works — May Qualify for DPA</h4>
+                  <p className="text-sm text-green-700 mb-3">Income qualifies for FHA full doc at this price with only 3.5% down ({fmt(fhaDown)}). Client may also qualify for down payment assistance programs.</p>
+                  {onTabChange && (
+                    <button onClick={goToClientWizard}
+                      className="px-4 py-2 text-sm font-semibold rounded-lg text-white transition-colors"
+                      style={{ background: "#C8202A", border: "none", cursor: "pointer" }}>
+                      Continue to Client Wizard for DPA Programs →
+                    </button>
+                  )}
                 </div>
               ) : step3Complete && (
                 <div className="space-y-3 mb-4 fade-in">
                   <div className="bg-amber-50 border border-amber-200 rounded-xl px-5 py-4">
-                    <h4 className="font-bold text-amber-800 mb-1">Income Needed for Full Doc</h4>
+                    <h4 className="font-bold text-amber-800 mb-1">Income Needed for Full Doc (FHA)</h4>
                     <p className="text-sm text-amber-700">
                       Current 2-year average of {fmt(combinedMonthly)}/month does not qualify for {fmt(purchasePrice)} purchase price.
                       Most recent year would need to show {fmt(recentYearNeeded)} net income to bring the 2-year average to the required {fmt(incomeNeededMonthly)}/month.
@@ -654,17 +685,17 @@ export default function SelfEmployedWizard() {
             <SectionLabel label="Loan Comparison" />
             <div className="card fade-in mb-2">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                {/* Full Doc Card */}
+                {/* FHA Full Doc Card */}
                 <div className={`border rounded-xl p-4 ${fdQualifies ? "border-t-4 border-t-[#C8202A] border-x border-b border-gray-200" : "border-gray-200"}`} style={{ position: "relative" }}>
                   {fdQualifies && <span className="absolute -top-px left-4 bg-[#C8202A] text-white text-xs font-bold px-3 py-0.5 rounded-b-lg uppercase tracking-wide" style={{ fontSize: 10 }}>Recommended</span>}
-                  <h4 className="font-bold text-gray-900 mb-3 mt-2">Full Doc Traditional</h4>
+                  <h4 className="font-bold text-gray-900 mb-3 mt-2">FHA Full Doc</h4>
                   <div className="space-y-2 text-sm">
                     {[
-                      { l: "Down Payment (10%)", v: fmt(down10Pct) },
-                      { l: "Rate", v: `${convRate.toFixed(2)}%` },
-                      { l: "PMI (0.45% est.)", v: `~${fmt(fdPMI)}/mo` },
-                      { l: "Monthly P&I", v: fmt(fdPI) },
-                      { l: "Monthly PITI + PMI", v: fmt(fdPITI) },
+                      { l: "Down Payment (3.5%)", v: fmt(fhaDown) },
+                      { l: "Rate", v: `${fhaRate.toFixed(2)}%` },
+                      { l: "MIP (0.55% annual)", v: `~${fmt(fhaMipMonthly)}/mo` },
+                      { l: "Monthly P&I", v: fmt(fhaPI) },
+                      { l: "Monthly PITI + MIP", v: fmt(fhaPITI) },
                     ].map((r, i) => (
                       <div key={i} className="flex justify-between border-b border-gray-100 pb-1">
                         <span className="text-gray-600">{r.l}</span>
@@ -676,7 +707,7 @@ export default function SelfEmployedWizard() {
                       <span className={`font-bold ${fdQualifies ? "text-green-600" : "text-red-600"}`}>{fdQualifies ? "Yes" : "No"}</span>
                     </div>
                   </div>
-                  <p className="text-xs text-gray-400 mt-3">Requires income shown on tax returns. Lower rate but PMI applies under 20% down.</p>
+                  <p className="text-xs text-gray-400 mt-3">3.5% down. Requires tax return income. Lower rate but MIP for life of loan. May qualify for DPA.</p>
                 </div>
 
                 {/* Bank Statement Card */}
@@ -685,9 +716,9 @@ export default function SelfEmployedWizard() {
                   <h4 className="font-bold text-gray-900 mb-3 mt-2">Bank Statement Loan</h4>
                   <div className="space-y-2 text-sm">
                     {[
-                      { l: "Down Payment (10%)", v: fmt(down10Pct) },
+                      { l: "Down Payment (10%)", v: fmt(bsDown) },
                       { l: "Rate", v: `~${bsRate.toFixed(2)}%` },
-                      { l: "PMI", v: "None" },
+                      { l: "PMI/MIP", v: "None" },
                       { l: "Monthly P&I", v: fmt(bsPI) },
                       { l: "Monthly PITI (no PMI)", v: fmt(bsPITI) },
                     ].map((r, i) => (
@@ -708,9 +739,8 @@ export default function SelfEmployedWizard() {
               {/* Summary callout */}
               <div className="border-2 border-[#C8202A] rounded-xl px-5 py-4">
                 <p className="text-sm text-gray-800">
-                  Bank statement loan payment is <strong>{fmt(Math.abs(paymentDiff))}/mo {paymentDiff > 0 ? "more" : "less"}</strong> than full doc.
-                  No PMI saves <strong>{fmt(pmiSavings)}/mo</strong>.
-                  Net difference: <strong>{fmt(Math.abs(netDiff))}/mo</strong>.
+                  FHA requires <strong>{fmt(fhaDown)} down (3.5%)</strong>. Bank statement requires <strong>{fmt(bsDown)} down (10%)</strong>.
+                  {' '}Monthly payment difference: <strong>{fmt(Math.abs(paymentDiff))}/mo</strong>.
                   {!fdQualifies && additionalTax > 0 && <> Bank statement avoids estimated <strong>{fmt(additionalTax)}</strong> in additional tax liability.</>}
                 </p>
               </div>
@@ -735,7 +765,7 @@ export default function SelfEmployedWizard() {
                   </p>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="bg-gray-50 rounded-lg p-3">
-                      <div className="text-xs text-gray-500">Max Full Doc Price</div>
+                      <div className="text-xs text-gray-500">Max FHA Price</div>
                       <div className="text-lg font-bold text-gray-900">{fmt(maxPriceFD)}</div>
                     </div>
                     <div className="bg-gray-50 rounded-lg p-3">
@@ -747,26 +777,33 @@ export default function SelfEmployedWizard() {
               ) : recommendFullDoc ? (
                 <div className="card card-accent-top">
                   <span className="inline-block bg-[#C8202A] text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide mb-3">Best Option</span>
-                  <h4 className="text-lg font-bold text-gray-900 mb-1">Full Doc Traditional</h4>
-                  <p className="text-sm text-gray-600 mb-4">Lower rate with qualifying income that supports this purchase price.</p>
+                  <h4 className="text-lg font-bold text-gray-900 mb-1">FHA Full Doc</h4>
+                  <p className="text-sm text-gray-600 mb-4">Lower rate with only 3.5% down. May qualify for DPA programs through Client Wizard.</p>
                   <div className="grid grid-cols-2 gap-4 mb-4">
                     <div>
                       <h5 className="text-xs font-semibold text-green-600 uppercase tracking-wide mb-2">Pros</h5>
                       <ul className="text-sm text-gray-800 space-y-1">
                         <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-green-500 mt-1.5 flex-shrink-0" />Lower interest rate</li>
-                        <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-green-500 mt-1.5 flex-shrink-0" />Lower total payment long-term</li>
-                        <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-green-500 mt-1.5 flex-shrink-0" />Standard underwriting</li>
+                        <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-green-500 mt-1.5 flex-shrink-0" />Only 3.5% down required</li>
+                        <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-green-500 mt-1.5 flex-shrink-0" />May qualify for DPA</li>
                       </ul>
                     </div>
                     <div>
                       <h5 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Cons</h5>
                       <ul className="text-sm text-gray-600 space-y-1">
-                        <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-gray-400 mt-1.5 flex-shrink-0" />PMI until 20% equity</li>
+                        <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-gray-400 mt-1.5 flex-shrink-0" />MIP for life of loan</li>
                         <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-gray-400 mt-1.5 flex-shrink-0" />Relies on tax return income</li>
                       </ul>
                     </div>
                   </div>
-                  <div className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-sm text-gray-600">
+                  {onTabChange && (
+                    <button onClick={goToClientWizard}
+                      className="w-full px-4 py-3 text-sm font-semibold rounded-lg text-white transition-colors"
+                      style={{ background: "#C8202A", border: "none", cursor: "pointer" }}>
+                      Continue to Client Wizard for DPA Program Matching →
+                    </button>
+                  )}
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-sm text-gray-600 mt-3">
                     Bank statement is available if client prefers not to rely on tax returns.
                   </div>
                 </div>
@@ -774,13 +811,13 @@ export default function SelfEmployedWizard() {
                 <div className="card card-accent-top">
                   <span className="inline-block bg-[#C8202A] text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide mb-3">Best Option</span>
                   <h4 className="text-lg font-bold text-gray-900 mb-1">Bank Statement Loan</h4>
-                  <p className="text-sm text-gray-600 mb-4">Current income does not qualify for full doc — bank statement avoids tax exposure and PMI.</p>
+                  <p className="text-sm text-gray-600 mb-4">Current income does not qualify for full doc — bank statement avoids tax exposure and requires no MIP/PMI.</p>
                   <div className="grid grid-cols-2 gap-4 mb-4">
                     <div>
                       <h5 className="text-xs font-semibold text-green-600 uppercase tracking-wide mb-2">Pros</h5>
                       <ul className="text-sm text-gray-800 space-y-1">
                         <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-green-500 mt-1.5 flex-shrink-0" />No tax returns needed</li>
-                        <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-green-500 mt-1.5 flex-shrink-0" />No PMI</li>
+                        <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-green-500 mt-1.5 flex-shrink-0" />No PMI or MIP</li>
                         <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-green-500 mt-1.5 flex-shrink-0" />No tax amendment exposure</li>
                         <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-green-500 mt-1.5 flex-shrink-0" />12 months bank statements only</li>
                       </ul>
@@ -853,7 +890,7 @@ export default function SelfEmployedWizard() {
                     </div>
                     {simAdditional > 0 && (
                       <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-sm text-amber-800">
-                        <strong>Is it worth amending?</strong> Additional tax cost of {fmt(simAdditionalTax)} vs 10% down payment of {fmt(simPrice * 0.1)}. Weigh the one-time tax cost against the ongoing rate difference on a bank statement loan.
+                        <strong>Is it worth amending?</strong> Additional tax cost of {fmt(simAdditionalTax)} vs FHA down payment of {fmt(simPrice * 0.035)}. Weigh the one-time tax cost against the ongoing rate difference on a bank statement loan.
                       </div>
                     )}
                     <p className="text-xs text-gray-400 italic">
@@ -867,8 +904,6 @@ export default function SelfEmployedWizard() {
 
         </div>{/* end no-print */}
       </div>{/* end printRef */}
-
-      <ScheduleCModal open={showScheduleC} onClose={() => setShowScheduleC(false)} />
     </div>
   );
 }

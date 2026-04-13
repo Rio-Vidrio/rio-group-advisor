@@ -37,7 +37,7 @@ export default function Home() {
           <div style={{ display: activeTab === "programs" ? "block" : "none" }}><ProgramReference /></div>
           <div style={{ display: activeTab === "rates" ? "block" : "none" }}><MarketRates /></div>
           <div style={{ display: activeTab === "homeowner" ? "block" : "none" }}><ExistingHomeowner /></div>
-          <div style={{ display: activeTab === "selfemployed" ? "block" : "none" }}><SelfEmployedWizard /></div>
+          <div style={{ display: activeTab === "selfemployed" ? "block" : "none" }}><SelfEmployedWizard onTabChange={setActiveTab} /></div>
           <div style={{ display: activeTab === "settings" ? "block" : "none" }}><SettingsPanel /></div>
         </div>
       </main>

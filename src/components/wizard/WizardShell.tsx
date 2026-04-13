@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef, useMemo } from "react";
+import { useState, useRef, useMemo, useEffect, useCallback } from "react";
 import { useReactToPrint } from "react-to-print";
 import { TRG_LOGO_BLACK_B64, AZ_LOGO_BLACK_B64 } from "@/lib/printLogos";
 import {
@@ -268,6 +268,32 @@ export default function WizardShell({ onTabChange }: Props) {
     setOverrideHomeowner(false);
     setDebtsTouched(false);
   };
+
+  /* ---- prefill from Self-Employed wizard ---- */
+  const handlePrefill = useCallback((e: Event) => {
+    const detail = (e as CustomEvent).detail;
+    if (!detail) return;
+    setClient((prev) => ({
+      ...prev,
+      firstName: detail.firstName || prev.firstName,
+      lastName: detail.lastName || prev.lastName,
+      date: detail.date || prev.date,
+      annualIncome: detail.annualIncome || prev.annualIncome,
+      monthlyDebts: detail.monthlyDebts || prev.monthlyDebts,
+      creditScore: detail.creditScore || prev.creditScore,
+      isSelfEmployed: detail.isSelfEmployed || prev.isSelfEmployed,
+      hasCosigner: detail.hasCosigner || prev.hasCosigner,
+      cosignerIncome: detail.cosignerIncome || prev.cosignerIncome,
+      cosignerDebts: detail.cosignerDebts || prev.cosignerDebts,
+      cosignerCreditScore: detail.cosignerCreditScore || prev.cosignerCreditScore,
+    }));
+    if (detail.monthlyDebts > 0) setDebtsTouched(true);
+  }, []);
+
+  useEffect(() => {
+    window.addEventListener("prefill-wizard", handlePrefill);
+    return () => window.removeEventListener("prefill-wizard", handlePrefill);
+  }, [handlePrefill]);
 
   /* ---- visibility conditions ---- */
   const showCitizenship = client.firstName.trim().length > 0;
