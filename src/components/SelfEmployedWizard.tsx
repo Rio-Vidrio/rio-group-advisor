@@ -848,7 +848,10 @@ export default function SelfEmployedWizard({ onTabChange }: SelfEmployedWizardPr
               )}
             </div>
 
-            {/* Action Buttons */}
+          </>)}
+
+          {/* ── Save / Print Buttons — always visible once step 1 complete ── */}
+          {step1Complete && (
             <div className="no-print flex flex-wrap gap-3 mt-6 pt-6 border-t border-gray-100">
               <button onClick={() => handlePrint()}
                 style={{ padding: "12px 28px", borderRadius: 10, background: "#C8202A", color: "#fff", fontWeight: 600, fontSize: "0.9375rem", border: "none", cursor: "pointer" }}>
@@ -859,7 +862,7 @@ export default function SelfEmployedWizard({ onTabChange }: SelfEmployedWizardPr
                 {imgLoading ? "Saving…" : "Save as Image"}
               </button>
             </div>
-          </>)}
+          )}
 
           {/* ── STANDALONE TOOLS ── */}
           <div className="mt-10 pt-8 border-t-2 border-gray-200 no-print">
