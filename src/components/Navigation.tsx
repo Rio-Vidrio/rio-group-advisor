@@ -8,7 +8,7 @@ interface NavigationProps {
 const tabs = [
   { id: "wizard", label: "Client Wizard" },
   { id: "homeowner", label: "Existing Homeowner" },
-  { id: "selfemployed", label: "Self-Employed" },
+  { id: "selfemployed", label: "Business Owner" },
   { id: "calculators", label: "Calculators" },
   { id: "programs", label: "Programs" },
   { id: "rates", label: "Market Rates" },

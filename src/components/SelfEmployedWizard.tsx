@@ -147,6 +147,19 @@ export default function SelfEmployedWizard({ onTabChange }: SelfEmployedWizardPr
   const [simCosignerIncome, setSimCosignerIncome] = useState(0);
   const [simPrice, setSimPrice] = useState(450000);
 
+  /* ── Full Doc vs Bank Statement Calculator ── */
+  const [calcOpen, setCalcOpen] = useState(false);
+  const [calcFdPrice, setCalcFdPrice] = useState(450000);
+  const [calcFdDown, setCalcFdDown] = useState(3.5);
+  const [calcFdRate, setCalcFdRate] = useState(0);
+  const [calcBsPrice, setCalcBsPrice] = useState(450000);
+  const [calcBsDown, setCalcBsDown] = useState(10);
+  const [calcBsRate, setCalcBsRate] = useState(0);
+
+  /* Initialize calc rates from live rates */
+  useEffect(() => { setCalcFdRate(fhaRate); }, [fhaRate]);
+  useEffect(() => { setCalcBsRate(bsRate); }, [bsRate]);
+
   /* ── Print ── */
   const printRef = useRef<HTMLDivElement>(null);
   const summaryRef = useRef<HTMLDivElement>(null);
@@ -250,7 +263,7 @@ export default function SelfEmployedWizard({ onTabChange }: SelfEmployedWizardPr
 
   // Recommendation
   const recommendFullDoc = fdQualifies && !creditBlocked;
-  const recommendBankStatement = !fdQualifies && !creditBlocked;
+  const _recommendBankStatement = !fdQualifies && !creditBlocked; // eslint-disable-line @typescript-eslint/no-unused-vars
 
   // Max qualifying prices
   const calcMaxPriceFHA = () => {
@@ -281,6 +294,21 @@ export default function SelfEmployedWizard({ onTabChange }: SelfEmployedWizardPr
   const maxPriceFD = step3Complete ? calcMaxPriceFHA() : 0;
   const maxPriceBS = step3Complete ? calcMaxPriceBS() : 0;
   const neitherWorks = !fdQualifies && maxPriceBS < purchasePrice && !creditBlocked;
+
+  /* ── Standalone calculator computed totals ── */
+  const calcFdBaseLoan = calcFdPrice * (1 - calcFdDown / 100);
+  const calcFdLoanMip = calcFdBaseLoan * (1 + fhaMipUpfront);
+  const calcFdPI = calcPayment(calcFdLoanMip, calcFdRate, 30);
+  const calcFdTax = calcFdPrice * taxRate / 12;
+  const calcFdIns = insuranceAnnual / 12;
+  const calcFdMip = calcFdBaseLoan * fhaMipAnnual / 12;
+  const calcFdTotal = calcFdPI + calcFdTax + calcFdIns + calcFdMip;
+
+  const calcBsLoan = calcBsPrice * (1 - calcBsDown / 100);
+  const calcBsPI = calcPayment(calcBsLoan, calcBsRate, 30);
+  const calcBsTax = calcBsPrice * taxRate / 12;
+  const calcBsIns = insuranceAnnual / 12;
+  const calcBsTotal = calcBsPI + calcBsTax + calcBsIns; // no PMI
 
   /* ── Go to Client Wizard with prefilled data ── */
   const goToClientWizard = () => {
@@ -340,163 +368,38 @@ export default function SelfEmployedWizard({ onTabChange }: SelfEmployedWizardPr
     <div>
       <div ref={printRef}>
 
-        {/* ── Print summary card ── */}
-        <div ref={summaryRef} className="print-only" style={{ maxWidth: 680, background: "#FFFFFF", borderRadius: 16, overflow: "hidden", boxShadow: "0 4px 24px rgba(0,0,0,0.08)" }}>
-          {/* Header */}
-          <div style={{ padding: "20px 28px", borderBottom: "3px solid #C8202A", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        {/* ── Print header (only visible in print) ── */}
+        <div ref={summaryRef} className="print-only" style={{ marginBottom: 16 }}>
+          <div style={{ padding: "16px 0", borderBottom: "3px solid #C8202A", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={TRG_LOGO_BLACK_B64} alt="The Rio Group" style={{ height: 44, width: "auto", display: "block" }} />
+              <img src={TRG_LOGO_BLACK_B64} alt="The Rio Group" style={{ height: 40, width: "auto", display: "block" }} />
               <div>
                 <div style={{ color: "#111", fontSize: 11, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase" }}>The Rio Group</div>
                 <div style={{ color: "#999", fontSize: 9, fontWeight: 500, letterSpacing: "0.08em", textTransform: "uppercase" }}>Built Different</div>
               </div>
             </div>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={AZ_LOGO_BLACK_B64} alt="AZ & Associates" style={{ height: 36, width: "auto", display: "block" }} />
+            <img src={AZ_LOGO_BLACK_B64} alt="AZ & Associates" style={{ height: 32, width: "auto", display: "block" }} />
           </div>
-          <div style={{ borderBottom: "2px solid #C8202A", padding: "10px 28px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ color: "#C8202A", fontSize: 14, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase" }}>Self-Employed Buyer Summary</span>
+          <div style={{ borderBottom: "2px solid #C8202A", padding: "8px 0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <span style={{ color: "#C8202A", fontSize: 14, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase" }}>Business Owner — Loan Qualification</span>
             <span style={{ color: "#999", fontSize: 11 }}>{todayStr}</span>
           </div>
           {(firstName || lastName) && (
-            <div style={{ padding: "14px 28px", borderBottom: "1px solid #E8E8E8" }}>
-              <div style={{ fontSize: 9, color: "#C8202A", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4 }}>Prepared For</div>
-              <div style={{ fontWeight: 700, fontSize: 15, color: "#111" }}>{firstName} {lastName}</div>
-              <div style={{ fontSize: 12, color: "#6B6B6B", marginTop: 2 }}>{clientDate}</div>
+            <div style={{ padding: "10px 0", borderBottom: "1px solid #E8E8E8" }}>
+              <div style={{ fontSize: 9, color: "#C8202A", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 3 }}>Prepared For</div>
+              <div style={{ fontWeight: 700, fontSize: 14, color: "#111" }}>{firstName} {lastName}</div>
             </div>
           )}
-
-          {/* Income Summary */}
-          {step3Complete && (
-            <div style={{ padding: "16px 28px", borderBottom: "1px solid #E8E8E8" }}>
-              <div style={{ fontSize: 11, fontWeight: 600, color: "#C8202A", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>Income Summary</div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                <div style={{ fontSize: 12, color: "#666" }}>Previous Year Net Income</div>
-                <div style={{ fontSize: 12, fontWeight: 600, color: "#111", textAlign: "right" }}>{fmt(prevYearIncome)}</div>
-                <div style={{ fontSize: 12, color: "#666" }}>Most Recent Year Net Income</div>
-                <div style={{ fontSize: 12, fontWeight: 600, color: "#111", textAlign: "right" }}>{fmt(recentYearIncome)}</div>
-                <div style={{ fontSize: 12, color: "#666", fontWeight: 600 }}>2-Year Average</div>
-                <div style={{ fontSize: 12, fontWeight: 700, color: "#111", textAlign: "right" }}>{fmt(twoYearAvg)}/yr — {fmt(monthlyAvg)}/mo</div>
-                {hasCosigner === "yes" && cosignerW2 > 0 && <>
-                  <div style={{ fontSize: 12, color: "#666" }}>Co-signer W2 Income</div>
-                  <div style={{ fontSize: 12, fontWeight: 600, color: "#111", textAlign: "right" }}>{fmt(cosignerW2)}/yr</div>
-                  <div style={{ fontSize: 12, color: "#666", fontWeight: 600 }}>Combined Monthly</div>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: "#111", textAlign: "right" }}>{fmt(combinedMonthly)}/mo</div>
-                </>}
-              </div>
-            </div>
-          )}
-
-          {/* Side-by-side comparison */}
-          {step4Complete && (
-            <div style={{ padding: "20px 28px 0" }}>
-              <div style={{ fontSize: 11, fontWeight: 600, color: "#C8202A", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 12 }}>Loan Comparison</div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-                {/* FHA Full Doc column */}
-                <div style={{ border: "1px solid #BFDBFE", borderRadius: 12, padding: 16, background: fdQualifies ? "#EFF6FF" : "#F9FAFB" }}>
-                  {fdQualifies && (
-                    <div style={{ textAlign: "center", marginBottom: 10 }}>
-                      <span style={{ display: "inline-block", background: "#C8202A", color: "#fff", fontSize: 9, fontWeight: 700, padding: "4px 14px", borderRadius: 20, textTransform: "uppercase", letterSpacing: "0.08em" }}>Recommended</span>
-                    </div>
-                  )}
-                  <div style={{ fontWeight: 700, color: fdQualifies ? "#1E40AF" : "#6B7280", marginBottom: 12, fontSize: 13, textTransform: "uppercase", letterSpacing: "0.05em" }}>FHA Full Doc</div>
-                  {[
-                    { l: "Purchase Price", v: fmt(purchasePrice) },
-                    { l: "Down (3.5%)", v: fmt(fhaDown) },
-                    { l: "Rate (FHA)", v: `${fhaRate.toFixed(2)}%` },
-                    { l: "MIP", v: `${fmt(fhaMipMonthly)}/mo` },
-                    { l: "P&I", v: fmt(fhaPI) },
-                    { l: "PITI + MIP", v: fmt(fhaPITI) },
-                  ].map((r, i) => (
-                    <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: 12, padding: "5px 0", borderBottom: fdQualifies ? "1px solid #DBEAFE" : "1px solid #E5E7EB" }}>
-                      <span style={{ color: fdQualifies ? "#1D4ED8" : "#6B7280" }}>{r.l}</span>
-                      <span style={{ fontWeight: 600, color: fdQualifies ? "#1E3A8A" : "#374151" }}>{r.v}</span>
-                    </div>
-                  ))}
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, fontWeight: 700, marginTop: 8, paddingTop: 8, color: fdQualifies ? "#1E3A8A" : "#374151" }}>
-                    <span>Total Monthly</span><span>{fmt(fhaPITI)}</span>
-                  </div>
-                  <div style={{ textAlign: "center", marginTop: 8, fontSize: 11, fontWeight: 600, color: fdQualifies ? "#16A34A" : "#DC2626" }}>
-                    {fdQualifies ? "✓ Qualifies" : "✗ Does Not Qualify"}
-                  </div>
-                </div>
-
-                {/* Bank Statement column */}
-                <div style={{ border: "1px solid #FED7AA", borderRadius: 12, padding: 16, background: !fdQualifies ? "#FFF7ED" : "#F9FAFB" }}>
-                  {!fdQualifies && (
-                    <div style={{ textAlign: "center", marginBottom: 10 }}>
-                      <span style={{ display: "inline-block", background: "#C8202A", color: "#fff", fontSize: 9, fontWeight: 700, padding: "4px 14px", borderRadius: 20, textTransform: "uppercase", letterSpacing: "0.08em" }}>Recommended</span>
-                    </div>
-                  )}
-                  <div style={{ fontWeight: 700, color: !fdQualifies ? "#9A3412" : "#6B7280", marginBottom: 12, fontSize: 13, textTransform: "uppercase", letterSpacing: "0.05em" }}>Bank Statement</div>
-                  {[
-                    { l: "Purchase Price", v: fmt(purchasePrice) },
-                    { l: "Down (10%)", v: fmt(bsDown) },
-                    { l: "Rate (+1.5%)", v: `${bsRate.toFixed(2)}%` },
-                    { l: "PMI/MIP", v: "None" },
-                    { l: "P&I", v: fmt(bsPI) },
-                    { l: "PITI", v: fmt(bsPITI) },
-                  ].map((r, i) => (
-                    <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: 12, padding: "5px 0", borderBottom: !fdQualifies ? "1px solid #FED7AA" : "1px solid #E5E7EB" }}>
-                      <span style={{ color: !fdQualifies ? "#C2410C" : "#6B7280" }}>{r.l}</span>
-                      <span style={{ fontWeight: 600, color: !fdQualifies ? "#7C2D12" : "#374151" }}>{r.v}</span>
-                    </div>
-                  ))}
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, fontWeight: 700, marginTop: 8, paddingTop: 8, color: !fdQualifies ? "#7C2D12" : "#374151" }}>
-                    <span>Total Monthly</span><span>{fmt(bsPITI)}</span>
-                  </div>
-                  <div style={{ textAlign: "center", marginTop: 8, fontSize: 11, fontWeight: 600, color: "#16A34A" }}>
-                    ✓ Qualifies
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Difference strip */}
-          {step4Complete && (
-            <div style={{ margin: "16px 28px", border: "2px solid #C8202A", borderRadius: 12, padding: "14px 20px" }}>
-              <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4, color: "#C8202A" }}>
-                Monthly Difference: {paymentDiff > 0
-                  ? `Full doc saves ${fmt(paymentDiff)}/mo`
-                  : `Bank statement saves ${fmt(Math.abs(paymentDiff))}/mo`}
-                {' '}| Down Payment: FHA {fmt(fhaDown)} vs Bank Stmt {fmt(bsDown)}
-              </div>
-              <div style={{ fontSize: 11, color: "#666" }}>
-                {recommendFullDoc && "FHA full doc recommended. Lower rate with 3.5% down. May qualify for DPA programs."}
-                {recommendBankStatement && "Bank statement recommended. Current income does not qualify for full doc. Avoids tax exposure."}
-                {neitherWorks && `Target price not achievable. Max FHA: ${fmt(maxPriceFD)}. Max bank statement: ${fmt(maxPriceBS)}.`}
-                {!fdQualifies && additionalTax > 0 && ` Bank statement avoids estimated ${fmt(additionalTax)} in additional tax liability.`}
-              </div>
-            </div>
-          )}
-
-          {/* Tax amendment if applicable */}
-          {step4Complete && !fdQualifies && additionalIncome > 0 && (
-            <div style={{ padding: "0 28px 16px" }}>
-              <div style={{ fontSize: 11, fontWeight: 600, color: "#C8202A", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>Tax Amendment Consideration</div>
-              <div style={{ fontSize: 11, color: "#666", lineHeight: 1.6 }}>
-                Most recent year would need {fmt(recentYearNeeded)} net income ({fmt(additionalIncome)} more than reported).
-                Estimated additional tax at 25%: {fmt(additionalTax)}.
-              </div>
-            </div>
-          )}
-
-          {/* Footer */}
-          <div style={{ borderTop: "2px solid #C8202A", padding: "12px 28px 16px", textAlign: "center" }}>
-            <div style={{ fontSize: 10, color: "#6B6B6B", fontWeight: 500 }}>The Rio Group — Powered by AZ &amp; Associates</div>
-            <div style={{ fontSize: 8, color: "#ABABAB", marginTop: 3 }}>All figures are estimates for informational purposes only. Client should consult a CPA before amending returns. Subject to lender approval.</div>
-          </div>
         </div>
 
         {/* ════════════════════════════════════════════════════════════════════ */}
-        {/*  SCREEN CONTENT                                                     */}
+        {/*  MAIN CONTENT (visible on screen AND print)                         */}
         {/* ════════════════════════════════════════════════════════════════════ */}
-        <div className="no-print">
 
-          <h2 className="text-2xl font-bold mb-1" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>Self-Employed Buyer</h2>
-          <p className="text-gray-500 text-sm mb-6">Guided qualification for business owners and self-employed clients.</p>
+          <h2 className="text-2xl font-bold mb-1 no-print" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>Business Owner</h2>
+          <p className="text-gray-500 text-sm mb-6 no-print">Guided qualification for business owners and self-employed clients.</p>
 
           {/* ── STEP 1: Client Info ── */}
           <SectionLabel label="Client Info" />
@@ -824,7 +727,8 @@ export default function SelfEmployedWizard({ onTabChange }: SelfEmployedWizardPr
                       <h5 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Cons</h5>
                       <ul className="text-sm text-gray-600 space-y-1">
                         <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-gray-400 mt-1.5 flex-shrink-0" />MIP for life of loan</li>
-                        <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-gray-400 mt-1.5 flex-shrink-0" />Relies on tax return income</li>
+                        <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-gray-400 mt-1.5 flex-shrink-0" />Requires higher net income on tax returns</li>
+                        <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-gray-400 mt-1.5 flex-shrink-0" />Higher tax payment to IRS if amending to qualify</li>
                       </ul>
                     </div>
                   </div>
@@ -884,18 +788,33 @@ export default function SelfEmployedWizard({ onTabChange }: SelfEmployedWizardPr
             </div>
           </>)}
 
-          {/* ── TAX AMENDMENT SIMULATOR ── */}
-          <div className="mt-10 pt-8 border-t-2 border-gray-200">
-            <button onClick={() => setSimOpen(!simOpen)}
-              className="flex items-center gap-2 text-left w-full"
-              style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}>
-              <span className="text-lg font-bold" style={{ fontFamily: "'Playfair Display', Georgia, serif", color: "#111" }}>Tax Amendment Simulator</span>
-              <span className="text-gray-400 text-sm">{simOpen ? "▲" : "▼"}</span>
-            </button>
-            <p className="text-xs text-gray-400 mt-1 mb-4">Standalone tool — estimate tax impact of amending returns to qualify for full doc.</p>
+          {/* ── STANDALONE TOOLS ── */}
+          <div className="mt-10 pt-8 border-t-2 border-gray-200 no-print">
+            <div style={{ fontSize: "0.6875rem", fontWeight: 600, color: "#C8202A", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 12 }}>
+              Business Owner Tools
+            </div>
+            <div className="flex flex-wrap gap-3 mb-6">
+              <button onClick={() => setSimOpen(!simOpen)}
+                style={{ padding: "10px 20px", borderRadius: 8, fontSize: "0.8125rem",
+                  border: simOpen ? "1.5px solid #C8202A" : "1.5px solid #E8E8E8",
+                  background: "#fff", color: simOpen ? "#C8202A" : "#6B6B6B",
+                  fontWeight: simOpen ? 600 : 500, cursor: "pointer" }}>
+                {simOpen ? "✓ " : ""}Tax Amendment Simulator
+              </button>
+              <button onClick={() => setCalcOpen(!calcOpen)}
+                style={{ padding: "10px 20px", borderRadius: 8, fontSize: "0.8125rem",
+                  border: calcOpen ? "1.5px solid #C8202A" : "1.5px solid #E8E8E8",
+                  background: "#fff", color: calcOpen ? "#C8202A" : "#6B6B6B",
+                  fontWeight: calcOpen ? 600 : 500, cursor: "pointer" }}>
+                {calcOpen ? "✓ " : ""}Full Doc vs Bank Statement Calculator
+              </button>
+            </div>
 
+            {/* Tax Amendment Simulator */}
             {simOpen && (
-              <div className="card fade-in">
+              <div className="card fade-in mb-6">
+                <h3 className="text-base font-bold text-gray-900 mb-1">Tax Amendment Simulator</h3>
+                <p className="text-xs text-gray-400 mb-4">Estimate tax impact of amending returns to qualify for full doc.</p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                   <MoneyInput label="Previous Year Net Income" value={simPrevIncome} onChange={setSimPrevIncome} />
                   <MoneyInput label="Most Recent Year Net Income" value={simRecentIncome} onChange={setSimRecentIncome} />
@@ -932,9 +851,60 @@ export default function SelfEmployedWizard({ onTabChange }: SelfEmployedWizardPr
                 )}
               </div>
             )}
+
+            {/* Full Doc vs Bank Statement Calculator */}
+            {calcOpen && (
+              <div className="card fade-in mb-6">
+                <h3 className="text-base font-bold text-gray-900 mb-1">Full Doc vs Bank Statement Calculator</h3>
+                <p className="text-xs text-gray-400 mb-4">Side-by-side comparison — adjust rates, down payment, and see the real numbers.</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  {/* Full Doc inputs */}
+                  <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                    <h4 className="font-bold text-blue-800 mb-1 text-sm">Full Doc (FHA)</h4>
+                    <p className="text-xs text-blue-600 mb-3">3.5% down · FHA rate · MIP for life</p>
+                    <div className="space-y-3">
+                      <MoneyInput label="Purchase Price" value={calcFdPrice} onChange={setCalcFdPrice} />
+                      <NumberInput label="Down %" value={calcFdDown} onChange={setCalcFdDown} suffix="%" />
+                      <NumberInput label="Rate" value={calcFdRate} onChange={setCalcFdRate} suffix="%" />
+                    </div>
+                  </div>
+                  {/* Bank Statement inputs */}
+                  <div className="bg-orange-50 border border-orange-200 rounded-xl p-4">
+                    <h4 className="font-bold text-orange-800 mb-1 text-sm">Bank Statement</h4>
+                    <p className="text-xs text-orange-600 mb-3">10% down · No PMI · Rate +1.5%</p>
+                    <div className="space-y-3">
+                      <MoneyInput label="Purchase Price" value={calcBsPrice} onChange={setCalcBsPrice} />
+                      <NumberInput label="Down %" value={calcBsDown} onChange={setCalcBsDown} suffix="%" />
+                      <NumberInput label="Rate" value={calcBsRate} onChange={setCalcBsRate} suffix="%" />
+                    </div>
+                  </div>
+                </div>
+                {/* Results */}
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                  <div className="bg-blue-50 border-2 border-blue-400 rounded-xl p-3 text-center">
+                    <div className="text-xs text-blue-600 font-semibold uppercase tracking-wide">Full Doc Monthly</div>
+                    <div className="text-2xl font-bold text-blue-900 mt-1">{fmt(calcFdTotal)}</div>
+                    <div className="text-xs text-blue-500 mt-1">Down: {fmt(calcFdPrice * calcFdDown / 100)}</div>
+                  </div>
+                  <div className="bg-orange-50 border-2 border-orange-400 rounded-xl p-3 text-center">
+                    <div className="text-xs text-orange-600 font-semibold uppercase tracking-wide">Bank Stmt Monthly</div>
+                    <div className="text-2xl font-bold text-orange-900 mt-1">{fmt(calcBsTotal)}</div>
+                    <div className="text-xs text-orange-500 mt-1">Down: {fmt(calcBsPrice * calcBsDown / 100)}</div>
+                  </div>
+                </div>
+                <div className="border-2 border-[#C8202A] rounded-xl px-4 py-3 text-center text-sm font-semibold text-[#C8202A]">
+                  Difference: {fmt(Math.abs(calcBsTotal - calcFdTotal))}/mo · Down payment gap: {fmt(Math.abs(calcBsPrice * calcBsDown / 100 - calcFdPrice * calcFdDown / 100))}
+                </div>
+              </div>
+            )}
           </div>
 
-        </div>{/* end no-print */}
+          {/* Print footer */}
+          <div className="print-only" style={{ borderTop: "2px solid #C8202A", padding: "10px 0", textAlign: "center", marginTop: 20 }}>
+            <div style={{ fontSize: 10, color: "#6B6B6B", fontWeight: 500 }}>The Rio Group — Powered by AZ &amp; Associates</div>
+            <div style={{ fontSize: 8, color: "#ABABAB", marginTop: 3 }}>All figures are estimates for informational purposes only. Client should consult a CPA before amending returns. Subject to lender approval.</div>
+          </div>
+
       </div>{/* end printRef */}
     </div>
   );
