@@ -127,6 +127,34 @@ function parseComma(s: string): number {
   return Number(s.replace(/,/g, "")) || 0;
 }
 
+function DownPaymentInput({ price, pct, onChange, label }: {
+  price: number; pct: number; onChange: (pct: number) => void; label?: string;
+}) {
+  const dollars = Math.round(price * pct / 100);
+  const handleDollars = (d: number) => {
+    if (price > 0) onChange(Math.round((d / price) * 10000) / 100);
+  };
+  return (
+    <div>
+      {label && <label style={labelStyle}>{label}</label>}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+        <div className="relative">
+          <input type="number" inputMode="decimal" value={pct || ""}
+            onChange={(e) => onChange(Number(e.target.value) || 0)}
+            step="0.5" style={{ ...inputStyle, paddingRight: "40px" }} placeholder="0" />
+          <span style={{ position: "absolute", right: "14px", top: "50%", transform: "translateY(-50%)", color: "#9B9B9B", fontSize: "0.875rem" }}>%</span>
+        </div>
+        <div className="relative">
+          <span style={{ position: "absolute", left: "14px", top: "50%", transform: "translateY(-50%)", color: "#9B9B9B", fontSize: "0.875rem" }}>$</span>
+          <input type="text" inputMode="numeric" value={fmtComma(dollars)}
+            onChange={(e) => handleDollars(parseComma(e.target.value))}
+            style={{ ...inputStyle, paddingLeft: "28px" }} placeholder="0" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function MoneyInput({
   label,
   value,
@@ -597,13 +625,7 @@ function PaymentCalc() {
 
         {/* Down payment — hidden for VA */}
         {loanMode !== "va" ? (
-          <NumberInput
-            label="Down Payment %"
-            value={downPct}
-            onChange={setDownPct}
-            suffix="%"
-            placeholder={loanMode === "fha" ? "3.5" : "3"}
-          />
+          <DownPaymentInput price={price} pct={downPct} onChange={setDownPct} label="Down Payment" />
         ) : (
           <div className="bg-green-50 border border-green-200 rounded-lg px-4 py-3 text-sm text-green-800 flex items-center">
             <span className="font-semibold">VA Loan — No Down Payment Required</span>
@@ -1229,7 +1251,7 @@ function NewBuildCalc() {
             <MoneyInput label="Purchase Price" value={nbPrice} onChange={setNbPrice} />
             {/* Down payment */}
             <div>
-              <NumberInput label="Down Payment %" value={nbDownPct} onChange={setNbDownPct} suffix="%" step="0.5" placeholder="3.5" />
+              <DownPaymentInput price={nbPrice} pct={nbDownPct} onChange={setNbDownPct} label="Down Payment" />
               <div className="mt-1 text-xs text-blue-600 font-medium pl-1">
                 = {fmt(nb.down)} down · Loan {fmt(nb.loan)}
               </div>
@@ -1259,7 +1281,7 @@ function NewBuildCalc() {
             <MoneyInput label="Purchase Price" value={rsPrice} onChange={setRsPrice} />
             {/* Down payment */}
             <div>
-              <NumberInput label="Down Payment %" value={rsDownPct} onChange={setRsDownPct} suffix="%" step="0.5" placeholder="3.5" />
+              <DownPaymentInput price={rsPrice} pct={rsDownPct} onChange={setRsDownPct} label="Down Payment" />
               <div className="mt-1 text-xs text-green-700 font-medium pl-1">
                 = {fmt(rs.down)} down · Loan {fmt(rs.loan)}
               </div>
@@ -1619,7 +1641,7 @@ function BusinessOwnerCalc() {
             <div className="space-y-3">
               <MoneyInput label="Purchase Price" value={fdPrice} onChange={setFdPrice} />
               <div>
-                <NumberInput label="Down Payment %" value={fdDownPct} onChange={setFdDownPct} suffix="%" step="0.5" placeholder="3.5" />
+                <DownPaymentInput price={fdPrice} pct={fdDownPct} onChange={setFdDownPct} label="Down Payment" />
                 <div className="mt-1 text-xs text-blue-600 font-medium pl-1">= {fmt(fdCalc.down)} down · Loan {fmt(fdCalc.loan)}</div>
               </div>
               <NumberInput label="Rate (FHA)" value={fdRate} onChange={setFdRate} suffix="%" step="0.125" />
@@ -1635,7 +1657,7 @@ function BusinessOwnerCalc() {
             <div className="space-y-3">
               <MoneyInput label="Purchase Price" value={bsPrice} onChange={setBsPrice} />
               <div>
-                <NumberInput label="Down Payment %" value={bsDownPct} onChange={setBsDownPct} suffix="%" step="0.5" placeholder="10" />
+                <DownPaymentInput price={bsPrice} pct={bsDownPct} onChange={setBsDownPct} label="Down Payment" />
                 <div className="mt-1 text-xs text-orange-600 font-medium pl-1">= {fmt(bsCalc.down)} down · Loan {fmt(bsCalc.loan)}</div>
               </div>
               <NumberInput label="Rate (conv + 1.5%)" value={bsRateAdj} onChange={setBsRateAdj} suffix="%" step="0.125" />

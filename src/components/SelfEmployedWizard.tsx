@@ -54,6 +54,35 @@ function NumberInput({ label, value, onChange, suffix, placeholder }: {
   );
 }
 
+/* ── Down Payment dual input (% and $) ── */
+function DownPaymentInput({ price, pct, onChange, label }: {
+  price: number; pct: number; onChange: (pct: number) => void; label?: string;
+}) {
+  const dollars = Math.round(price * pct / 100);
+  const handleDollars = (d: number) => {
+    if (price > 0) onChange(Math.round((d / price) * 10000) / 100);
+  };
+  return (
+    <div>
+      {label && <label style={labelStyle}>{label}</label>}
+      <div className="grid grid-cols-2 gap-2">
+        <div className="relative">
+          <input type="number" inputMode="decimal" value={pct || ""}
+            onChange={(e) => onChange(Number(e.target.value) || 0)}
+            style={inputStyle} placeholder="0" />
+          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">%</span>
+        </div>
+        <div className="relative">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">$</span>
+          <input type="text" inputMode="numeric" value={fmtComma(dollars)}
+            onChange={(e) => handleDollars(parseComma(e.target.value))}
+            style={{ ...inputStyle, paddingLeft: "28px" }} placeholder="0" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ── Section connector ── */
 function SectionConnector() {
   return <div className="section-connector" style={{ display: "flex", justifyContent: "center", margin: "8px 0" }}>
@@ -138,6 +167,8 @@ export default function SelfEmployedWizard({ onTabChange }: SelfEmployedWizardPr
 
   /* ── Step 4: Purchase Details ── */
   const [purchasePrice, setPurchasePrice] = useState(450000);
+  const [fhaDownPct, setFhaDownPct] = useState(3.5);
+  const [bsDownPct, setBsDownPct] = useState(10);
 
   /* ── Tax Amendment Simulator ── */
   const [simOpen, setSimOpen] = useState(false);
@@ -300,19 +331,19 @@ export default function SelfEmployedWizard({ onTabChange }: SelfEmployedWizardPr
   const fhaMipUpfront = 0.0175; // 1.75% financed into loan
   const fhaMipAnnual = 0.0055; // 0.55% annual MIP
 
-  // FHA Full Doc — 3.5% down
-  const fhaDown = purchasePrice * 0.035;
+  // FHA Full Doc
+  const fhaDown = purchasePrice * (fhaDownPct / 100);
   const fhaBaseLoan = purchasePrice - fhaDown;
-  const fhaLoanWithMip = fhaBaseLoan * (1 + fhaMipUpfront); // UFMIP financed
+  const fhaLoanWithMip = fhaDownPct < 20 ? fhaBaseLoan * (1 + fhaMipUpfront) : fhaBaseLoan;
   const fhaPI = calcPayment(fhaLoanWithMip, fhaRate, 30);
   const fhaTax = purchasePrice * taxRate / 12;
   const fhaIns = insuranceAnnual / 12;
-  const fhaMipMonthly = fhaBaseLoan * fhaMipAnnual / 12;
+  const fhaMipMonthly = fhaDownPct < 20 ? fhaBaseLoan * fhaMipAnnual / 12 : 0;
   const fhaPITI = fhaPI + fhaTax + fhaIns + fhaMipMonthly;
 
-  // Bank statement — 10% down, no PMI
-  const bsDown = purchasePrice * 0.1;
-  const bsLoan = purchasePrice * 0.9;
+  // Bank statement — no PMI
+  const bsDown = purchasePrice * (bsDownPct / 100);
+  const bsLoan = purchasePrice - bsDown;
   const bsPI = calcPayment(bsLoan, bsRate, 30);
   const bsTax = purchasePrice * taxRate / 12;
   const bsIns = insuranceAnnual / 12;
@@ -341,23 +372,25 @@ export default function SelfEmployedWizard({ onTabChange }: SelfEmployedWizardPr
   // Max qualifying prices
   const calcMaxPriceFHA = () => {
     let lo = 0, hi = 2000000;
+    const downFrac = fhaDownPct / 100;
     for (let i = 0; i < 50; i++) {
       const mid = (lo + hi) / 2;
-      const baseLoan = mid * 0.965;
-      const loanMip = baseLoan * (1 + fhaMipUpfront);
+      const baseLoan = mid * (1 - downFrac);
+      const loanMip = downFrac < 0.2 ? baseLoan * (1 + fhaMipUpfront) : baseLoan;
       const pi = calcPayment(loanMip, fhaRate, 30);
       const tax = mid * taxRate / 12;
       const ins = insuranceAnnual / 12;
-      const mip = baseLoan * fhaMipAnnual / 12;
+      const mip = downFrac < 0.2 ? baseLoan * fhaMipAnnual / 12 : 0;
       if (pi + tax + ins + mip + totalDebts < combinedMonthly * 0.45) lo = mid; else hi = mid;
     }
     return Math.floor(lo);
   };
   const calcMaxPriceBS = () => {
     let lo = 0, hi = 2000000;
+    const downFrac = bsDownPct / 100;
     for (let i = 0; i < 50; i++) {
       const mid = (lo + hi) / 2;
-      const pi = calcPayment(mid * 0.9, bsRate, 30);
+      const pi = calcPayment(mid * (1 - downFrac), bsRate, 30);
       const tax = mid * taxRate / 12;
       const ins = insuranceAnnual / 12;
       if (pi + tax + ins + totalDebts < combinedMonthly * 0.45) lo = mid; else hi = mid;
@@ -635,13 +668,11 @@ export default function SelfEmployedWizard({ onTabChange }: SelfEmployedWizardPr
             <SectionConnector />
             <SectionLabel label="Purchase Details & Qualification" />
             <div className="card fade-in mb-2">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                <MoneyInput label="Target Purchase Price" value={purchasePrice} onChange={setPurchasePrice} placeholder="450000" />
-                <div className="flex items-end">
-                  <div className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-sm text-gray-600 w-full">
-                    <div className="text-xs text-gray-400 mb-1">Down Payment Comparison</div>
-                    <div>FHA (3.5%): <strong>{fmt(fhaDown)}</strong> &nbsp;|&nbsp; Bank Stmt (10%): <strong>{fmt(bsDown)}</strong></div>
-                  </div>
+              <div className="mb-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <MoneyInput label="Target Purchase Price" value={purchasePrice} onChange={setPurchasePrice} placeholder="450000" />
+                  <DownPaymentInput price={purchasePrice} pct={fhaDownPct} onChange={setFhaDownPct} label="FHA Down Payment" />
+                  <DownPaymentInput price={purchasePrice} pct={bsDownPct} onChange={setBsDownPct} label="Bank Stmt Down Payment" />
                 </div>
               </div>
 
@@ -649,7 +680,7 @@ export default function SelfEmployedWizard({ onTabChange }: SelfEmployedWizardPr
               {fdQualifies ? (
                 <div className="bg-green-50 border border-green-200 rounded-xl px-5 py-4 mb-4 fade-in">
                   <h4 className="font-bold text-green-800 mb-1">Full Doc Path Works — May Qualify for DPA</h4>
-                  <p className="text-sm text-green-700 mb-3">Income qualifies for FHA full doc at this price with only 3.5% down ({fmt(fhaDown)}). Client may also qualify for down payment assistance programs.</p>
+                  <p className="text-sm text-green-700 mb-3">Income qualifies for FHA full doc at this price with only {fhaDownPct}% down ({fmt(fhaDown)}). Client may also qualify for down payment assistance programs.</p>
                   {onTabChange && (
                     <button onClick={goToClientWizard}
                       className="print-hide px-4 py-2 text-sm font-semibold rounded-lg text-white transition-colors"
@@ -700,12 +731,12 @@ export default function SelfEmployedWizard({ onTabChange }: SelfEmployedWizardPr
                   <div className="font-bold text-blue-800 mb-3 text-xs uppercase tracking-wide">Full Doc (FHA)</div>
                   {[
                     { label: "Purchase Price", value: fmt(purchasePrice) },
-                    { label: "Down (3.5%)", value: fmt(fhaDown) },
+                    { label: `Down (${fhaDownPct}%)`, value: fmt(fhaDown) },
                     { label: "Loan Amount", value: fmt(fhaBaseLoan) },
                     { label: "Rate (FHA)", value: `${fhaRate.toFixed(2)}%` },
-                    { label: "MIP (0.55%)", value: `${fmt(fhaMipMonthly)}/mo` },
+                    { label: "MIP (0.55%)", value: fhaMipMonthly > 0 ? `${fmt(fhaMipMonthly)}/mo` : "None" },
                     { label: "P&I", value: fmt(fhaPI) },
-                    { label: "PITI + MIP", value: fmt(fhaPITI) },
+                    { label: fhaMipMonthly > 0 ? "PITI + MIP" : "PITI", value: fmt(fhaPITI) },
                   ].map((r, i) => (
                     <div key={i} className="flex justify-between text-sm py-1.5 border-b border-blue-100">
                       <span className="text-blue-700">{r.label}</span>
@@ -722,7 +753,7 @@ export default function SelfEmployedWizard({ onTabChange }: SelfEmployedWizardPr
                   <div className="font-bold text-orange-800 mb-3 text-xs uppercase tracking-wide">Bank Statement</div>
                   {[
                     { label: "Purchase Price", value: fmt(purchasePrice) },
-                    { label: "Down (10%)", value: fmt(bsDown) },
+                    { label: `Down (${bsDownPct}%)`, value: fmt(bsDown) },
                     { label: "Loan Amount", value: fmt(bsLoan) },
                     { label: "Rate (+1.5%)", value: `${bsRate.toFixed(2)}%` },
                     { label: "PMI/MIP", value: "None" },
@@ -745,7 +776,7 @@ export default function SelfEmployedWizard({ onTabChange }: SelfEmployedWizardPr
                 <div className="bg-blue-50 border-2 border-blue-400 rounded-xl p-4 text-center">
                   <div className="text-xs text-blue-600 font-semibold uppercase tracking-wide">Full Doc Monthly</div>
                   <div className="text-3xl font-bold text-blue-900 mt-1">{fmt(fhaPITI)}</div>
-                  <div className="text-xs text-blue-500 mt-1">P&I {fmt(fhaPI)} + Tax/Ins + MIP</div>
+                  <div className="text-xs text-blue-500 mt-1">P&I {fmt(fhaPI)} + Tax/Ins{fhaMipMonthly > 0 ? " + MIP" : ""}</div>
                 </div>
                 <div className="bg-orange-50 border-2 border-orange-400 rounded-xl p-4 text-center">
                   <div className="text-xs text-orange-600 font-semibold uppercase tracking-wide">Bank Stmt Monthly</div>
@@ -767,7 +798,7 @@ export default function SelfEmployedWizard({ onTabChange }: SelfEmployedWizardPr
               <div className="bg-red-50/50 border-2 border-[#C8202A] rounded-xl px-5 py-4 mb-4">
                 <h4 className="font-bold text-[#C8202A] text-sm mb-2">Down Payment vs Monthly Cost Trade-off</h4>
                 <p className="text-sm text-gray-700">
-                  Full doc requires <strong>{fmt(fhaDown)} down (3.5%)</strong> — bank statement requires <strong>{fmt(bsDown)} down (10%)</strong>.
+                  Full doc requires <strong>{fmt(fhaDown)} down ({fhaDownPct}%)</strong> — bank statement requires <strong>{fmt(bsDown)} down ({bsDownPct}%)</strong>.
                   That&apos;s <strong className="text-[#C8202A]">{fmt(Math.abs(bsDown - fhaDown))} more</strong> upfront for bank statement.
                 </p>
                 <p className="text-sm text-gray-700 mt-2">
@@ -799,7 +830,7 @@ export default function SelfEmployedWizard({ onTabChange }: SelfEmployedWizardPr
                   <h4 className="font-bold text-blue-800 mb-1">Full Doc (FHA) Notes</h4>
                   <ul className="text-blue-700 space-y-1">
                     <li>✅ Lower interest rate</li>
-                    <li>✅ Only 3.5% down payment</li>
+                    <li>✅ Only {fhaDownPct}% down payment</li>
                     <li>✅ May qualify for DPA programs</li>
                     <li>⚠️ Requires 2 years tax returns</li>
                     <li>⚠️ MIP for life of loan</li>
@@ -814,7 +845,7 @@ export default function SelfEmployedWizard({ onTabChange }: SelfEmployedWizardPr
                     <li>✅ No PMI or MIP ever</li>
                     <li>✅ No tax amendment exposure</li>
                     <li>✅ 12 months bank statements only</li>
-                    <li>⚠️ 10% minimum down required</li>
+                    <li>⚠️ {bsDownPct}% minimum down required</li>
                     <li>⚠️ Rate ~1.5% above market</li>
                   </ul>
                 </div>
@@ -852,7 +883,7 @@ export default function SelfEmployedWizard({ onTabChange }: SelfEmployedWizardPr
               ) : recommendFullDoc ? (
                 <div className="card card-accent-top">
                   <span className="inline-block bg-[#C8202A] text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide mb-3">Recommended — FHA Full Doc</span>
-                  <p className="text-sm text-gray-600 mb-3">Income qualifies for FHA full doc at this price with only 3.5% down. May also qualify for down payment assistance programs.</p>
+                  <p className="text-sm text-gray-600 mb-3">Income qualifies for FHA full doc at this price with only {fhaDownPct}% down. May also qualify for down payment assistance programs.</p>
                   {onTabChange && (
                     <button onClick={goToClientWizard}
                       className="print-hide w-full px-4 py-3 text-sm font-semibold rounded-lg text-white transition-colors"
@@ -946,7 +977,7 @@ export default function SelfEmployedWizard({ onTabChange }: SelfEmployedWizardPr
                     </div>
                     {simAdditional > 0 && (
                       <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-sm text-amber-800">
-                        <strong>Is it worth amending?</strong> Additional tax cost of {fmt(simAdditionalTax)} vs FHA down payment of {fmt(simPrice * 0.035)}. Weigh the one-time tax cost against the ongoing rate difference on a bank statement loan.
+                        <strong>Is it worth amending?</strong> Additional tax cost of {fmt(simAdditionalTax)} vs FHA down payment of {fmt(simPrice * fhaDownPct / 100)}. Weigh the one-time tax cost against the ongoing rate difference on a bank statement loan.
                       </div>
                     )}
                     <p className="text-xs text-gray-400 italic">
@@ -969,7 +1000,7 @@ export default function SelfEmployedWizard({ onTabChange }: SelfEmployedWizardPr
                     <p className="text-xs text-blue-600 mb-3">3.5% down · FHA rate · MIP for life</p>
                     <div className="space-y-3">
                       <MoneyInput label="Purchase Price" value={calcFdPrice} onChange={setCalcFdPrice} />
-                      <NumberInput label="Down %" value={calcFdDown} onChange={setCalcFdDown} suffix="%" />
+                      <DownPaymentInput price={calcFdPrice} pct={calcFdDown} onChange={setCalcFdDown} label="Down Payment" />
                       <NumberInput label="Rate" value={calcFdRate} onChange={setCalcFdRate} suffix="%" />
                     </div>
                   </div>
@@ -979,7 +1010,7 @@ export default function SelfEmployedWizard({ onTabChange }: SelfEmployedWizardPr
                     <p className="text-xs text-orange-600 mb-3">10% down · No PMI · Rate +1.5%</p>
                     <div className="space-y-3">
                       <MoneyInput label="Purchase Price" value={calcBsPrice} onChange={setCalcBsPrice} />
-                      <NumberInput label="Down %" value={calcBsDown} onChange={setCalcBsDown} suffix="%" />
+                      <DownPaymentInput price={calcBsPrice} pct={calcBsDown} onChange={setCalcBsDown} label="Down Payment" />
                       <NumberInput label="Rate" value={calcBsRate} onChange={setCalcBsRate} suffix="%" />
                     </div>
                   </div>
