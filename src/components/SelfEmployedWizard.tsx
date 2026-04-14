@@ -687,70 +687,137 @@ export default function SelfEmployedWizard({ onTabChange }: SelfEmployedWizardPr
             </div>
           </>)}
 
-          {/* ── STEP 5: Side-by-Side Comparison ── */}
+          {/* ── STEP 5: Side-by-Side Comparison (matches Calculator tab layout) ── */}
           {step4Complete && (<>
             <SectionConnector />
             <SectionLabel label="Loan Comparison" />
-            <div className="card fade-in mb-2">
+            <div className="fade-in mb-2">
+
+              {/* Detailed breakdown cards — side by side */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                {/* FHA Full Doc Card */}
-                <div className={`border rounded-xl p-4 ${fdQualifies ? "border-t-4 border-t-[#C8202A] border-x border-b border-gray-200" : "border-gray-200"}`} style={{ position: "relative" }}>
-                  {fdQualifies && <span className="absolute -top-px left-4 bg-[#C8202A] text-white text-xs font-bold px-3 py-0.5 rounded-b-lg uppercase tracking-wide" style={{ fontSize: 10 }}>Recommended</span>}
-                  <h4 className="font-bold text-gray-900 mb-3 mt-2">FHA Full Doc</h4>
-                  <div className="space-y-2 text-sm">
-                    {[
-                      { l: "Down Payment (3.5%)", v: fmt(fhaDown) },
-                      { l: "Rate", v: `${fhaRate.toFixed(2)}%` },
-                      { l: "MIP (0.55% annual)", v: `~${fmt(fhaMipMonthly)}/mo` },
-                      { l: "Monthly P&I", v: fmt(fhaPI) },
-                      { l: "Monthly PITI + MIP", v: fmt(fhaPITI) },
-                    ].map((r, i) => (
-                      <div key={i} className="flex justify-between border-b border-gray-100 pb-1">
-                        <span className="text-gray-600">{r.l}</span>
-                        <span className="font-semibold text-gray-900">{r.v}</span>
-                      </div>
-                    ))}
-                    <div className="flex justify-between pt-1">
-                      <span className="font-bold text-gray-900">Qualifies</span>
-                      <span className={`font-bold ${fdQualifies ? "text-green-600" : "text-red-600"}`}>{fdQualifies ? "Yes" : "No"}</span>
+                {/* Full Doc (FHA) breakdown */}
+                <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                  <div className="font-bold text-blue-800 mb-3 text-xs uppercase tracking-wide">Full Doc (FHA)</div>
+                  {[
+                    { label: "Purchase Price", value: fmt(purchasePrice) },
+                    { label: "Down (3.5%)", value: fmt(fhaDown) },
+                    { label: "Loan Amount", value: fmt(fhaBaseLoan) },
+                    { label: "Rate (FHA)", value: `${fhaRate.toFixed(2)}%` },
+                    { label: "MIP (0.55%)", value: `${fmt(fhaMipMonthly)}/mo` },
+                    { label: "P&I", value: fmt(fhaPI) },
+                    { label: "PITI + MIP", value: fmt(fhaPITI) },
+                  ].map((r, i) => (
+                    <div key={i} className="flex justify-between text-sm py-1.5 border-b border-blue-100">
+                      <span className="text-blue-700">{r.label}</span>
+                      <span className="font-semibold text-blue-900">{r.value}</span>
                     </div>
+                  ))}
+                  <div className="flex justify-between text-sm font-bold mt-2 pt-2 text-blue-900">
+                    <span>Total Monthly</span><span>{fmt(fhaPITI)}</span>
                   </div>
-                  <p className="text-xs text-gray-400 mt-3">3.5% down. Requires tax return income. Lower rate but MIP for life of loan. May qualify for DPA.</p>
                 </div>
 
-                {/* Bank Statement Card */}
-                <div className={`border rounded-xl p-4 ${!fdQualifies ? "border-t-4 border-t-[#C8202A] border-x border-b border-gray-200" : "border-gray-200"}`} style={{ position: "relative" }}>
-                  {!fdQualifies && <span className="absolute -top-px left-4 bg-[#C8202A] text-white text-xs font-bold px-3 py-0.5 rounded-b-lg uppercase tracking-wide" style={{ fontSize: 10 }}>Recommended</span>}
-                  <h4 className="font-bold text-gray-900 mb-3 mt-2">Bank Statement Loan</h4>
-                  <div className="space-y-2 text-sm">
-                    {[
-                      { l: "Down Payment (10%)", v: fmt(bsDown) },
-                      { l: "Rate", v: `~${bsRate.toFixed(2)}%` },
-                      { l: "PMI/MIP", v: "None" },
-                      { l: "Monthly P&I", v: fmt(bsPI) },
-                      { l: "Monthly PITI (no PMI)", v: fmt(bsPITI) },
-                    ].map((r, i) => (
-                      <div key={i} className="flex justify-between border-b border-gray-100 pb-1">
-                        <span className="text-gray-600">{r.l}</span>
-                        <span className="font-semibold text-gray-900">{r.v}</span>
-                      </div>
-                    ))}
-                    <div className="flex justify-between pt-1">
-                      <span className="font-bold text-gray-900">Qualifies</span>
-                      <span className="font-bold text-green-600">Yes</span>
+                {/* Bank Statement breakdown */}
+                <div className="bg-orange-50 border border-orange-200 rounded-xl p-4">
+                  <div className="font-bold text-orange-800 mb-3 text-xs uppercase tracking-wide">Bank Statement</div>
+                  {[
+                    { label: "Purchase Price", value: fmt(purchasePrice) },
+                    { label: "Down (10%)", value: fmt(bsDown) },
+                    { label: "Loan Amount", value: fmt(bsLoan) },
+                    { label: "Rate (+1.5%)", value: `${bsRate.toFixed(2)}%` },
+                    { label: "PMI/MIP", value: "None" },
+                    { label: "P&I", value: fmt(bsPI) },
+                    { label: "PITI", value: fmt(bsPITI) },
+                  ].map((r, i) => (
+                    <div key={i} className="flex justify-between text-sm py-1.5 border-b border-orange-100">
+                      <span className="text-orange-700">{r.label}</span>
+                      <span className="font-semibold text-orange-900">{r.value}</span>
                     </div>
+                  ))}
+                  <div className="flex justify-between text-sm font-bold mt-2 pt-2 text-orange-900">
+                    <span>Total Monthly</span><span>{fmt(bsPITI)}</span>
                   </div>
-                  <p className="text-xs text-gray-400 mt-3">12 months bank statements only. No tax returns required. Higher rate but no PMI and no tax exposure.</p>
                 </div>
               </div>
 
-              {/* Summary callout */}
-              <div className="border-2 border-[#C8202A] rounded-xl px-5 py-4">
-                <p className="text-sm text-gray-800">
-                  FHA requires <strong>{fmt(fhaDown)} down (3.5%)</strong>. Bank statement requires <strong>{fmt(bsDown)} down (10%)</strong>.
-                  {' '}Monthly payment difference: <strong>{fmt(Math.abs(paymentDiff))}/mo</strong>.
-                  {!fdQualifies && additionalTax > 0 && <> Bank statement avoids estimated <strong>{fmt(additionalTax)}</strong> in additional tax liability.</>}
+              {/* Payment total cards */}
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div className="bg-blue-50 border-2 border-blue-400 rounded-xl p-4 text-center">
+                  <div className="text-xs text-blue-600 font-semibold uppercase tracking-wide">Full Doc Monthly</div>
+                  <div className="text-3xl font-bold text-blue-900 mt-1">{fmt(fhaPITI)}</div>
+                  <div className="text-xs text-blue-500 mt-1">P&I {fmt(fhaPI)} + Tax/Ins + MIP</div>
+                </div>
+                <div className="bg-orange-50 border-2 border-orange-400 rounded-xl p-4 text-center">
+                  <div className="text-xs text-orange-600 font-semibold uppercase tracking-wide">Bank Stmt Monthly</div>
+                  <div className="text-3xl font-bold text-orange-900 mt-1">{fmt(bsPITI)}</div>
+                  <div className="text-xs text-orange-500 mt-1">P&I {fmt(bsPI)} + Tax/Ins</div>
+                </div>
+              </div>
+
+              {/* Monthly difference strip */}
+              <div className={`rounded-lg px-4 py-3 text-center text-sm font-semibold mb-4 ${
+                paymentDiff > 0 ? "bg-blue-50 border border-blue-300 text-blue-800" : "bg-orange-50 border border-orange-300 text-orange-800"
+              }`}>
+                {paymentDiff > 0
+                  ? `Full doc saves ${fmt(paymentDiff)}/mo (${fmt(paymentDiff * 12)}/yr)`
+                  : `Bank statement saves ${fmt(Math.abs(paymentDiff))}/mo (${fmt(Math.abs(paymentDiff) * 12)}/yr)`}
+              </div>
+
+              {/* Down Payment vs Monthly Cost Trade-off */}
+              <div className="bg-red-50/50 border-2 border-[#C8202A] rounded-xl px-5 py-4 mb-4">
+                <h4 className="font-bold text-[#C8202A] text-sm mb-2">Down Payment vs Monthly Cost Trade-off</h4>
+                <p className="text-sm text-gray-700">
+                  Full doc requires <strong>{fmt(fhaDown)} down (3.5%)</strong> — bank statement requires <strong>{fmt(bsDown)} down (10%)</strong>.
+                  That&apos;s <strong className="text-[#C8202A]">{fmt(Math.abs(bsDown - fhaDown))} more</strong> upfront for bank statement.
                 </p>
+                <p className="text-sm text-gray-700 mt-2">
+                  Bank statement has no MIP, saving <strong>{fmt(fhaMipMonthly)}/mo</strong>, but the higher rate adds <strong>{fmt(Math.abs(bsPI - fhaPI))}/mo</strong> to P&I.
+                  Net monthly difference: <strong className="text-[#C8202A]">{fmt(Math.abs(paymentDiff))}/mo</strong>.
+                </p>
+                {!fdQualifies && additionalTax > 0 && (
+                  <p className="text-sm text-gray-700 mt-2">
+                    Bank statement also avoids estimated <strong className="text-[#C8202A]">{fmt(additionalTax)}</strong> in additional tax liability from amending returns.
+                  </p>
+                )}
+              </div>
+
+              {/* Qualification status */}
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div className={`rounded-xl p-3 text-center border-2 ${fdQualifies ? "bg-green-50 border-green-400" : "bg-red-50 border-red-300"}`}>
+                  <div className="text-xs font-semibold uppercase tracking-wide mb-1" style={{ color: fdQualifies ? "#166534" : "#991B1B" }}>Full Doc Qualifies</div>
+                  <div className={`text-lg font-bold ${fdQualifies ? "text-green-700" : "text-red-700"}`}>{fdQualifies ? "Yes" : "No"}</div>
+                </div>
+                <div className="bg-green-50 border-2 border-green-400 rounded-xl p-3 text-center">
+                  <div className="text-xs font-semibold uppercase tracking-wide mb-1 text-green-800">Bank Stmt Qualifies</div>
+                  <div className="text-lg font-bold text-green-700">Yes</div>
+                </div>
+              </div>
+
+              {/* Pros / Cons notes — matching calculator tab */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm">
+                  <h4 className="font-bold text-blue-800 mb-1">Full Doc (FHA) Notes</h4>
+                  <ul className="text-blue-700 space-y-1">
+                    <li>✅ Lower interest rate</li>
+                    <li>✅ Only 3.5% down payment</li>
+                    <li>✅ May qualify for DPA programs</li>
+                    <li>⚠️ Requires 2 years tax returns</li>
+                    <li>⚠️ MIP for life of loan</li>
+                    <li>⚠️ Requires higher net income on tax returns</li>
+                    <li>⚠️ Higher tax payment to IRS if amending to qualify</li>
+                  </ul>
+                </div>
+                <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 text-sm">
+                  <h4 className="font-bold text-orange-800 mb-1">Bank Statement Notes</h4>
+                  <ul className="text-orange-700 space-y-1">
+                    <li>✅ No tax returns needed</li>
+                    <li>✅ No PMI or MIP ever</li>
+                    <li>✅ No tax amendment exposure</li>
+                    <li>✅ 12 months bank statements only</li>
+                    <li>⚠️ 10% minimum down required</li>
+                    <li>⚠️ Rate ~1.5% above market</li>
+                  </ul>
+                </div>
               </div>
             </div>
           </>)}
@@ -784,27 +851,8 @@ export default function SelfEmployedWizard({ onTabChange }: SelfEmployedWizardPr
                 </div>
               ) : recommendFullDoc ? (
                 <div className="card card-accent-top">
-                  <span className="inline-block bg-[#C8202A] text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide mb-3">Best Option</span>
-                  <h4 className="text-lg font-bold text-gray-900 mb-1">FHA Full Doc</h4>
-                  <p className="text-sm text-gray-600 mb-4">Lower rate with only 3.5% down. May qualify for DPA programs through Client Wizard.</p>
-                  <div className="grid grid-cols-2 gap-4 mb-4">
-                    <div>
-                      <h5 className="text-xs font-semibold text-green-600 uppercase tracking-wide mb-2">Pros</h5>
-                      <ul className="text-sm text-gray-800 space-y-1">
-                        <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-green-500 mt-1.5 flex-shrink-0" />Lower interest rate</li>
-                        <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-green-500 mt-1.5 flex-shrink-0" />Only 3.5% down required</li>
-                        <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-green-500 mt-1.5 flex-shrink-0" />May qualify for DPA</li>
-                      </ul>
-                    </div>
-                    <div>
-                      <h5 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Cons</h5>
-                      <ul className="text-sm text-gray-600 space-y-1">
-                        <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-gray-400 mt-1.5 flex-shrink-0" />MIP for life of loan</li>
-                        <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-gray-400 mt-1.5 flex-shrink-0" />Requires higher net income on tax returns</li>
-                        <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-gray-400 mt-1.5 flex-shrink-0" />Higher tax payment to IRS if amending to qualify</li>
-                      </ul>
-                    </div>
-                  </div>
+                  <span className="inline-block bg-[#C8202A] text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide mb-3">Recommended — FHA Full Doc</span>
+                  <p className="text-sm text-gray-600 mb-3">Income qualifies for FHA full doc at this price with only 3.5% down. May also qualify for down payment assistance programs.</p>
                   {onTabChange && (
                     <button onClick={goToClientWizard}
                       className="print-hide w-full px-4 py-3 text-sm font-semibold rounded-lg text-white transition-colors"
@@ -813,32 +861,13 @@ export default function SelfEmployedWizard({ onTabChange }: SelfEmployedWizardPr
                     </button>
                   )}
                   <div className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-sm text-gray-600 mt-3">
-                    Bank statement is available if client prefers not to rely on tax returns.
+                    Bank statement is also available if client prefers not to rely on tax returns.
                   </div>
                 </div>
               ) : (
                 <div className="card card-accent-top">
-                  <span className="inline-block bg-[#C8202A] text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide mb-3">Best Option</span>
-                  <h4 className="text-lg font-bold text-gray-900 mb-1">Bank Statement Loan</h4>
-                  <p className="text-sm text-gray-600 mb-4">Current income does not qualify for full doc — bank statement avoids tax exposure and requires no MIP/PMI.</p>
-                  <div className="grid grid-cols-2 gap-4 mb-4">
-                    <div>
-                      <h5 className="text-xs font-semibold text-green-600 uppercase tracking-wide mb-2">Pros</h5>
-                      <ul className="text-sm text-gray-800 space-y-1">
-                        <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-green-500 mt-1.5 flex-shrink-0" />No tax returns needed</li>
-                        <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-green-500 mt-1.5 flex-shrink-0" />No PMI or MIP</li>
-                        <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-green-500 mt-1.5 flex-shrink-0" />No tax amendment exposure</li>
-                        <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-green-500 mt-1.5 flex-shrink-0" />12 months bank statements only</li>
-                      </ul>
-                    </div>
-                    <div>
-                      <h5 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Cons</h5>
-                      <ul className="text-sm text-gray-600 space-y-1">
-                        <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-gray-400 mt-1.5 flex-shrink-0" />Higher rate (+1.5% over market)</li>
-                        <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-gray-400 mt-1.5 flex-shrink-0" />10% minimum down required</li>
-                      </ul>
-                    </div>
-                  </div>
+                  <span className="inline-block bg-[#C8202A] text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide mb-3">Recommended — Bank Statement</span>
+                  <p className="text-sm text-gray-600 mb-3">Current income does not qualify for full doc — bank statement avoids tax exposure and requires no MIP/PMI.</p>
                   {additionalTax > 0 && (
                     <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-sm text-amber-800">
                       <strong>Full doc alternative:</strong> Would require amending returns to show {fmt(additionalIncome)} more income. Estimated additional tax: {fmt(additionalTax)}. Consult a CPA before amending.
