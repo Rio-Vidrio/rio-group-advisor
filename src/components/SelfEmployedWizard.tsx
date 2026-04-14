@@ -390,64 +390,84 @@ export default function SelfEmployedWizard({ onTabChange }: SelfEmployedWizardPr
 
           {/* Side-by-side comparison */}
           {step4Complete && (
-            <div style={{ padding: "16px 28px" }}>
-              <div style={{ fontSize: 11, fontWeight: 600, color: "#C8202A", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>Loan Comparison</div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                <div style={{ border: fdQualifies ? "2px solid #C8202A" : "1px solid #E8E8E8", borderRadius: 12, padding: 14, position: "relative" }}>
-                  {fdQualifies && <span style={{ position: "absolute", top: -1, left: 16, background: "#C8202A", color: "#fff", fontSize: 9, fontWeight: 700, padding: "2px 8px", borderRadius: "0 0 6px 6px", textTransform: "uppercase" }}>Recommended</span>}
-                  <div style={{ fontWeight: 700, fontSize: 12, color: "#111", marginTop: fdQualifies ? 12 : 0, marginBottom: 8 }}>FHA Full Doc</div>
+            <div style={{ padding: "20px 28px 0" }}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: "#C8202A", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 12 }}>Loan Comparison</div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                {/* FHA Full Doc column */}
+                <div style={{ border: "1px solid #BFDBFE", borderRadius: 12, padding: 16, background: fdQualifies ? "#EFF6FF" : "#F9FAFB" }}>
+                  {fdQualifies && (
+                    <div style={{ textAlign: "center", marginBottom: 10 }}>
+                      <span style={{ display: "inline-block", background: "#C8202A", color: "#fff", fontSize: 9, fontWeight: 700, padding: "4px 14px", borderRadius: 20, textTransform: "uppercase", letterSpacing: "0.08em" }}>Recommended</span>
+                    </div>
+                  )}
+                  <div style={{ fontWeight: 700, color: fdQualifies ? "#1E40AF" : "#6B7280", marginBottom: 12, fontSize: 13, textTransform: "uppercase", letterSpacing: "0.05em" }}>FHA Full Doc</div>
                   {[
+                    { l: "Purchase Price", v: fmt(purchasePrice) },
                     { l: "Down (3.5%)", v: fmt(fhaDown) },
-                    { l: "Rate", v: `${fhaRate.toFixed(2)}%` },
+                    { l: "Rate (FHA)", v: `${fhaRate.toFixed(2)}%` },
                     { l: "MIP", v: `${fmt(fhaMipMonthly)}/mo` },
-                    { l: "Monthly P&I", v: fmt(fhaPI) },
-                    { l: "Monthly PITI+MIP", v: fmt(fhaPITI) },
-                    { l: "Qualifies", v: fdQualifies ? "Yes" : "No" },
+                    { l: "P&I", v: fmt(fhaPI) },
+                    { l: "PITI + MIP", v: fmt(fhaPITI) },
                   ].map((r, i) => (
-                    <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: 11, padding: "3px 0", borderBottom: "1px solid #F0F0F0" }}>
-                      <span style={{ color: "#666" }}>{r.l}</span>
-                      <span style={{ fontWeight: 600, color: "#111" }}>{r.v}</span>
+                    <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: 12, padding: "5px 0", borderBottom: fdQualifies ? "1px solid #DBEAFE" : "1px solid #E5E7EB" }}>
+                      <span style={{ color: fdQualifies ? "#1D4ED8" : "#6B7280" }}>{r.l}</span>
+                      <span style={{ fontWeight: 600, color: fdQualifies ? "#1E3A8A" : "#374151" }}>{r.v}</span>
                     </div>
                   ))}
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, fontWeight: 700, marginTop: 8, paddingTop: 8, color: fdQualifies ? "#1E3A8A" : "#374151" }}>
+                    <span>Total Monthly</span><span>{fmt(fhaPITI)}</span>
+                  </div>
+                  <div style={{ textAlign: "center", marginTop: 8, fontSize: 11, fontWeight: 600, color: fdQualifies ? "#16A34A" : "#DC2626" }}>
+                    {fdQualifies ? "✓ Qualifies" : "✗ Does Not Qualify"}
+                  </div>
                 </div>
-                <div style={{ border: !fdQualifies ? "2px solid #C8202A" : "1px solid #E8E8E8", borderRadius: 12, padding: 14, position: "relative" }}>
-                  {!fdQualifies && <span style={{ position: "absolute", top: -1, left: 16, background: "#C8202A", color: "#fff", fontSize: 9, fontWeight: 700, padding: "2px 8px", borderRadius: "0 0 6px 6px", textTransform: "uppercase" }}>Recommended</span>}
-                  <div style={{ fontWeight: 700, fontSize: 12, color: "#111", marginTop: !fdQualifies ? 12 : 0, marginBottom: 8 }}>Bank Statement Loan</div>
+
+                {/* Bank Statement column */}
+                <div style={{ border: "1px solid #FED7AA", borderRadius: 12, padding: 16, background: !fdQualifies ? "#FFF7ED" : "#F9FAFB" }}>
+                  {!fdQualifies && (
+                    <div style={{ textAlign: "center", marginBottom: 10 }}>
+                      <span style={{ display: "inline-block", background: "#C8202A", color: "#fff", fontSize: 9, fontWeight: 700, padding: "4px 14px", borderRadius: 20, textTransform: "uppercase", letterSpacing: "0.08em" }}>Recommended</span>
+                    </div>
+                  )}
+                  <div style={{ fontWeight: 700, color: !fdQualifies ? "#9A3412" : "#6B7280", marginBottom: 12, fontSize: 13, textTransform: "uppercase", letterSpacing: "0.05em" }}>Bank Statement</div>
                   {[
+                    { l: "Purchase Price", v: fmt(purchasePrice) },
                     { l: "Down (10%)", v: fmt(bsDown) },
-                    { l: "Rate", v: `${bsRate.toFixed(2)}%` },
+                    { l: "Rate (+1.5%)", v: `${bsRate.toFixed(2)}%` },
                     { l: "PMI/MIP", v: "None" },
-                    { l: "Monthly P&I", v: fmt(bsPI) },
-                    { l: "Monthly PITI", v: fmt(bsPITI) },
-                    { l: "Qualifies", v: "Yes" },
+                    { l: "P&I", v: fmt(bsPI) },
+                    { l: "PITI", v: fmt(bsPITI) },
                   ].map((r, i) => (
-                    <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: 11, padding: "3px 0", borderBottom: "1px solid #F0F0F0" }}>
-                      <span style={{ color: "#666" }}>{r.l}</span>
-                      <span style={{ fontWeight: 600, color: "#111" }}>{r.v}</span>
+                    <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: 12, padding: "5px 0", borderBottom: !fdQualifies ? "1px solid #FED7AA" : "1px solid #E5E7EB" }}>
+                      <span style={{ color: !fdQualifies ? "#C2410C" : "#6B7280" }}>{r.l}</span>
+                      <span style={{ fontWeight: 600, color: !fdQualifies ? "#7C2D12" : "#374151" }}>{r.v}</span>
                     </div>
                   ))}
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, fontWeight: 700, marginTop: 8, paddingTop: 8, color: !fdQualifies ? "#7C2D12" : "#374151" }}>
+                    <span>Total Monthly</span><span>{fmt(bsPITI)}</span>
+                  </div>
+                  <div style={{ textAlign: "center", marginTop: 8, fontSize: 11, fontWeight: 600, color: "#16A34A" }}>
+                    ✓ Qualifies
+                  </div>
                 </div>
-              </div>
-              {/* Summary */}
-              <div style={{ border: "2px solid #C8202A", borderRadius: 10, padding: "12px 16px", marginTop: 12 }}>
-                <div style={{ fontSize: 11, color: "#C8202A", fontWeight: 700, marginBottom: 4 }}>
-                  FHA requires {fmt(fhaDown)} down (3.5%). Bank statement requires {fmt(bsDown)} down (10%). Monthly difference: {fmt(Math.abs(paymentDiff))}/mo.
-                </div>
-                {!fdQualifies && additionalTax > 0 && (
-                  <div style={{ fontSize: 10, color: "#666", marginTop: 4 }}>Bank statement avoids estimated {fmt(additionalTax)} in additional tax liability.</div>
-                )}
               </div>
             </div>
           )}
 
-          {/* Recommendation */}
+          {/* Difference strip */}
           {step4Complete && (
-            <div style={{ padding: "0 28px 16px" }}>
-              <div style={{ fontSize: 11, fontWeight: 600, color: "#C8202A", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>Recommendation</div>
-              <div style={{ fontSize: 12, color: "#111", lineHeight: 1.6 }}>
-                {recommendFullDoc && `FHA full doc path recommended. Lower rate and 3.5% down payment. May qualify for DPA programs — see Client Wizard for full program matching.`}
-                {recommendBankStatement && `Bank statement loan recommended. Current 2-year average does not qualify for full doc at this price. Bank statement avoids tax exposure.`}
-                {neitherWorks && `Target price of ${fmt(purchasePrice)} is not achievable with current income. Max FHA: ${fmt(maxPriceFD)}. Max bank statement: ${fmt(maxPriceBS)}.`}
+            <div style={{ margin: "16px 28px", border: "2px solid #C8202A", borderRadius: 12, padding: "14px 20px" }}>
+              <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4, color: "#C8202A" }}>
+                Monthly Difference: {paymentDiff > 0
+                  ? `Full doc saves ${fmt(paymentDiff)}/mo`
+                  : `Bank statement saves ${fmt(Math.abs(paymentDiff))}/mo`}
+                {' '}| Down Payment: FHA {fmt(fhaDown)} vs Bank Stmt {fmt(bsDown)}
+              </div>
+              <div style={{ fontSize: 11, color: "#666" }}>
+                {recommendFullDoc && "FHA full doc recommended. Lower rate with 3.5% down. May qualify for DPA programs."}
+                {recommendBankStatement && "Bank statement recommended. Current income does not qualify for full doc. Avoids tax exposure."}
+                {neitherWorks && `Target price not achievable. Max FHA: ${fmt(maxPriceFD)}. Max bank statement: ${fmt(maxPriceBS)}.`}
+                {!fdQualifies && additionalTax > 0 && ` Bank statement avoids estimated ${fmt(additionalTax)} in additional tax liability.`}
               </div>
             </div>
           )}
