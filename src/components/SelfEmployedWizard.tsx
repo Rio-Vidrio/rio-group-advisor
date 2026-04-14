@@ -56,7 +56,7 @@ function NumberInput({ label, value, onChange, suffix, placeholder }: {
 
 /* ── Section connector ── */
 function SectionConnector() {
-  return <div style={{ display: "flex", justifyContent: "center", margin: "8px 0" }}>
+  return <div className="section-connector" style={{ display: "flex", justifyContent: "center", margin: "8px 0" }}>
     <div style={{ width: 2, height: 24, background: "#D4D0C8" }} />
   </div>;
 }
@@ -162,7 +162,6 @@ export default function SelfEmployedWizard({ onTabChange }: SelfEmployedWizardPr
 
   /* ── Print ── */
   const printRef = useRef<HTMLDivElement>(null);
-  const summaryRef = useRef<HTMLDivElement>(null);
   const [imgLoading, setImgLoading] = useState(false);
 
   const todayStr = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
@@ -170,28 +169,102 @@ export default function SelfEmployedWizard({ onTabChange }: SelfEmployedWizardPr
   const handlePrint = useReactToPrint({
     contentRef: printRef,
     pageStyle: `
-      @page { margin: 0.5in; size: letter portrait; }
-      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      @page { margin: 0.45in 0.5in; size: letter portrait; }
+      body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; font-family: 'DM Sans', sans-serif; }
+      * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+      img { display: block !important; max-width: 100% !important; }
+
       .no-print { display: none !important; height: 0 !important; margin: 0 !important; padding: 0 !important; overflow: hidden !important; }
       .print-only { display: block !important; }
+
+      /* ── Global compacting for 8.5x11 ── */
+      .bo-print-root { font-size: 11px !important; line-height: 1.35 !important; }
+      .bo-print-root .card { padding: 12px 14px !important; margin-bottom: 6px !important; border-radius: 8px !important; box-shadow: none !important; border: 1px solid #E0E0E0 !important; }
+
+      /* Section labels */
+      .bo-print-root .section-label { font-size: 9px !important; margin-bottom: 4px !important; }
+
+      /* Section connectors — tighten */
+      .bo-print-root .section-connector { margin: 3px 0 !important; }
+      .bo-print-root .section-connector > div { height: 12px !important; }
+
+      /* ── Form inputs → clean inline text in print ── */
+      .bo-print-root input,
+      .bo-print-root select { border: none !important; background: transparent !important; padding: 2px 0 !important; font-size: 11px !important; font-weight: 600 !important; box-shadow: none !important; outline: none !important; }
+      .bo-print-root input[type="date"] { font-size: 10px !important; }
+
+      /* ── Grids — ensure columns render in print ── */
+      .bo-print-root .grid { display: grid !important; gap: 8px !important; }
+      .bo-print-root .grid-cols-1.md\\:grid-cols-3 { grid-template-columns: repeat(3, 1fr) !important; }
+      .bo-print-root .grid-cols-1.md\\:grid-cols-2 { grid-template-columns: repeat(2, 1fr) !important; }
+      .bo-print-root .grid-cols-2 { grid-template-columns: repeat(2, 1fr) !important; }
+
+      /* ── Label sizing ── */
+      .bo-print-root label { font-size: 9px !important; margin-bottom: 2px !important; }
+
+      /* ── Tighten spacing on comparison cards ── */
+      .bo-print-root .space-y-2 > * { margin-top: 3px !important; margin-bottom: 0 !important; }
+      .bo-print-root .space-y-1 > * { margin-top: 2px !important; margin-bottom: 0 !important; }
+      .bo-print-root .space-y-3 > * { margin-top: 4px !important; margin-bottom: 0 !important; }
+
+      /* ── Buttons in cards — hide action buttons but keep toggle-like pill buttons ── */
+      .bo-print-root button.print-hide { display: none !important; }
+
+      /* ── Headings inside cards ── */
+      .bo-print-root h3 { font-size: 13px !important; margin-bottom: 2px !important; }
+      .bo-print-root h4 { font-size: 11px !important; margin-bottom: 2px !important; }
+
+      /* ── Info boxes — compact ── */
+      .bo-print-root .bg-blue-50, .bo-print-root .bg-amber-50, .bo-print-root .bg-green-50, .bo-print-root .bg-red-50, .bo-print-root .bg-gray-50 {
+        padding: 8px 10px !important;
+        margin-bottom: 6px !important;
+        font-size: 10px !important;
+      }
+
+      /* ── Comparison cards side-by-side ── */
+      .bo-print-root .rounded-xl { border-radius: 8px !important; }
+      .bo-print-root .rounded-xl p { font-size: 9px !important; }
+
+      /* ── Summary callout ── */
+      .bo-print-root .border-\\[\\#C8202A\\] { padding: 8px 12px !important; }
+
+      /* ── Recommendation section ── */
+      .bo-print-root .card-accent-top { padding: 12px 14px !important; }
+      .bo-print-root .inline-block.bg-\\[\\#C8202A\\] { font-size: 8px !important; padding: 3px 8px !important; margin-bottom: 6px !important; }
+
+      /* ── Page breaks ── */
+      .bo-print-root .card { break-inside: avoid !important; page-break-inside: avoid !important; }
+      .bo-print-root .bo-step-group { break-inside: avoid !important; page-break-inside: avoid !important; }
+
+      /* ── Dollar sign prefixes ── */
+      .bo-print-root .relative > span.absolute { font-size: 10px !important; }
+
+      /* ── Pros/Cons lists compact ── */
+      .bo-print-root ul { padding-left: 0 !important; }
+      .bo-print-root li { font-size: 10px !important; }
+      .bo-print-root .w-1\\.5 { width: 4px !important; height: 4px !important; }
+
+      /* ── Print footer ── */
+      .bo-print-root .bo-print-footer { margin-top: 12px !important; }
+
+      /* ── IRS Schedule C box — compact for print ── */
+      .bo-print-root .bg-gray-50.border.border-gray-200.rounded-xl { padding: 6px !important; font-size: 10px !important; }
+      .bo-print-root .bg-gray-50.border.border-gray-200.rounded-xl .p-5 { padding: 8px !important; }
+      .bo-print-root .bg-gray-50.border.border-gray-200.rounded-xl .px-5 { padding-left: 8px !important; padding-right: 8px !important; }
     `,
   });
 
   const downloadJPG = async () => {
-    const el = summaryRef.current;
+    const el = printRef.current;
     if (!el) return;
     setImgLoading(true);
-    el.style.display = "block";
-    el.style.position = "fixed";
-    el.style.left = "-9999px";
     try {
       const canvas = await html2canvas(el, { scale: 2, backgroundColor: "#ffffff", useCORS: true, logging: false });
       const link = document.createElement("a");
-      link.download = `Rio-Group-SelfEmployed${firstName ? `-${firstName.replace(/\s+/g, "-")}` : ""}.jpg`;
+      link.download = `Rio-Group-BusinessOwner${firstName ? `-${firstName.replace(/\s+/g, "-")}` : ""}.jpg`;
       link.href = canvas.toDataURL("image/jpeg", 0.95);
       link.click();
     } finally {
-      el.style.display = ""; el.style.position = ""; el.style.left = "";
       setImgLoading(false);
     }
   };
@@ -366,10 +439,10 @@ export default function SelfEmployedWizard({ onTabChange }: SelfEmployedWizardPr
   /* ════════════════════════════════════════════════════════════════════════ */
   return (
     <div>
-      <div ref={printRef}>
+      <div ref={printRef} className="bo-print-root">
 
         {/* ── Print header (only visible in print) ── */}
-        <div ref={summaryRef} className="print-only" style={{ marginBottom: 16 }}>
+        <div className="print-only" style={{ marginBottom: 16 }}>
           <div style={{ padding: "16px 0", borderBottom: "3px solid #C8202A", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -579,7 +652,7 @@ export default function SelfEmployedWizard({ onTabChange }: SelfEmployedWizardPr
                   <p className="text-sm text-green-700 mb-3">Income qualifies for FHA full doc at this price with only 3.5% down ({fmt(fhaDown)}). Client may also qualify for down payment assistance programs.</p>
                   {onTabChange && (
                     <button onClick={goToClientWizard}
-                      className="px-4 py-2 text-sm font-semibold rounded-lg text-white transition-colors"
+                      className="print-hide px-4 py-2 text-sm font-semibold rounded-lg text-white transition-colors"
                       style={{ background: "#C8202A", border: "none", cursor: "pointer" }}>
                       Continue to Client Wizard for DPA Programs →
                     </button>
@@ -734,7 +807,7 @@ export default function SelfEmployedWizard({ onTabChange }: SelfEmployedWizardPr
                   </div>
                   {onTabChange && (
                     <button onClick={goToClientWizard}
-                      className="w-full px-4 py-3 text-sm font-semibold rounded-lg text-white transition-colors"
+                      className="print-hide w-full px-4 py-3 text-sm font-semibold rounded-lg text-white transition-colors"
                       style={{ background: "#C8202A", border: "none", cursor: "pointer" }}>
                       Continue to Client Wizard for DPA Program Matching →
                     </button>
@@ -776,7 +849,7 @@ export default function SelfEmployedWizard({ onTabChange }: SelfEmployedWizardPr
             </div>
 
             {/* Action Buttons */}
-            <div className="flex flex-wrap gap-3 mt-6 pt-6 border-t border-gray-100">
+            <div className="no-print flex flex-wrap gap-3 mt-6 pt-6 border-t border-gray-100">
               <button onClick={() => handlePrint()}
                 style={{ padding: "12px 28px", borderRadius: 10, background: "#C8202A", color: "#fff", fontWeight: 600, fontSize: "0.9375rem", border: "none", cursor: "pointer" }}>
                 Save PDF
