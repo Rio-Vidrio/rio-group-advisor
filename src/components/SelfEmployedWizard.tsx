@@ -197,8 +197,10 @@ export default function SelfEmployedWizard({ onTabChange }: SelfEmployedWizardPr
 
   const todayStr = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
 
+  const boPdfName = `Rio-Group-BusinessOwner${firstName ? `-${[firstName, lastName].filter(Boolean).join("-").replace(/[^a-zA-Z0-9-]/g, "")}` : ""}`;
   const handlePrint = useReactToPrint({
     contentRef: printRef,
+    documentTitle: boPdfName,
     pageStyle: `
       @page { margin: 0.45in 0.5in; size: letter portrait; }
       body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; font-family: 'DM Sans', sans-serif; }
@@ -292,7 +294,8 @@ export default function SelfEmployedWizard({ onTabChange }: SelfEmployedWizardPr
     try {
       const canvas = await html2canvas(el, { scale: 2, backgroundColor: "#ffffff", useCORS: true, logging: false });
       const link = document.createElement("a");
-      link.download = `Rio-Group-BusinessOwner${firstName ? `-${firstName.replace(/\s+/g, "-")}` : ""}.jpg`;
+      const namePart = [firstName, lastName].filter(Boolean).join("-").replace(/[^a-zA-Z0-9-]/g, "");
+      link.download = `Rio-Group-BusinessOwner${namePart ? `-${namePart}` : ""}.jpg`;
       link.href = canvas.toDataURL("image/jpeg", 0.95);
       link.click();
     } finally {

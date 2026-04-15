@@ -98,6 +98,10 @@ function FloatingCalc() {
   );
 }
 
+function safeName(s: string) {
+  return s.trim().replace(/[^a-zA-Z0-9 _-]/g, "").replace(/\s+/g, "-");
+}
+
 function fmt(n: number) {
   return "$" + n.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
@@ -405,8 +409,10 @@ function PaymentCalc() {
   };
   const todayStr = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
   const printRef = useRef<HTMLDivElement>(null);
+  const pdfTitle = `Rio-Group-Payment${clientName ? `-${safeName(clientName)}` : ""}`;
   const handlePrint = useReactToPrint({
     contentRef: printRef,
+    documentTitle: pdfTitle,
     pageStyle: `
       @page { margin: 0.5in; size: letter portrait; }
       body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
@@ -474,7 +480,7 @@ function PaymentCalc() {
     try {
       const canvas = await html2canvas(el, { scale: 2, backgroundColor: "#ffffff", useCORS: true, logging: false });
       const link = document.createElement("a");
-      link.download = "Rio-Group-Payment-Summary.jpg";
+      link.download = `${pdfTitle}.jpg`;
       link.href = canvas.toDataURL("image/jpeg", 0.95);
       link.click();
     } finally {
@@ -1059,7 +1065,7 @@ function NewBuildCalc() {
     try {
       const canvas = await html2canvas(el, { scale: 2, backgroundColor: "#ffffff", useCORS: true, logging: false });
       const link = document.createElement("a");
-      link.download = `Rio-Group-NewBuild-vs-Resale${clientName ? `-${clientName.replace(/\s+/g, "-")}` : ""}.jpg`;
+      link.download = `Rio-Group-NB-vs-Resale${clientName ? `-${safeName(clientName)}` : ""}.jpg`;
       link.href = canvas.toDataURL("image/jpeg", 0.95);
       link.click();
     } finally {
@@ -1070,8 +1076,10 @@ function NewBuildCalc() {
     }
   };
 
+  const nbPdfTitle = `Rio-Group-NB-vs-Resale${clientName ? `-${safeName(clientName)}` : ""}`;
   const handlePrint = useReactToPrint({
     contentRef: printRef,
+    documentTitle: nbPdfTitle,
     pageStyle: `
       @page { margin: 0.5in; size: letter portrait; }
       body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
@@ -1474,7 +1482,7 @@ function BusinessOwnerCalc() {
     try {
       const canvas = await html2canvas(el, { scale: 2, backgroundColor: "#ffffff", useCORS: true, logging: false });
       const link = document.createElement("a");
-      link.download = `Rio-Group-FullDoc-vs-BankStatement${clientName ? `-${clientName.replace(/\s+/g, "-")}` : ""}.jpg`;
+      link.download = `Rio-Group-FullDoc-vs-BankStmt${clientName ? `-${safeName(clientName)}` : ""}.jpg`;
       link.href = canvas.toDataURL("image/jpeg", 0.95);
       link.click();
     } finally {
@@ -1483,8 +1491,10 @@ function BusinessOwnerCalc() {
     }
   };
 
+  const boPdfTitle = `Rio-Group-FullDoc-vs-BankStmt${clientName ? `-${safeName(clientName)}` : ""}`;
   const handlePrint = useReactToPrint({
     contentRef: printRef,
+    documentTitle: boPdfTitle,
     pageStyle: `
       @page { margin: 0.5in; size: letter portrait; }
       body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
@@ -1890,8 +1900,10 @@ function SellerNetCalc({ importedPayoff }: { importedPayoff: number | null }) {
   const printRef = useRef<HTMLDivElement>(null);
   const summaryRef = useRef<HTMLDivElement>(null);
   const [imgLoading, setImgLoading] = useState(false);
+  const sellerPdfTitle = `Rio-Group-Seller-Net${clientName ? `-${safeName(clientName)}` : ""}`;
   const handlePrint = useReactToPrint({
     contentRef: printRef,
+    documentTitle: sellerPdfTitle,
     pageStyle: `
       @page { margin: 0.5in; size: letter portrait; }
       body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
@@ -1919,7 +1931,7 @@ function SellerNetCalc({ importedPayoff }: { importedPayoff: number | null }) {
     try {
       const canvas = await html2canvas(el, { scale: 2, backgroundColor: "#ffffff", useCORS: true, logging: false });
       const link = document.createElement("a");
-      link.download = "Rio-Group-Seller-Net-Proceeds.jpg";
+      link.download = `${sellerPdfTitle}.jpg`;
       link.href = canvas.toDataURL("image/jpeg", 0.95);
       link.click();
     } finally {
