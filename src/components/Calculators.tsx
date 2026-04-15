@@ -372,8 +372,6 @@ function PaymentCalc() {
   const [loanMode, setLoanMode] = useState<LoanMode>("conventional");
   const [rates, setRates] = useState<Rates>(defaultRates);
   const [price, setPrice] = useState(450000);
-  const [downPct, setDownPct] = useState(3);
-  const [rate, setRate] = useState(0);
   const [term, setTerm] = useState(30);
   const [tax, setTax] = useState(0.45);
   const [taxDollars, setTaxDollars] = useState(Math.round(450000 * 0.0045));
@@ -383,6 +381,28 @@ function PaymentCalc() {
   const [vaDisabilityWaiver, setVaDisabilityWaiver] = useState(false);
   const [clientName, setClientName] = useState("");
   const [propertyAddress, setPropertyAddress] = useState("");
+
+  /* Per-mode state: rate and down% persist when toggling between loan types */
+  const [convRate, setConvRate] = useState(0);
+  const [convDown, setConvDown] = useState(3);
+  const [fhaModeRate, setFhaModeRate] = useState(0);
+  const [fhaModeDown, setFhaModeDown] = useState(3.5);
+  const [vaModeRate, setVaModeRate] = useState(0);
+  const [vaModeDown, setVaModeDown] = useState(0);
+
+  /* Active rate/down derived from current mode */
+  const rate = loanMode === "conventional" ? convRate : loanMode === "fha" ? fhaModeRate : vaModeRate;
+  const downPct = loanMode === "conventional" ? convDown : loanMode === "fha" ? fhaModeDown : vaModeDown;
+  const setRate = (v: number) => {
+    if (loanMode === "conventional") setConvRate(v);
+    else if (loanMode === "fha") setFhaModeRate(v);
+    else setVaModeRate(v);
+  };
+  const setDownPct = (v: number) => {
+    if (loanMode === "conventional") setConvDown(v);
+    else if (loanMode === "fha") setFhaModeDown(v);
+    else setVaModeDown(v);
+  };
   const todayStr = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
   const printRef = useRef<HTMLDivElement>(null);
   const handlePrint = useReactToPrint({
@@ -404,26 +424,14 @@ function PaymentCalc() {
     }),
   });
 
+  /* Initialize per-mode rates from market rates (once on mount) */
   useEffect(() => {
     const r = getRates();
     setRates(r);
-    setRate(r.conventional);
+    setConvRate(r.conventional);
+    setFhaModeRate(r.fha);
+    setVaModeRate(r.va);
   }, []);
-
-  // When loan mode changes, reset rate and down payment defaults
-  useEffect(() => {
-    if (loanMode === "conventional") {
-      setRate(rates.conventional);
-      setDownPct(3);
-    } else if (loanMode === "fha") {
-      setRate(rates.fha);
-      setDownPct(3.5);
-    } else {
-      setRate(rates.va);
-      setDownPct(0);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loanMode]);
 
   // --- Core calculations ---
   const downPayment = loanMode === "va" ? 0 : price * (downPct / 100);
@@ -744,7 +752,7 @@ function PaymentCalc() {
 
       </div>{/* end printRef */}
 
-      {/* Two download buttons — outside printRef */}
+      {/* Action buttons — outside printRef */}
       <div className="flex flex-wrap items-center justify-between gap-3 mt-6 pt-6 border-t border-gray-100 no-print">
         <div className="flex flex-col sm:flex-row gap-3">
           <button
@@ -759,6 +767,21 @@ function PaymentCalc() {
             style={{ padding: "12px 28px", borderRadius: "10px", background: "#111111", color: "#FFFFFF", fontWeight: 600, fontSize: "0.9375rem", border: "none", cursor: "pointer", opacity: imgLoading ? 0.6 : 1 }}
           >
             {imgLoading ? "Saving…" : "Save as Image"}
+          </button>
+          <button
+            onClick={() => {
+              setPrice(450000);
+              setConvRate(rates.conventional); setConvDown(3);
+              setFhaModeRate(rates.fha); setFhaModeDown(3.5);
+              setVaModeRate(rates.va); setVaModeDown(0);
+              setTerm(30); setTax(0.45); setTaxDollars(Math.round(450000 * 0.0045));
+              setInsurance(1350); setHoa(0); setPmiRate(0.55);
+              setVaDisabilityWaiver(false);
+              setClientName(""); setPropertyAddress("");
+            }}
+            style={{ padding: "12px 28px", borderRadius: "10px", background: "#FFFFFF", color: "#6B6B6B", fontWeight: 600, fontSize: "0.9375rem", border: "1.5px solid #E8E8E8", cursor: "pointer" }}
+          >
+            Reset
           </button>
         </div>
         <FloatingCalc />
