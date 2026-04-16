@@ -125,11 +125,6 @@ function ymLabel(ym: string): string {
   return `${months[Number(m) - 1]} ${y}`;
 }
 
-function monthsInclusive(startYM: string, endYMRaw: string): number {
-  const endYM = endYMRaw === "present" ? todayYM() : endYMRaw;
-  return Math.max(0, ymToIndex(endYM) - ymToIndex(startYM) + 1);
-}
-
 function addMonths(ym: string, n: number): string {
   return indexToYM(ymToIndex(ym) + n);
 }
