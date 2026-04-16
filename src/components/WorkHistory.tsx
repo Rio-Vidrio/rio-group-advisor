@@ -148,52 +148,15 @@ function analyzeCoverage(periods: Period[]): {
 type VerdictLevel = "green" | "amber" | "red";
 type Verdict = { level: VerdictLevel; title: string; message: string; needs: string[]; earliestEligibleYM?: string };
 
-// Returns true if this period contributes documented time for the eligibility calc.
-function periodIsUsableForEligibility(p: Period): boolean {
-  if (p.type === "gap") return false;
-  if (p.documented === "no") return false;
-  if (p.type === "cash" && (!p.cashDoc || p.cashDoc === "cannot")) return false;
-  if (p.type === "foreign" && p.foreignLetter !== "yes") return false;
-  return true;
-}
-
-// Earliest month M such that every month in [M-23, M] is covered by some
-// usable period. Present-dated periods extend indefinitely forward. Searches
-// up to 5 years ahead. Returns undefined if unreachable from current data.
-function computeEarliestEligible(periods: Period[]): string | undefined {
-  const today = ymToIndex(todayYM());
-  const MAX_FORWARD = 60;
-  const usable = periods.filter(periodIsUsableForEligibility);
-  if (usable.length === 0) return undefined;
-
-  for (let offset = 0; offset <= MAX_FORWARD; offset++) {
-    const M = today + offset;
-    const windowStart = M - 23;
-    let allCovered = true;
-    for (let idx = windowStart; idx <= M; idx++) {
-      let covered = false;
-      for (const p of usable) {
-        if (!p.startYM) continue;
-        const pStart = ymToIndex(p.startYM);
-        const pEnd = p.endYM === "present" ? Number.POSITIVE_INFINITY : ymToIndex(p.endYM);
-        if (idx >= pStart && idx <= pEnd) { covered = true; break; }
-      }
-      if (!covered) { allCovered = false; break; }
-    }
-    if (allCovered) return indexToYM(M);
-  }
-  return undefined;
-}
-
 function computeVerdict(s: State): Verdict {
   const needs: string[] = [];
   let level: VerdictLevel = "green";
+  let earliest: string | undefined;
   const bump = (next: VerdictLevel) => {
     const rank: Record<VerdictLevel, number> = { green: 0, amber: 1, red: 2 };
     if (rank[next] > rank[level]) level = next;
   };
 
-  // Step 1 per-status flags (non-window issues)
   if (s.current === "w2ft" || s.current === "w2pt") {
     if (s.w2Tenure === "<30d" && s.w2Offer === "no") { bump("amber"); needs.push("Offer letter or first pay stub required before closing"); }
     if (s.w2IncomeChange === "decreased") needs.push("Must qualify on new lower income — prior cannot be averaged");
@@ -211,59 +174,42 @@ function computeVerdict(s: State): Verdict {
     if (s.contractActive === "yes" && s.contractExpires === "yes") { bump("red"); needs.push("Contract expires before closing — renewal required"); }
     if (s.contractActive === "no") { bump("amber"); needs.push("Confirm next contract start date"); }
   }
+  if (s.current === "none") {
+    if (s.noneDuration === "1-6m") { bump("amber"); needs.push("Must be back on the job 6 full months before closing"); }
+    if (s.noneDuration === "6+m") {
+      const monthsBack = Number(s.backOnJobMonths || 0);
+      if (monthsBack < 6) {
+        bump("red");
+        earliest = addMonths(todayYM(), Math.max(0, 6 - monthsBack));
+        needs.push(`6 months continuous employment required — eligible ${ymLabel(earliest)}`);
+      }
+    }
+  }
 
-  // Per-period documentation flags
+  const a = analyzeCoverage(s.periods);
+  if (s.periods.length > 0) {
+    if (a.longestGap >= 6) { bump("red"); needs.push(`${a.longestGap}-month undocumented gap must be resolved`); }
+    else if (a.documentedMonths + a.partialMonths < 24) {
+      bump("amber");
+      if (a.partialMonths > 0) needs.push(`${a.partialMonths} month(s) of partial documentation — firm up before closing`);
+      const uncovered = 24 - a.documentedMonths - a.partialMonths;
+      if (uncovered > 0) needs.push(`${uncovered} month(s) still uncovered in the 2-year window`);
+    }
+  }
+
   for (const p of s.periods) {
     if (p.type === "cash") {
       if (p.cashDoc === "letter" || p.cashDoc === "amend") {
         bump("amber");
         needs.push(`Cash period (${ymLabel(p.startYM)}–${ymLabel(p.endYM)}): ${p.cashDoc === "letter" ? "get employer verification letter" : "amend taxes"} before closing`);
       }
-      if (p.cashDoc === "cannot") { bump("red"); needs.push(`Cash period (${ymLabel(p.startYM)}–${ymLabel(p.endYM)}) cannot be documented — must be covered by other employment or aged out of window`); }
+      if (p.cashDoc === "cannot") { bump("red"); needs.push(`Cash period (${ymLabel(p.startYM)}–${ymLabel(p.endYM)}) cannot be documented — treated as gap`); }
     }
-    if (p.type === "foreign" && p.foreignLetter === "no") { bump("red"); needs.push(`Foreign employment (${ymLabel(p.startYM)}–${ymLabel(p.endYM)}): no verification letter — must be covered by other employment or aged out of window`); }
+    if (p.type === "foreign" && p.foreignLetter === "no") { bump("red"); needs.push(`Foreign employment (${ymLabel(p.startYM)}–${ymLabel(p.endYM)}): no verification letter — treated as gap`); }
   }
 
   if (s.multiIncome === "yes" && s.multiDuration === "<2y") {
     bump("amber"); needs.push("Newer income stream has <2 years simultaneous history — use only older stream for qualifying");
-  }
-
-  // Coverage analysis — the core 24-month requirement
-  const a = analyzeCoverage(s.periods);
-  const earliest = computeEarliestEligible(s.periods);
-  const fullyCoveredToday = a.documentedMonths + a.partialMonths >= 24;
-
-  if (s.periods.length > 0) {
-    const uncovered = 24 - a.documentedMonths - a.partialMonths;
-    if (fullyCoveredToday && a.partialMonths > 0) {
-      bump("amber");
-      needs.push(`${a.partialMonths} month(s) of partial documentation — firm up records before closing`);
-    } else if (!fullyCoveredToday) {
-      bump("amber");
-      if (uncovered > 0) {
-        // If earliest date is today or past, treat as workable (just need docs). Otherwise red: requires waiting.
-        if (!earliest || ymToIndex(earliest) > ymToIndex(todayYM())) {
-          bump("red");
-        }
-        needs.push(`${uncovered} month(s) still uncovered in the 24-month window — goal is 24 documented months`);
-        if (earliest) {
-          needs.push(`If client stays continuously employed, rolling window reaches 24 documented months on ${ymLabel(earliest)}`);
-        } else {
-          needs.push("No ongoing documented employment — client must return to work to start building toward 24 months");
-        }
-      }
-    }
-  }
-
-  // Status follow-up: not currently working
-  if (s.current === "none") {
-    bump("red");
-    if (s.noneDuration === "<30d") {
-      needs.push("Currently out of work — confirm new start date and resume building toward 24-month window");
-    } else if (s.noneDuration === "1-6m" || s.noneDuration === "6+m") {
-      needs.push("Client must return to work before qualifying — goal is 24 documented months in the window");
-      if (earliest) needs.push(`Rolling window reaches 24 documented months on ${ymLabel(earliest)} if client resumes work continuously`);
-    }
   }
 
   const TITLES: Record<VerdictLevel, string> = {
@@ -272,9 +218,9 @@ function computeVerdict(s: State): Verdict {
     red: "Complex File",
   };
   const MESSAGES: Record<VerdictLevel, string> = {
-    green: "Client has 24 months of documented employment. Proceed with standard qualification.",
-    amber: "This file can reach 24 documented months, but requires the following before closing:",
-    red: "Client does not currently have 24 months of documented employment and cannot close until the requirement is met.",
+    green: "Client meets the 2-year employment history requirement. Proceed with standard qualification.",
+    amber: "This file is workable but requires the following before closing:",
+    red: "Client does not currently meet the 2-year employment history requirement.",
   };
 
   return { level, title: TITLES[level], message: MESSAGES[level], needs, earliestEligibleYM: earliest };
@@ -412,67 +358,13 @@ function PeriodRow({ period, onChange, onRemove }: { period: Period; onChange: (
           <input type="month" value={period.startYM} onChange={(e) => onChange({ ...period, startYM: e.target.value })} style={inp} />
         </Field>
         <Field label="End (month)">
-          {period.endYM === "present" ? (
-            <div style={{ display: "flex", gap: "6px", alignItems: "stretch" }}>
-              <div
-                style={{
-                  ...inp,
-                  flex: 1,
-                  background: "#F0FDF4",
-                  color: "#166534",
-                  borderColor: "#BBF7D0",
-                  fontWeight: 600,
-                  display: "flex",
-                  alignItems: "center",
-                }}
-              >
-                Present — still employed
-              </div>
-              <button
-                type="button"
-                onClick={() => onChange({ ...period, endYM: todayYM() })}
-                style={{
-                  padding: "0 12px",
-                  borderRadius: "8px",
-                  border: "1px solid #E8E8E8",
-                  background: "#FFFFFF",
-                  color: "#6B6B6B",
-                  fontSize: "0.75rem",
-                  fontWeight: 600,
-                  cursor: "pointer",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                Set date
-              </button>
-            </div>
-          ) : (
-            <div style={{ display: "flex", gap: "6px", alignItems: "stretch" }}>
-              <input
-                type="month"
-                value={period.endYM}
-                onChange={(e) => onChange({ ...period, endYM: e.target.value })}
-                style={{ ...inp, flex: 1 }}
-              />
-              <button
-                type="button"
-                onClick={() => onChange({ ...period, endYM: "present" })}
-                style={{
-                  padding: "0 12px",
-                  borderRadius: "8px",
-                  border: "1px solid #E8E8E8",
-                  background: "#FFFFFF",
-                  color: "#6B6B6B",
-                  fontSize: "0.75rem",
-                  fontWeight: 600,
-                  cursor: "pointer",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                Present
-              </button>
-            </div>
-          )}
+          <div style={{ display: "flex", gap: "6px" }}>
+            <input type="month" value={period.endYM === "present" ? "" : period.endYM} disabled={period.endYM === "present"} onChange={(e) => onChange({ ...period, endYM: e.target.value })} style={{ ...inp, flex: 1 }} />
+            <label style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "0.75rem", color: "#4B4B4B" }}>
+              <input type="checkbox" checked={period.endYM === "present"} onChange={(e) => onChange({ ...period, endYM: e.target.checked ? "present" : todayYM() })} />
+              Present
+            </label>
+          </div>
         </Field>
         <Field label="Industry (optional)">
           <input type="text" placeholder="e.g. Healthcare" value={period.industry} onChange={(e) => onChange({ ...period, industry: e.target.value })} style={inp} />
@@ -582,8 +474,9 @@ export default function WorkHistory() {
 
   const showStep2 = state.periods.length > 0;
   const showStep3 = state.current !== null;
-  const showStep4 = state.periods.length > 0 && coverage.gaps.some((g) => g.months >= 6);
-  const showVerdict = state.periods.length > 0 || state.current !== null;
+  // Step 4 only appears after Step 3 is answered — never mid-flow
+  const showStep4 = state.multiIncome !== null && coverage.gaps.some((g) => g.months >= 6);
+  const showVerdict = state.current !== null && state.multiIncome !== null;
 
   return (
     <div style={{ background: "#FFFFFF", borderRadius: "16px", border: "1px solid #E8E8E8", boxShadow: "0 2px 12px rgba(0,0,0,0.06)", padding: "32px" }}>
@@ -629,10 +522,18 @@ export default function WorkHistory() {
         <div style={{ marginTop: "12px" }}><Flag level="green">Full 24-month window documented — timeline complete.</Flag></div>
       )}
       {state.periods.length > 0 && coverage.longestGap >= 6 && (
-        <div style={{ marginTop: "12px" }}><Flag level="red">{coverage.longestGap}-month gap detected — see Gap Resolution below.</Flag></div>
+        <div style={{ marginTop: "12px" }}>
+          <Flag level="red">
+            {coverage.longestGap}-month gap detected. Add another employment period above to cover this window — the goal is a complete, unbroken 24-month history.
+          </Flag>
+        </div>
       )}
-      {state.periods.length > 0 && coverage.longestGap < 6 && coverage.documentedMonths + coverage.partialMonths < 24 && (
-        <div style={{ marginTop: "12px" }}><Flag level="amber">{24 - coverage.documentedMonths - coverage.partialMonths} month(s) still uncovered — add more periods or mark remaining months as gaps.</Flag></div>
+      {state.periods.length > 0 && coverage.longestGap > 0 && coverage.longestGap < 6 && coverage.documentedMonths + coverage.partialMonths < 24 && (
+        <div style={{ marginTop: "12px" }}>
+          <Flag level="amber">
+            {24 - coverage.documentedMonths - coverage.partialMonths} month(s) still uncovered. Add another period to complete the 2-year history.
+          </Flag>
+        </div>
       )}
 
       {/* ═══ STEP 2 — Current Employment ═══ */}
@@ -779,28 +680,23 @@ export default function WorkHistory() {
       {showStep4 && (
         <>
           <SectionConnector />
-          <StepHeader
-            n={4}
-            title="Gap Resolution"
-            hint="The goal is 24 documented months in the rolling window. Each gap must be closed or aged out."
-          />
+          <StepHeader n={4} title="Gap Resolution" hint="Unresolved gaps of 6+ months will block qualification — scroll up to Step 1 and fill them in" />
           <div style={{ marginTop: "14px", display: "flex", flexDirection: "column", gap: "12px" }}>
+            <Flag level="red">
+              The goal is a complete, unbroken 2-year employment history. Every gap below needs to be covered before this file can move forward. Go back to Step 1 and add the missing period — W2, self-employed, gig, or seasonal — that covers the window.
+            </Flag>
             {coverage.gaps.filter((g) => g.months >= 6).map((g, i) => (
-              <div key={i} style={{ background: "#FFF5F5", borderLeft: "4px solid #C8202A", borderRadius: "0 10px 10px 0", padding: "12px 16px" }}>
-                <div style={{ fontSize: "0.8125rem", fontWeight: 700, color: "#7F1D1D" }}>Gap: {ymLabel(g.startYM)} – {ymLabel(g.endYM)} ({g.months} months)</div>
-                <ul style={{ margin: "8px 0 0 0", paddingLeft: "20px", color: "#4B4B4B", fontSize: "0.8125rem", lineHeight: 1.7 }}>
-                  <li><strong>Add the missing period above</strong> — if client had W2, SE, or gig employment here that wasn&apos;t logged yet, add it to close the gap.</li>
-                  <li><strong>Employer verification letter</strong> — for a cash employer during this window (amber — obtain before closing).</li>
-                  <li><strong>Amend taxes</strong> — if income was earned but not reported, amending brings that period on-record. Consult CPA.</li>
-                  <li>
-                    <strong>Age the gap out</strong> — if the client stays continuously employed, the rolling 24-month window slides forward until this gap falls outside it.
-                    {verdict.earliestEligibleYM && (
-                      <> Earliest fully-covered window: <strong>{ymLabel(verdict.earliestEligibleYM)}</strong>.</>
-                    )}
-                    {!verdict.earliestEligibleYM && (
-                      <> Client must return to documented work first.</>
-                    )}
-                  </li>
+              <div key={i} style={{ background: "#FFF5F5", border: "1px solid #FECACA", borderRadius: "10px", padding: "14px 16px" }}>
+                <div style={{ fontSize: "0.875rem", fontWeight: 700, color: "#7F1D1D", marginBottom: "10px" }}>
+                  Gap: {ymLabel(g.startYM)} – {ymLabel(g.endYM)} ({g.months} months)
+                </div>
+                <div style={{ fontSize: "0.8125rem", color: "#111111", fontWeight: 600, marginBottom: "6px" }}>
+                  Was the client working during this time?
+                </div>
+                <ul style={{ margin: 0, paddingLeft: "20px", color: "#4B4B4B", fontSize: "0.8125rem", lineHeight: 1.8 }}>
+                  <li><strong>W2, self-employed, gig, or contract</strong> — go to Step 1 and add that employment period. This is the primary resolution.</li>
+                  <li><strong>Paid cash / off the books</strong> — obtain a written employer verification letter, or amend prior year taxes to include the income. Either makes the period documentable.</li>
+                  <li><strong>Truly not working</strong> — client does not currently qualify. Must return to work and maintain continuous employment for 6 months before the file can move forward.</li>
                 </ul>
               </div>
             ))}
