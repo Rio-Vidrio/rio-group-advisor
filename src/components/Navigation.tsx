@@ -20,9 +20,9 @@ export default function Navigation({ activeTab, onTabChange }: NavigationProps) 
     <nav
       className="no-print"
       style={{
-        background: "#1E293B",
-        borderBottom: "1px solid #334155",
-        boxShadow: "0 2px 12px rgba(0,0,0,0.25)",
+        background: "#111111",
+        borderBottom: "2px solid #C8202A",
+        boxShadow: "0 2px 12px rgba(0,0,0,0.3)",
       }}
     >
       <div style={{ maxWidth: "1280px", margin: "0 auto", padding: "0 28px" }}>
