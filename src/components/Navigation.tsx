@@ -20,9 +20,9 @@ export default function Navigation({ activeTab, onTabChange }: NavigationProps) 
     <nav
       className="no-print"
       style={{
-        background: "#FFFFFF",
-        borderBottom: "1px solid #F0EEE9",
-        boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+        background: "#1E293B",
+        borderBottom: "1px solid #334155",
+        boxShadow: "0 2px 12px rgba(0,0,0,0.25)",
       }}
     >
       <div style={{ maxWidth: "1280px", margin: "0 auto", padding: "0 28px" }}>
@@ -37,28 +37,30 @@ export default function Navigation({ activeTab, onTabChange }: NavigationProps) 
                 key={tab.id}
                 onClick={() => onTabChange(tab.id)}
                 style={{
-                  padding: "16px 24px",
-                  fontSize: "14px",
+                  padding: "15px 24px",
+                  fontSize: "13px",
                   fontFamily: "'DM Sans', sans-serif",
-                  fontWeight: isActive ? 600 : 500,
+                  fontWeight: isActive ? 700 : 400,
+                  letterSpacing: "0.04em",
+                  textTransform: "uppercase" as const,
                   whiteSpace: "nowrap",
                   border: "none",
                   borderBottom: isActive ? "3px solid #C8202A" : "3px solid transparent",
                   background: "transparent",
-                  color: isActive ? "#C8202A" : "#8C8880",
+                  color: isActive ? "#C8202A" : "rgba(255,255,255,0.45)",
                   cursor: "pointer",
                   transition: "color 120ms, background 120ms",
                   marginBottom: "-1px",
                 }}
                 onMouseEnter={(e) => {
                   if (!isActive) {
-                    (e.currentTarget as HTMLButtonElement).style.color = "#4A4845";
-                    (e.currentTarget as HTMLButtonElement).style.background = "#F0EEE9";
+                    (e.currentTarget as HTMLButtonElement).style.color = "rgba(255,255,255,0.85)";
+                    (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.05)";
                   }
                 }}
                 onMouseLeave={(e) => {
                   if (!isActive) {
-                    (e.currentTarget as HTMLButtonElement).style.color = "#8C8880";
+                    (e.currentTarget as HTMLButtonElement).style.color = "rgba(255,255,255,0.45)";
                     (e.currentTarget as HTMLButtonElement).style.background = "transparent";
                   }
                 }}

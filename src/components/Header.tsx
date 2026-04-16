@@ -9,11 +9,11 @@ export default function Header() {
       style={{
         position: "relative",
         overflow: "hidden",
-        borderBottom: "3px solid #C8202A",
+        borderBottom: "2px solid #C8202A",
         boxShadow: "0 2px 12px rgba(0,0,0,0.3)",
       }}
     >
-      {/* Background image — blurred, darkened, texture only */}
+      {/* Background image — slightly darkened, more visible */}
       <div
         aria-hidden="true"
         style={{
@@ -21,9 +21,19 @@ export default function Header() {
           inset: 0,
           backgroundImage: "url('/NAI-BUILDING.jpg')",
           backgroundSize: "cover",
-          backgroundPosition: "center 40%",
-          filter: "blur(2px) brightness(0.35)",
-          transform: "scale(1.05)",
+          backgroundPosition: "center 65%",
+          filter: "brightness(0.5)",
+          transform: "scale(1.02)",
+          zIndex: 0,
+        }}
+      />
+      {/* Dark overlay for text legibility */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          inset: 0,
+          background: "linear-gradient(180deg, rgba(15,23,42,0.75) 0%, rgba(15,23,42,0.55) 100%)",
           zIndex: 0,
         }}
       />
