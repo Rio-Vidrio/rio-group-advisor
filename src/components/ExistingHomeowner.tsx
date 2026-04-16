@@ -17,6 +17,8 @@ type TreeState = {
   hasEquity25: boolean | null;
   familySizeIncreasedLong: boolean | null;
   vacated: boolean | null;
+  // When no 25% equity: did client claim prior-year rental income on taxes?
+  claimedRentalIncome: "yes" | "no" | null;
   // Conventional branch
   nextLoanType: "fha" | "conventional" | null;
   convToFHAEquity: "yes" | "no" | null;
@@ -32,6 +34,7 @@ const initialState: TreeState = {
   hasEquity25: null,
   familySizeIncreasedLong: null,
   vacated: null,
+  claimedRentalIncome: null,
   nextLoanType: null,
   convToFHAEquity: null,
 };
@@ -43,6 +46,7 @@ const clearFromCitizenship = {
   hasEquity25: null,
   familySizeIncreasedLong: null,
   vacated: null,
+  claimedRentalIncome: null,
   nextLoanType: null,
   convToFHAEquity: null,
 };
@@ -418,6 +422,8 @@ function buildBreadcrumb(state: TreeState): string[] {
       if (state.familySizeIncreased === "no") crumbs.push("No Family Size Change");
     } else if (state.purchaseTiming === "longago") {
       crumbs.push("Before 2021");
+      if (state.hasEquity25 === false && state.claimedRentalIncome === "yes") crumbs.push("Rental Income Claimed");
+      if (state.hasEquity25 === false && state.claimedRentalIncome === "no") crumbs.push("No Rental Income Claimed");
     }
   } else if (state.currentLoan === "conventional") {
     crumbs.push("Conventional");
@@ -451,9 +457,10 @@ export default function ExistingHomeowner() {
           return { ...prev, citizenship: null, ...clearFromCitizenship };
         }
         if (key === "purchaseTiming") {
-          return { ...prev, purchaseTiming: null, familySizeIncreased: null, hasEquity25: null, familySizeIncreasedLong: null, vacated: null };
+          return { ...prev, purchaseTiming: null, familySizeIncreased: null, hasEquity25: null, familySizeIncreasedLong: null, vacated: null, claimedRentalIncome: null };
         }
         if (key === "familySizeIncreased") return { ...prev, familySizeIncreased: null };
+        if (key === "claimedRentalIncome") return { ...prev, claimedRentalIncome: null };
         if (key === "nextLoanType") return { ...prev, nextLoanType: null, convToFHAEquity: null };
         if (key === "convToFHAEquity") return { ...prev, convToFHAEquity: null };
         return { ...prev, [key]: null };
@@ -470,10 +477,13 @@ export default function ExistingHomeowner() {
         return { ...prev, citizenship: value as TreeState["citizenship"], ...clearFromCitizenship };
       }
       if (key === "purchaseTiming") {
-        return { ...prev, purchaseTiming: value as TreeState["purchaseTiming"], familySizeIncreased: null, hasEquity25: null, familySizeIncreasedLong: null, vacated: null };
+        return { ...prev, purchaseTiming: value as TreeState["purchaseTiming"], familySizeIncreased: null, hasEquity25: null, familySizeIncreasedLong: null, vacated: null, claimedRentalIncome: null };
       }
       if (key === "familySizeIncreased") {
         return { ...prev, familySizeIncreased: value as TreeState["familySizeIncreased"] };
+      }
+      if (key === "claimedRentalIncome") {
+        return { ...prev, claimedRentalIncome: value as TreeState["claimedRentalIncome"] };
       }
       if (key === "nextLoanType") {
         return { ...prev, nextLoanType: value as TreeState["nextLoanType"], convToFHAEquity: null };
@@ -506,8 +516,8 @@ export default function ExistingHomeowner() {
 
   const fhaToConvCard = (
     <PathCard
-      title="FHA → Conventional"
-      badge={{ text: "Recommended Path", color: "red" }}
+      title="Option B — Purchase New Home with Conventional"
+      badge={{ text: "Recommended", color: "red" }}
       borderColor="red"
       bullets={[
         { icon: "✅", text: "5% down on new purchase" },
@@ -518,6 +528,20 @@ export default function ExistingHomeowner() {
         { icon: "✅", text: "No rental history required" },
       ]}
       programs={["ccConvDPA", "selfConv"]}
+    />
+  );
+
+  const fhaRefiToConvCard = (
+    <PathCard
+      title="Option A — Refinance Current Home to Conventional"
+      borderColor="gray"
+      bullets={[
+        { icon: "🔁", text: "Refi current FHA loan into Conventional first" },
+        { icon: "✅", text: "Removes the active FHA — no 100-mile / family-size restriction on next purchase" },
+        { icon: "✅", text: "Opens up FHA or Conventional on the new home" },
+        { icon: "⚠️", text: "Requires sufficient equity and credit to qualify for conventional refi" },
+      ]}
+      programs={["selfConv"]}
     />
   );
 
@@ -765,14 +789,15 @@ export default function ExistingHomeowner() {
               </div>
             </div>
 
-            {/* FHA + 2021 or Later + No → FHA to FHA disqualifier + conventional */}
+            {/* FHA + 2021 or Later + No → FHA to FHA hard stop, show both conv paths */}
             {state.familySizeIncreased === "no" && (
               <>
                 <SectionConnector />
                 <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                  <DisqualifierCard reason="FHA to FHA not available — the client's new home is within 100 miles and there has been no family size increase." />
+                  <DisqualifierCard reason="FHA → FHA is a hard stop — the client's new home is within 100 miles and family size has not increased. A second FHA loan is not available." />
                   {fhaHasBankruptcy && <PlanningDisclaimer years={2} loanType="FHA" />}
-                  <h3 style={{ fontSize: "0.9375rem", fontWeight: 700, color: "#111111", margin: 0 }}>Recommended Path</h3>
+                  <h3 style={{ fontSize: "0.9375rem", fontWeight: 700, color: "#111111", margin: 0 }}>Available Options</h3>
+                  {fhaRefiToConvCard}
                   {fhaToConvCard}
                 </div>
               </>
@@ -840,7 +865,7 @@ export default function ExistingHomeowner() {
                   <PillToggle
                     label="Does the client's current home have 25%+ equity?"
                     value={state.hasEquity25}
-                    onChange={(v) => setState((prev) => ({ ...prev, hasEquity25: v }))}
+                    onChange={(v) => setState((prev) => ({ ...prev, hasEquity25: v, claimedRentalIncome: null }))}
                   />
                   <PillToggle
                     label="Has the client's family size increased? (marriage or children)"
@@ -931,17 +956,65 @@ export default function ExistingHomeowner() {
                       if (c === 3) {
                         return (
                           <>
-                            <DisqualifierCard reason="FHA to FHA not available — the client's family size has not increased. Family size increase is required to obtain a second FHA loan on a home within 100 miles." />
+                            <DisqualifierCard reason="FHA → FHA is a hard stop — family size has not increased. A second FHA loan requires either a family-size increase or a home outside the 100-mile radius." />
+                            <h3 style={{ fontSize: "0.9375rem", fontWeight: 700, color: "#111111", margin: 0 }}>Available Options</h3>
+                            {fhaRefiToConvCard}
                             {fhaToConvCard}
                           </>
                         );
                       }
 
-                      // c === 4 — no equity
+                      // c === 4 — no equity → rental-income exception may still qualify
                       return (
                         <>
-                          <DisqualifierCard reason="FHA to FHA not available — the current home does not have 25%+ equity. Without sufficient equity the current FHA payment cannot be offset." />
-                          {fhaToConvCard}
+                          <div style={{ background: "#FFFBEB", borderLeft: "4px solid #F59E0B", borderRadius: "0 8px 8px 0", padding: "12px 16px", fontSize: "0.875rem", color: "#92400E" }}>
+                            Without 25%+ equity, the current FHA payment cannot be excluded from DTI —{" "}
+                            <span style={{ fontWeight: 700 }}>unless</span> the client claimed the prior year&apos;s rental income on their tax returns.
+                          </div>
+                          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                            <p style={{ fontSize: "0.875rem", fontWeight: 600, color: "#111111", margin: 0 }}>
+                              Did the client claim the prior year&apos;s rental income from this property on their tax returns?
+                            </p>
+                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                              <SelectionCard
+                                title="Yes"
+                                selected={state.claimedRentalIncome === "yes"}
+                                onClick={() => selectCard("claimedRentalIncome", "yes")}
+                              />
+                              <SelectionCard
+                                title="No"
+                                selected={state.claimedRentalIncome === "no"}
+                                onClick={() => selectCard("claimedRentalIncome", "no")}
+                              />
+                            </div>
+                          </div>
+
+                          {state.claimedRentalIncome === "yes" && (
+                            <>
+                              <h3 style={{ fontSize: "0.9375rem", fontWeight: 700, color: "#111111", margin: 0 }}>FHA → FHA Available ✅</h3>
+                              <PathCard
+                                title="FHA → FHA (Rental Income Documented)"
+                                borderColor="green"
+                                bullets={[
+                                  { icon: "✅", text: "Prior-year rental income claimed on taxes — current FHA payment can be excluded from DTI" },
+                                  { icon: "✅", text: "Family size has increased" },
+                                  { icon: state.vacated ? "✅" : "⚠️", text: state.vacated ? "Home has been vacated" : "Home must be vacated before application" },
+                                ]}
+                                programs={["fhaDPA", "fhaSolar"]}
+                              />
+                              <h3 style={{ fontSize: "0.9375rem", fontWeight: 700, color: "#111111", margin: 0 }}>Also Available</h3>
+                              {fhaToConvCard}
+                            </>
+                          )}
+
+                          {state.claimedRentalIncome === "no" && (
+                            <>
+                              <DisqualifierCard reason="FHA → FHA is a hard stop — no 25%+ equity and no prior-year rental income claimed on taxes. The current FHA payment cannot be excluded from DTI." />
+                              <h3 style={{ fontSize: "0.9375rem", fontWeight: 700, color: "#111111", margin: 0 }}>Available Options</h3>
+                              {fhaRefiToConvCard}
+                              {fhaToConvCard}
+                            </>
+                          )}
                         </>
                       );
                     })()}
