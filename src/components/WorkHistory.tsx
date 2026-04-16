@@ -212,14 +212,15 @@ function computeVerdict(s: State): Verdict {
     bump("amber"); needs.push("Newer income stream has <2 years simultaneous history — use only older stream for qualifying");
   }
 
-  const title = level === "amber" ? "Workable File" : level === "red" ? "Complex File" : "Clean File";
-  const message = level === "amber"
+  const finalLevel = level as VerdictLevel;
+  const title = finalLevel === "amber" ? "Workable File" : finalLevel === "red" ? "Complex File" : "Clean File";
+  const message = finalLevel === "amber"
     ? "This file is workable but requires the following before closing:"
-    : level === "red"
+    : finalLevel === "red"
     ? "Client does not currently meet the 2-year employment history requirement."
     : "Client meets the 2-year employment history requirement. Proceed with standard qualification.";
 
-  return { level, title, message, needs, earliestEligibleYM: earliest };
+  return { level: finalLevel, title, message, needs, earliestEligibleYM: earliest };
 }
 
 // ─── UI helpers ───────────────────────────────────────────────────────────────
@@ -354,13 +355,67 @@ function PeriodRow({ period, onChange, onRemove }: { period: Period; onChange: (
           <input type="month" value={period.startYM} onChange={(e) => onChange({ ...period, startYM: e.target.value })} style={inp} />
         </Field>
         <Field label="End (month)">
-          <div style={{ display: "flex", gap: "6px" }}>
-            <input type="month" value={period.endYM === "present" ? "" : period.endYM} disabled={period.endYM === "present"} onChange={(e) => onChange({ ...period, endYM: e.target.value })} style={{ ...inp, flex: 1 }} />
-            <label style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "0.75rem", color: "#4B4B4B" }}>
-              <input type="checkbox" checked={period.endYM === "present"} onChange={(e) => onChange({ ...period, endYM: e.target.checked ? "present" : todayYM() })} />
-              Present
-            </label>
-          </div>
+          {period.endYM === "present" ? (
+            <div style={{ display: "flex", gap: "6px", alignItems: "stretch" }}>
+              <div
+                style={{
+                  ...inp,
+                  flex: 1,
+                  background: "#F0FDF4",
+                  color: "#166534",
+                  borderColor: "#BBF7D0",
+                  fontWeight: 600,
+                  display: "flex",
+                  alignItems: "center",
+                }}
+              >
+                Present — still employed
+              </div>
+              <button
+                type="button"
+                onClick={() => onChange({ ...period, endYM: todayYM() })}
+                style={{
+                  padding: "0 12px",
+                  borderRadius: "8px",
+                  border: "1px solid #E8E8E8",
+                  background: "#FFFFFF",
+                  color: "#6B6B6B",
+                  fontSize: "0.75rem",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                Set date
+              </button>
+            </div>
+          ) : (
+            <div style={{ display: "flex", gap: "6px", alignItems: "stretch" }}>
+              <input
+                type="month"
+                value={period.endYM}
+                onChange={(e) => onChange({ ...period, endYM: e.target.value })}
+                style={{ ...inp, flex: 1 }}
+              />
+              <button
+                type="button"
+                onClick={() => onChange({ ...period, endYM: "present" })}
+                style={{
+                  padding: "0 12px",
+                  borderRadius: "8px",
+                  border: "1px solid #E8E8E8",
+                  background: "#FFFFFF",
+                  color: "#6B6B6B",
+                  fontSize: "0.75rem",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                Present
+              </button>
+            </div>
+          )}
         </Field>
         <Field label="Industry (optional)">
           <input type="text" placeholder="e.g. Healthcare" value={period.industry} onChange={(e) => onChange({ ...period, industry: e.target.value })} style={inp} />
