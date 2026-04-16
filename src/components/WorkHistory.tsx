@@ -212,15 +212,18 @@ function computeVerdict(s: State): Verdict {
     bump("amber"); needs.push("Newer income stream has <2 years simultaneous history — use only older stream for qualifying");
   }
 
-  const finalLevel: VerdictLevel = level;
-  const title = finalLevel === "amber" ? "Workable File" : finalLevel === "red" ? "Complex File" : "Clean File";
-  const message = finalLevel === "amber"
-    ? "This file is workable but requires the following before closing:"
-    : finalLevel === "red"
-    ? "Client does not currently meet the 2-year employment history requirement."
-    : "Client meets the 2-year employment history requirement. Proceed with standard qualification.";
+  const TITLES: Record<VerdictLevel, string> = {
+    green: "Clean File",
+    amber: "Workable File",
+    red: "Complex File",
+  };
+  const MESSAGES: Record<VerdictLevel, string> = {
+    green: "Client meets the 2-year employment history requirement. Proceed with standard qualification.",
+    amber: "This file is workable but requires the following before closing:",
+    red: "Client does not currently meet the 2-year employment history requirement.",
+  };
 
-  return { level: finalLevel, title, message, needs, earliestEligibleYM: earliest };
+  return { level, title: TITLES[level], message: MESSAGES[level], needs, earliestEligibleYM: earliest };
 }
 
 // ─── UI helpers ───────────────────────────────────────────────────────────────
