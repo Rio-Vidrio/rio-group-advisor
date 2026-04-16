@@ -10,6 +10,7 @@ interface NavigationProps {
 const tabs = [
   { id: "wizard", label: "Client Wizard" },
   { id: "homeowner", label: "Existing Homeowner" },
+  { id: "workhistory", label: "Work History" },
   { id: "selfemployed", label: "Business Owner" },
   { id: "calculators", label: "Calculators" },
   { id: "programs", label: "Programs" },
