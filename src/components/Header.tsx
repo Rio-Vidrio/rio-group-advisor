@@ -22,8 +22,8 @@ export default function Header() {
           backgroundImage: "url('/NAI-BUILDING.jpg')",
           backgroundSize: "cover",
           backgroundPosition: "center 80%",
-          filter: "brightness(0.7)",
-          transform: "scale(1.02)",
+          filter: "brightness(0.95) blur(5px)",
+          transform: "scale(1.06)",
           zIndex: 0,
         }}
       />
@@ -33,7 +33,7 @@ export default function Header() {
         style={{
           position: "absolute",
           inset: 0,
-          background: "linear-gradient(180deg, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.3) 100%)",
+          background: "linear-gradient(180deg, rgba(0,0,0,0.25) 0%, rgba(255,255,255,0.15) 100%)",
           zIndex: 0,
         }}
       />
