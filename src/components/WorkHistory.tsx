@@ -825,10 +825,16 @@ export default function WorkHistory() {
   const removePeriod = (id: string) =>
     setState((prev) => ({ ...prev, periods: prev.periods.filter((p) => p.id !== id) }));
 
-  const showStep2 = state.current !== null;
-  const showStep3 = state.current !== null;
-  const showStep4 = state.periods.length > 0 && coverage.gaps.some((g) => g.months >= 6);
-  const showVerdict = state.current !== null;
+  // Step 1 (Job History) is always visible.
+  // Step 2 (Current Employment Detail) unlocks once the agent has mapped at least one period.
+  // Step 3 (Income Combinations) unlocks alongside Step 2.
+  // Step 4 (Gap Resolution) only when a 6+ month gap is detected.
+  // Step 5 (Verdict) shows once the flow has real input.
+  const hasPeriods = state.periods.length > 0;
+  const showCurrentDetail = hasPeriods;
+  const showStep3 = hasPeriods;
+  const showStep4 = hasPeriods && coverage.gaps.some((g) => g.months >= 6);
+  const showVerdict = hasPeriods || state.current !== null;
 
   return (
     <div
@@ -870,22 +876,90 @@ export default function WorkHistory() {
         Answer each question as accurately as possible. The app will map the client&apos;s history and flag any qualifying issues.
       </p>
 
-      {/* ═════ STEP 1 ═════ */}
-      <StepHeader n={1} title="Current Employment Status" hint="What is the client's current employment situation?" />
-      <div style={{ marginTop: "14px" }}>
-        <OptionRow
-          columns={1}
-          options={[
-            { value: "w2ft", label: "W2 Full-Time" },
-            { value: "w2pt", label: "W2 Part-Time" },
-            { value: "se", label: "Self-Employed / 1099 / Gig Work" },
-            { value: "contract", label: "Contract / Seasonal" },
-            { value: "none", label: "Not Currently Working" },
-          ]}
-          value={state.current}
-          onChange={(v) => selectCurrent(v as CurrentStatus)}
-        />
+      {/* ═════ STEP 1 — Job History Timeline ═════ */}
+      <StepHeader
+        n={1}
+        title="Job History — Last 2 Years"
+        hint="Start by mapping the client's employment periods. The timeline below drives every follow-up."
+      />
+
+      <div style={{ background: "#FAF8F3", borderRadius: "12px", padding: "16px", marginTop: "14px", marginBottom: "14px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px", flexWrap: "wrap", gap: "8px" }}>
+          <div style={{ fontSize: "0.8125rem", fontWeight: 700, color: "#111111" }}>
+            {coverage.documentedMonths} of 24 months documented
+            {coverage.partialMonths > 0 && (
+              <span style={{ color: "#92400E", fontWeight: 500 }}> · {coverage.partialMonths} partial</span>
+            )}
+            {hasPeriods && coverage.gaps.length > 0 && (
+              <span style={{ color: "#C8202A", fontWeight: 500 }}>
+                {" "}
+                · {coverage.gaps.length} gap{coverage.gaps.length > 1 ? "s" : ""} (longest {coverage.longestGap}m)
+              </span>
+            )}
+          </div>
+        </div>
+        <TimelineBar periods={state.periods} />
       </div>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+        {state.periods.map((p) => (
+          <PeriodRow
+            key={p.id}
+            period={p}
+            onChange={(np) => updatePeriod(p.id, np)}
+            onRemove={() => removePeriod(p.id)}
+          />
+        ))}
+        {state.periods.length < 6 && (
+          <button
+            onClick={addPeriod}
+            style={{
+              padding: "12px 16px",
+              borderRadius: "10px",
+              border: "1.5px dashed #C8202A",
+              background: "#FFFFFF",
+              color: "#C8202A",
+              fontSize: "0.8125rem",
+              fontWeight: 600,
+              cursor: "pointer",
+            }}
+          >
+            + Add employment period
+          </button>
+        )}
+        {state.periods.length >= 6 && (
+          <div style={{ fontSize: "0.75rem", color: "#9B9B9B", textAlign: "center" }}>
+            Maximum 6 periods
+          </div>
+        )}
+      </div>
+
+      {/* ═════ STEP 2 — Current Employment Detail ═════ */}
+      {showCurrentDetail && (
+        <>
+          <SectionConnector />
+          <StepHeader
+            n={2}
+            title="Current Employment Detail"
+            hint="Now that the timeline is laid out, tell us about the client's current situation."
+          />
+          <div style={{ marginTop: "14px" }}>
+            <p style={{ fontSize: "0.875rem", fontWeight: 600, color: "#111111", margin: "0 0 10px" }}>
+              What is the client&apos;s current employment situation?
+            </p>
+            <OptionRow
+              columns={1}
+              options={[
+                { value: "w2ft", label: "W2 Full-Time" },
+                { value: "w2pt", label: "W2 Part-Time" },
+                { value: "se", label: "Self-Employed / 1099 / Gig Work" },
+                { value: "contract", label: "Contract / Seasonal" },
+                { value: "none", label: "Not Currently Working" },
+              ]}
+              value={state.current}
+              onChange={(v) => selectCurrent(v as CurrentStatus)}
+            />
+          </div>
 
       {/* W2 follow-ups */}
       {(state.current === "w2ft" || state.current === "w2pt") && (
@@ -1169,67 +1243,6 @@ export default function WorkHistory() {
           </div>
         </>
       )}
-
-      {/* ═════ STEP 2 ═════ */}
-      {showStep2 && (
-        <>
-          <SectionConnector />
-          <StepHeader
-            n={2}
-            title="Employment History — Last 2 Years"
-            hint="Walk us through the client's employment over the last 2 years"
-          />
-
-          <div style={{ background: "#FAF8F3", borderRadius: "12px", padding: "16px", marginTop: "14px", marginBottom: "14px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px", flexWrap: "wrap", gap: "8px" }}>
-              <div style={{ fontSize: "0.8125rem", fontWeight: 700, color: "#111111" }}>
-                {coverage.documentedMonths} of 24 months documented
-                {coverage.partialMonths > 0 && (
-                  <span style={{ color: "#92400E", fontWeight: 500 }}> · {coverage.partialMonths} partial</span>
-                )}
-                {coverage.gaps.length > 0 && (
-                  <span style={{ color: "#C8202A", fontWeight: 500 }}>
-                    {" "}
-                    · {coverage.gaps.length} gap{coverage.gaps.length > 1 ? "s" : ""} (longest {coverage.longestGap}m)
-                  </span>
-                )}
-              </div>
-            </div>
-            <TimelineBar periods={state.periods} />
-          </div>
-
-          <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-            {state.periods.map((p) => (
-              <PeriodRow
-                key={p.id}
-                period={p}
-                onChange={(np) => updatePeriod(p.id, np)}
-                onRemove={() => removePeriod(p.id)}
-              />
-            ))}
-            {state.periods.length < 6 && (
-              <button
-                onClick={addPeriod}
-                style={{
-                  padding: "12px 16px",
-                  borderRadius: "10px",
-                  border: "1.5px dashed #C8202A",
-                  background: "#FFFFFF",
-                  color: "#C8202A",
-                  fontSize: "0.8125rem",
-                  fontWeight: 600,
-                  cursor: "pointer",
-                }}
-              >
-                + Add employment period
-              </button>
-            )}
-            {state.periods.length >= 6 && (
-              <div style={{ fontSize: "0.75rem", color: "#9B9B9B", textAlign: "center" }}>
-                Maximum 6 periods
-              </div>
-            )}
-          </div>
         </>
       )}
 
