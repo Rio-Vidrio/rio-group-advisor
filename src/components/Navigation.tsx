@@ -20,14 +20,14 @@ export default function Navigation({ activeTab, onTabChange }: NavigationProps) 
     <nav
       className="no-print"
       style={{
-        background: "#111111",
-        borderBottom: "2px solid #C8202A",
-        boxShadow: "0 2px 12px rgba(0,0,0,0.3)",
+        background: "#FFFFFF",
+        borderBottom: "1px solid #ECE8E1",
+        boxShadow: "0 1px 3px rgba(20, 16, 10, 0.04)",
       }}
     >
-      <div style={{ maxWidth: "1280px", margin: "0 auto", padding: "0 28px" }}>
+      <div style={{ maxWidth: "1280px", margin: "0 auto", padding: "0 32px" }}>
         <div
-          style={{ display: "flex", overflowX: "auto" }}
+          style={{ display: "flex", overflowX: "auto", gap: "4px" }}
           className="scrollbar-none"
         >
           {tabs.map((tab) => {
@@ -37,35 +37,46 @@ export default function Navigation({ activeTab, onTabChange }: NavigationProps) 
                 key={tab.id}
                 onClick={() => onTabChange(tab.id)}
                 style={{
-                  padding: "15px 24px",
-                  fontSize: "13px",
+                  position: "relative",
+                  padding: "18px 22px",
+                  fontSize: "13.5px",
                   fontFamily: "'DM Sans', sans-serif",
-                  fontWeight: isActive ? 700 : 400,
-                  letterSpacing: "0.04em",
-                  textTransform: "uppercase" as const,
+                  fontWeight: isActive ? 600 : 500,
+                  letterSpacing: "0.02em",
                   whiteSpace: "nowrap",
                   border: "none",
-                  borderBottom: isActive ? "3px solid #C8202A" : "3px solid transparent",
                   background: "transparent",
-                  color: isActive ? "#C8202A" : "rgba(255,255,255,0.45)",
+                  color: isActive ? "#1A1A1A" : "#8A857C",
                   cursor: "pointer",
-                  transition: "color 120ms, background 120ms",
+                  transition: "color 160ms ease",
                   marginBottom: "-1px",
                 }}
                 onMouseEnter={(e) => {
                   if (!isActive) {
-                    (e.currentTarget as HTMLButtonElement).style.color = "rgba(255,255,255,0.85)";
-                    (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.05)";
+                    (e.currentTarget as HTMLButtonElement).style.color = "#3A3733";
                   }
                 }}
                 onMouseLeave={(e) => {
                   if (!isActive) {
-                    (e.currentTarget as HTMLButtonElement).style.color = "rgba(255,255,255,0.45)";
-                    (e.currentTarget as HTMLButtonElement).style.background = "transparent";
+                    (e.currentTarget as HTMLButtonElement).style.color = "#8A857C";
                   }
                 }}
               >
                 {tab.label}
+                {/* Active underline — thin, elegant */}
+                <span
+                  aria-hidden="true"
+                  style={{
+                    position: "absolute",
+                    left: "22px",
+                    right: "22px",
+                    bottom: 0,
+                    height: "2px",
+                    background: "#C8202A",
+                    opacity: isActive ? 1 : 0,
+                    transition: "opacity 160ms ease",
+                  }}
+                />
               </button>
             );
           })}
