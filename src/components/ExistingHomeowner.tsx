@@ -13,8 +13,6 @@ type TreeState = {
   // FHA branch
   purchaseTiming: "recent" | "longago" | null;
   familySizeIncreased: "yes" | "no" | null;
-  // FHA 2021+ branch — equity check after family-size question
-  fhaRecentEquity: "yes" | "no" | null;
   // FHA Before 2021 toggles
   hasEquity25: boolean | null;
   familySizeIncreasedLong: boolean | null;
@@ -31,7 +29,6 @@ const initialState: TreeState = {
   citizenship: null,
   purchaseTiming: null,
   familySizeIncreased: null,
-  fhaRecentEquity: null,
   hasEquity25: null,
   familySizeIncreasedLong: null,
   vacated: null,
@@ -43,7 +40,6 @@ const initialState: TreeState = {
 const clearFromCitizenship = {
   purchaseTiming: null,
   familySizeIncreased: null,
-  fhaRecentEquity: null,
   hasEquity25: null,
   familySizeIncreasedLong: null,
   vacated: null,
@@ -79,7 +75,7 @@ const PROGRAMS = {
     note: "U.S. citizens and permanent residents only — No DACA",
   },
   ccConvDPA: {
-    name: "Cross Country Conventional DPA",
+    name: "Conventional DPA",
     minScore: "660+",
     bullets: [
       "Income limit: $146K",
@@ -420,8 +416,6 @@ function buildBreadcrumb(state: TreeState): string[] {
       crumbs.push("2021 or Later");
       if (state.familySizeIncreased === "yes") crumbs.push("Family Size Increased");
       if (state.familySizeIncreased === "no") crumbs.push("No Family Size Change");
-      if (state.fhaRecentEquity === "yes") crumbs.push("Has 25%+ Equity");
-      if (state.fhaRecentEquity === "no") crumbs.push("No 25%+ Equity");
     } else if (state.purchaseTiming === "longago") {
       crumbs.push("Before 2021");
     }
@@ -457,10 +451,9 @@ export default function ExistingHomeowner() {
           return { ...prev, citizenship: null, ...clearFromCitizenship };
         }
         if (key === "purchaseTiming") {
-          return { ...prev, purchaseTiming: null, familySizeIncreased: null, fhaRecentEquity: null, hasEquity25: null, familySizeIncreasedLong: null, vacated: null };
+          return { ...prev, purchaseTiming: null, familySizeIncreased: null, hasEquity25: null, familySizeIncreasedLong: null, vacated: null };
         }
-        if (key === "familySizeIncreased") return { ...prev, familySizeIncreased: null, fhaRecentEquity: null };
-        if (key === "fhaRecentEquity") return { ...prev, fhaRecentEquity: null };
+        if (key === "familySizeIncreased") return { ...prev, familySizeIncreased: null };
         if (key === "nextLoanType") return { ...prev, nextLoanType: null, convToFHAEquity: null };
         if (key === "convToFHAEquity") return { ...prev, convToFHAEquity: null };
         return { ...prev, [key]: null };
@@ -477,13 +470,10 @@ export default function ExistingHomeowner() {
         return { ...prev, citizenship: value as TreeState["citizenship"], ...clearFromCitizenship };
       }
       if (key === "purchaseTiming") {
-        return { ...prev, purchaseTiming: value as TreeState["purchaseTiming"], familySizeIncreased: null, fhaRecentEquity: null, hasEquity25: null, familySizeIncreasedLong: null, vacated: null };
+        return { ...prev, purchaseTiming: value as TreeState["purchaseTiming"], familySizeIncreased: null, hasEquity25: null, familySizeIncreasedLong: null, vacated: null };
       }
       if (key === "familySizeIncreased") {
-        return { ...prev, familySizeIncreased: value as TreeState["familySizeIncreased"], fhaRecentEquity: null };
-      }
-      if (key === "fhaRecentEquity") {
-        return { ...prev, fhaRecentEquity: value as TreeState["fhaRecentEquity"] };
+        return { ...prev, familySizeIncreased: value as TreeState["familySizeIncreased"] };
       }
       if (key === "nextLoanType") {
         return { ...prev, nextLoanType: value as TreeState["nextLoanType"], convToFHAEquity: null };
@@ -499,25 +489,26 @@ export default function ExistingHomeowner() {
   const breadcrumb = buildBreadcrumb(state);
 
   // ── Long-ago result logic ──────────────────────────────────────────────────
+  // Show results early when any hard-stop condition is met (no need to answer all 3)
   const longAgoAllAnswered =
-    state.hasEquity25 !== null &&
-    state.familySizeIncreasedLong !== null &&
-    state.vacated !== null;
+    state.hasEquity25 === false ||                                           // Hard stop: no equity
+    (state.hasEquity25 === true && state.familySizeIncreasedLong === false) || // Hard stop: no family size
+    (state.hasEquity25 !== null && state.familySizeIncreasedLong !== null && state.vacated !== null);
 
   const getLongAgoCase = (): 1 | 2 | 3 | 4 => {
     const { hasEquity25, familySizeIncreasedLong, vacated } = state;
-    if (!hasEquity25) return 4;
-    if (hasEquity25 && familySizeIncreasedLong && vacated) return 1;
-    if (hasEquity25 && familySizeIncreasedLong && !vacated) return 2;
-    return 3;
+    if (!hasEquity25) return 4;                   // Hard stop — no 25% equity
+    if (!familySizeIncreasedLong) return 3;       // Hard stop — family size has not increased
+    if (vacated) return 1;                        // All three conditions met
+    return 2;                                     // Has equity + family size, not yet vacated
   };
 
   // ── Reusable result cards ──────────────────────────────────────────────────
 
   const fhaToConvCard = (
     <PathCard
-      title="Option B — Purchase New Home with Conventional"
-      badge={{ text: "Recommended", color: "red" }}
+      title="FHA → Conventional"
+      badge={{ text: "Recommended Path", color: "red" }}
       borderColor="red"
       bullets={[
         { icon: "✅", text: "5% down on new purchase" },
@@ -528,20 +519,6 @@ export default function ExistingHomeowner() {
         { icon: "✅", text: "No rental history required" },
       ]}
       programs={["ccConvDPA", "selfConv"]}
-    />
-  );
-
-  const fhaRefiToConvCard = (
-    <PathCard
-      title="Option A — Refinance Current Home to Conventional"
-      borderColor="gray"
-      bullets={[
-        { icon: "🔁", text: "Refi current FHA loan into Conventional first" },
-        { icon: "✅", text: "Removes the active FHA — no 100-mile / family-size restriction on next purchase" },
-        { icon: "✅", text: "Opens up FHA or Conventional on the new home" },
-        { icon: "⚠️", text: "Requires sufficient equity and credit to qualify for conventional refi" },
-      ]}
-      programs={["selfConv"]}
     />
   );
 
@@ -789,61 +766,84 @@ export default function ExistingHomeowner() {
               </div>
             </div>
 
-            {/* FHA + 2021 or Later + No → FHA to FHA hard stop, show both conv paths */}
+            {/* FHA + 2021 or Later + No → Hard stop + two paths */}
             {state.familySizeIncreased === "no" && (
               <>
                 <SectionConnector />
                 <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                  <DisqualifierCard reason="FHA → FHA is a hard stop — the client's new home is within 100 miles and family size has not increased. A second FHA loan is not available." />
+                  <DisqualifierCard reason="FHA to FHA — Hard Stop. Family size has not increased. This is a non-negotiable requirement for a second FHA loan on a home within 100 miles. There is no workaround." />
                   {fhaHasBankruptcy && <PlanningDisclaimer years={2} loanType="FHA" />}
-                  <h3 style={{ fontSize: "0.9375rem", fontWeight: 700, color: "#111111", margin: 0 }}>Available Options</h3>
-                  {fhaRefiToConvCard}
+                  <h3 style={{ fontSize: "0.9375rem", fontWeight: 700, color: "#111111", margin: 0 }}>Available Paths</h3>
+                  <PathCard
+                    title="Option A — Refinance Current FHA → Conventional"
+                    borderColor="red"
+                    bullets={[
+                      { icon: "✅", text: "Refinance the current home out of FHA into a conventional loan" },
+                      { icon: "✅", text: "Eliminates the existing FHA loan — frees up FHA entitlement" },
+                      { icon: "✅", text: "Client can then purchase the new home using FHA financing" },
+                      { icon: "⚠️", text: "Requires sufficient equity and qualifying income to refi" },
+                    ]}
+                    programs={["selfConv"]}
+                  />
                   {fhaToConvCard}
                 </div>
               </>
             )}
 
-            {/* FHA + 2021 or Later + Yes → ask 25% equity question (hard stop if no) */}
+            {/* FHA + 2021 or Later + Yes → equity question */}
             {state.familySizeIncreased === "yes" && (
               <>
                 <SectionConnector />
                 <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                  {fhaHasBankruptcy && <PlanningDisclaimer years={2} loanType="FHA" />}
                   <p style={{ fontSize: "0.875rem", fontWeight: 600, color: "#111111", margin: 0 }}>
                     Does the client&apos;s current home have 25%+ equity?
                   </p>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
                     <SelectionCard
                       title="Yes"
-                      selected={state.fhaRecentEquity === "yes"}
-                      onClick={() => selectCard("fhaRecentEquity", "yes")}
+                      note="Equity can offset the existing FHA payment in DTI"
+                      selected={state.hasEquity25 === true}
+                      onClick={() => setState((prev) => ({ ...prev, hasEquity25: true }))}
                     />
                     <SelectionCard
                       title="No"
-                      selected={state.fhaRecentEquity === "no"}
-                      onClick={() => selectCard("fhaRecentEquity", "no")}
+                      note="Most 2021+ purchases have not yet reached 25% equity"
+                      selected={state.hasEquity25 === false}
+                      onClick={() => setState((prev) => ({ ...prev, hasEquity25: false }))}
                     />
                   </div>
                 </div>
 
-                {/* No equity → hard stop, two conv options only */}
-                {state.fhaRecentEquity === "no" && (
+                {/* No equity → hard stop */}
+                {state.hasEquity25 === false && (
                   <>
                     <SectionConnector />
                     <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                      <DisqualifierCard reason="FHA → FHA is a hard stop — without 25%+ equity on the current home, the existing FHA payment cannot be offset. A second FHA loan is not available." />
-                      <h3 style={{ fontSize: "0.9375rem", fontWeight: 700, color: "#111111", margin: 0 }}>Available Options</h3>
-                      {fhaRefiToConvCard}
+                      {fhaHasBankruptcy && <PlanningDisclaimer years={2} loanType="FHA" />}
+                      <DisqualifierCard reason="FHA to FHA — Hard Stop. The client's current home does not have 25%+ equity. Without equity, the existing FHA payment cannot be excluded from DTI — both payments must be fully carried. There is no workaround." />
+                      <h3 style={{ fontSize: "0.9375rem", fontWeight: 700, color: "#111111", margin: 0 }}>Available Paths</h3>
+                      <PathCard
+                        title="Option A — Refinance Current FHA → Conventional"
+                        borderColor="red"
+                        bullets={[
+                          { icon: "✅", text: "Refinance the current home out of FHA into a conventional loan" },
+                          { icon: "✅", text: "Eliminates the existing FHA loan — frees up FHA entitlement" },
+                          { icon: "✅", text: "Client can then purchase the new home using FHA financing" },
+                          { icon: "⚠️", text: "Requires sufficient equity and qualifying income to refi" },
+                        ]}
+                        programs={["selfConv"]}
+                      />
                       {fhaToConvCard}
                     </div>
                   </>
                 )}
 
-                {/* Has equity → show FHA→FHA + FHA→Conv paths */}
-                {state.fhaRecentEquity === "yes" && (
+                {/* Has equity → FHA to FHA available */}
+                {state.hasEquity25 === true && (
                   <>
                     <SectionConnector />
                     <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                      {fhaHasBankruptcy && <PlanningDisclaimer years={2} loanType="FHA" />}
                       <h3 style={{ fontSize: "0.9375rem", fontWeight: 700, color: "#111111", margin: 0 }}>Available Options</h3>
                       <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
                         <PathCard
@@ -851,7 +851,7 @@ export default function ExistingHomeowner() {
                           borderColor="red"
                           bullets={[
                             { icon: "✅", text: "Family size increased" },
-                            { icon: "✅", text: "25%+ equity — current FHA payment can be offset" },
+                            { icon: "✅", text: "25%+ equity — existing FHA payment can be offset in DTI" },
                             {
                               icon: "✅",
                               text: (
@@ -869,7 +869,7 @@ export default function ExistingHomeowner() {
                           borderColor="gray"
                           bullets={[
                             { icon: "✅", text: "5% down" },
-                            { icon: "✅", text: "No equity requirement" },
+                            { icon: "✅", text: "No rental history required" },
                             { icon: "✅", text: "Can rent current home" },
                           ]}
                           programs={["ccConvDPA", "selfConv"]}
@@ -985,20 +985,40 @@ export default function ExistingHomeowner() {
                       if (c === 3) {
                         return (
                           <>
-                            <DisqualifierCard reason="FHA → FHA is a hard stop — family size has not increased. A second FHA loan requires either a family-size increase or a home outside the 100-mile radius." />
-                            <h3 style={{ fontSize: "0.9375rem", fontWeight: 700, color: "#111111", margin: 0 }}>Available Options</h3>
-                            {fhaRefiToConvCard}
+                            <DisqualifierCard reason="FHA to FHA — Hard Stop. Family size has not increased. This is a non-negotiable requirement for a second FHA loan on a home within 100 miles. There is no workaround." />
+                            <h3 style={{ fontSize: "0.9375rem", fontWeight: 700, color: "#111111", margin: 0 }}>Available Paths</h3>
+                            <PathCard
+                              title="Option A — Refinance Current FHA → Conventional"
+                              borderColor="red"
+                              bullets={[
+                                { icon: "✅", text: "Refinance the current home out of FHA into a conventional loan" },
+                                { icon: "✅", text: "Eliminates the existing FHA loan — frees up FHA entitlement" },
+                                { icon: "✅", text: "Client can then purchase the new home using FHA financing" },
+                                { icon: "⚠️", text: "Requires sufficient equity and qualifying income to refi" },
+                              ]}
+                              programs={["selfConv"]}
+                            />
                             {fhaToConvCard}
                           </>
                         );
                       }
 
-                      // c === 4 — no 25% equity → hard stop
+                      // c === 4 — no equity: hard stop for FHA to FHA
                       return (
                         <>
-                          <DisqualifierCard reason="FHA → FHA is a hard stop — without 25%+ equity on the current home, the existing FHA payment cannot be offset. A second FHA loan is not available." />
-                          <h3 style={{ fontSize: "0.9375rem", fontWeight: 700, color: "#111111", margin: 0 }}>Available Options</h3>
-                          {fhaRefiToConvCard}
+                          <DisqualifierCard reason="FHA to FHA — Hard Stop. The client's current home does not have 25%+ equity. Without equity, the existing FHA payment cannot be excluded from DTI. Both mortgage payments must be fully carried — this disqualifies most borrowers. There is no workaround." />
+                          <h3 style={{ fontSize: "0.9375rem", fontWeight: 700, color: "#111111", margin: 0 }}>Available Paths</h3>
+                          <PathCard
+                            title="Option A — Refinance Current FHA → Conventional"
+                            borderColor="red"
+                            bullets={[
+                              { icon: "✅", text: "Refinance the current home out of FHA into a conventional loan" },
+                              { icon: "✅", text: "Eliminates the existing FHA loan — frees up FHA entitlement" },
+                              { icon: "✅", text: "Client can then purchase the new home using FHA financing" },
+                              { icon: "⚠️", text: "Requires sufficient equity and qualifying income to refi" },
+                            ]}
+                            programs={["selfConv"]}
+                          />
                           {fhaToConvCard}
                         </>
                       );

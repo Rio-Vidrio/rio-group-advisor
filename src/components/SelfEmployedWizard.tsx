@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useReactToPrint } from "react-to-print";
 import html2canvas from "html2canvas";
 import { getRates, Rates, defaultRates } from "@/lib/rateStore";
-import { TRG_LOGO_BLACK_B64, AZ_LOGO_BLACK_B64 } from "@/lib/printLogos";
+import { AZ_LOGO_BLACK_B64, TRG_LOGO_BLACK_B64 } from "@/lib/printLogos";
 
 /* ── Helpers ── */
 const fmt = (n: number) => "$" + Math.round(n).toLocaleString("en-US");
@@ -480,16 +480,19 @@ export default function SelfEmployedWizard({ onTabChange }: SelfEmployedWizardPr
         {/* ── Print header (only visible in print) ── */}
         <div className="print-only" style={{ marginBottom: 16 }}>
           <div style={{ padding: "16px 0", borderBottom: "3px solid #C8202A", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={TRG_LOGO_BLACK_B64} alt="The Rio Group" style={{ height: 40, width: "auto", display: "block" }} />
+              <img src={AZ_LOGO_BLACK_B64} alt="AZ & Associates" style={{ height: 44, width: "auto", display: "block" }} />
               <div>
-                <div style={{ color: "#111", fontSize: 11, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase" }}>The Rio Group</div>
-                <div style={{ color: "#999", fontSize: 9, fontWeight: 500, letterSpacing: "0.08em", textTransform: "uppercase" }}>Built Different</div>
+                <div style={{ color: "#111", fontSize: 13, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" }}>AZ &amp; Associates</div>
+                <div style={{ color: "#999", fontSize: 10, fontWeight: 500, letterSpacing: "0.08em", textTransform: "uppercase" }}>Client Advisor</div>
               </div>
             </div>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={AZ_LOGO_BLACK_B64} alt="AZ & Associates" style={{ height: 32, width: "auto", display: "block" }} />
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 3 }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={TRG_LOGO_BLACK_B64} alt="The Rio Group" style={{ height: 20, width: "auto", display: "block", opacity: 0.55 }} />
+              <div style={{ color: "#bbb", fontSize: 8, letterSpacing: "0.15em", textTransform: "uppercase" }}>Designed by The Rio Group</div>
+            </div>
           </div>
           <div style={{ borderBottom: "2px solid #C8202A", padding: "8px 0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <span style={{ color: "#C8202A", fontSize: 14, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase" }}>Business Owner — Loan Qualification</span>
@@ -1040,7 +1043,7 @@ export default function SelfEmployedWizard({ onTabChange }: SelfEmployedWizardPr
 
           {/* Print footer */}
           <div className="print-only" style={{ borderTop: "2px solid #C8202A", padding: "10px 0", textAlign: "center", marginTop: 20 }}>
-            <div style={{ fontSize: 10, color: "#6B6B6B", fontWeight: 500 }}>The Rio Group — Powered by AZ &amp; Associates</div>
+            <div style={{ fontSize: 10, color: "#6B6B6B", fontWeight: 500 }}>AZ &amp; Associates — Home Buying Advisor</div>
             <div style={{ fontSize: 8, color: "#ABABAB", marginTop: 3 }}>All figures are estimates for informational purposes only. Client should consult a CPA before amending returns. Subject to lender approval.</div>
           </div>
 
