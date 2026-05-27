@@ -1979,7 +1979,7 @@ function SellerNetCalc({ importedPayoff }: { importedPayoff: number | null }) {
     secondLienAmt > 0 ? { label: "HELOC / 2nd Lien / DPA Payoff", value: `− ${fmt(secondLienAmt)}`, isDeduction: true } : null,
     closingDate && annualTaxes > 0 ? { label: `Prorated Property Taxes (${daysFromJan1} days)`, value: `− ${fmt(proratedTaxes)}`, isDeduction: true } : null,
     hoaDues > 0 ? { label: "HOA Dues at Closing", value: `− ${fmt(hoaDues)}`, isDeduction: true } : null,
-    { label: `Seller Concessions (${concessionsPct.toFixed(1)}%)`, value: `− ${fmt(concessionsAmt)}`, isDeduction: true },
+    { label: `Seller Concessions (${concessionsPct.toFixed(2)}%)`, value: `− ${fmt(concessionsAmt)}`, isDeduction: true },
     { label: `Buyer's Agent Commission (${buyerAgentPct.toFixed(2)}%)`, value: `− ${fmt(buyerAgentAmt)}`, isDeduction: true },
     { label: `Listing Agent Commission (${listingAgentPct.toFixed(2)}%)`, value: `− ${fmt(listingAgentAmt)}`, isDeduction: true },
     { label: "Title Fees (1%)", value: `− ${fmt(titleFees)}`, isDeduction: true },
@@ -2169,11 +2169,11 @@ function SellerNetCalc({ importedPayoff }: { importedPayoff: number | null }) {
         {/* Seller concessions */}
         <div>
           <label style={labelStyle}>
-            Seller Concessions: {concessionsPct.toFixed(1)}%
+            Seller Concessions: {concessionsPct.toFixed(2)}%
             <span className="ml-2 text-rio-red font-bold">{fmt(concessionsAmt)}</span>
           </label>
           <input
-            type="range" min="0" max="6" step="0.5" value={concessionsPct}
+            type="range" min="0" max="6" step="0.25" value={concessionsPct}
             onChange={(e) => setConcessionsPct(Number(e.target.value))}
             className="w-full accent-rio-red"
           />
@@ -2239,7 +2239,7 @@ function SellerNetCalc({ importedPayoff }: { importedPayoff: number | null }) {
           />
         )}
         {hoaDues > 0 && <DeductionRow label="HOA Dues at Closing" value={hoaDues} />}
-        <DeductionRow label={`Seller Concessions (${concessionsPct.toFixed(1)}% = ${fmt(concessionsAmt)})`} value={concessionsAmt} />
+        <DeductionRow label={`Seller Concessions (${concessionsPct.toFixed(2)}% = ${fmt(concessionsAmt)})`} value={concessionsAmt} />
         <DeductionRow label={`Buyer's Agent Commission (${buyerAgentPct.toFixed(2)}% = ${fmt(buyerAgentAmt)})`} value={buyerAgentAmt} />
         <DeductionRow label={`Listing Agent Commission (${listingAgentPct.toFixed(2)}% = ${fmt(listingAgentAmt)})`} value={listingAgentAmt} />
         <DeductionRow label={`Title Fees (1% = ${fmt(titleFees)})`} value={titleFees} />
