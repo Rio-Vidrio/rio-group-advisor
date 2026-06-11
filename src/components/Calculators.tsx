@@ -383,6 +383,7 @@ function PaymentCalc() {
   const [hoa, setHoa] = useState(0);
   const [pmiRate, setPmiRate] = useState(0.55); // Conventional PMI — adjustable, default 0.55%
   const [vaDisabilityWaiver, setVaDisabilityWaiver] = useState(false);
+  const [fhaDpaPayment, setFhaDpaPayment] = useState(0); // FHA DPA 2nd-loan monthly payment (dollar entry)
   const [clientName, setClientName] = useState("");
   const [propertyAddress, setPropertyAddress] = useState("");
 
@@ -459,7 +460,8 @@ function PaymentCalc() {
     0; // VA: no MI
 
   const piti  = monthlyPI + monthlyTax + monthlyIns + monthlyMI;
-  const total = piti + hoa;
+  const fhaDpaMonthly = loanMode === "fha" ? Math.max(0, fhaDpaPayment) : 0;
+  const total = piti + hoa + fhaDpaMonthly;
 
   const modeLabel = loanMode === "conventional" ? "Conv" : loanMode === "fha" ? "FHA" : "VA";
   const currentRate =
@@ -505,6 +507,7 @@ function PaymentCalc() {
     hoa > 0 ? { label: "Monthly HOA", value: fmt(hoa) } : null,
     loanMode === "conventional" && downPct < 20 ? { label: `Monthly PMI (${pmiRate}%/yr)`, value: fmt(monthlyMI) } : null,
     loanMode === "fha" ? { label: "Monthly MIP (0.55%/yr)", value: fmt(monthlyMI) } : null,
+    loanMode === "fha" && fhaDpaMonthly > 0 ? { label: "Monthly DPA 2nd Payment", value: fmt(fhaDpaMonthly) } : null,
   ] as ({ label: string; value: string } | null)[]).filter((r): r is { label: string; value: string } => r !== null);
 
   return (
@@ -567,7 +570,7 @@ function PaymentCalc() {
           <div style={{ margin: "0 20px 20px", border: "2px solid #C8202A", borderRadius: 12, padding: "18px 20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div>
               <div style={{ color: "#C8202A", fontSize: 10, fontWeight: 600, textTransform: "uppercase" as const, letterSpacing: "0.1em" }}>Total Monthly Payment</div>
-              <div style={{ color: "#666", fontSize: 11, marginTop: 2 }}>Principal, Interest, Taxes, Insurance{hoa > 0 ? " & HOA" : ""}</div>
+              <div style={{ color: "#666", fontSize: 11, marginTop: 2 }}>Principal, Interest, Taxes, Insurance{hoa > 0 ? ", HOA" : ""}{fhaDpaMonthly > 0 ? " & DPA 2nd Payment" : ""}</div>
             </div>
             <div style={{ color: "#C8202A", fontSize: 28, fontWeight: 800, fontVariantNumeric: "tabular-nums" }}>{fmt(total)}</div>
           </div>
@@ -701,6 +704,16 @@ function PaymentCalc() {
           </div>
         )}
 
+        {/* FHA — Down Payment Assistance 2nd-loan monthly payment (agent-entered $) */}
+        {loanMode === "fha" && (
+          <MoneyInput
+            label="DPA 2nd Payment ($/mo, optional)"
+            value={fhaDpaPayment}
+            onChange={setFhaDpaPayment}
+            placeholder="0"
+          />
+        )}
+
         {/* FHA loan limit warning */}
         {loanMode === "fha" && baseLoan > 578000 && (
           <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-sm md:col-span-2">
@@ -786,6 +799,7 @@ function PaymentCalc() {
               setTerm(30); setTax(0.45); setTaxDollars(Math.round(450000 * 0.0045));
               setInsurance(1350); setHoa(0); setPmiRate(0.55);
               setVaDisabilityWaiver(false);
+              setFhaDpaPayment(0);
               setClientName(""); setPropertyAddress("");
             }}
             style={{ padding: "12px 28px", borderRadius: "10px", background: "#FFFFFF", color: "#6B6B6B", fontWeight: 600, fontSize: "0.9375rem", border: "1.5px solid #E8E8E8", cursor: "pointer" }}
