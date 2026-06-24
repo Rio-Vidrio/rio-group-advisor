@@ -2298,6 +2298,95 @@ function SellerNetCalc({ importedPayoff }: { importedPayoff: number | null }) {
   );
 }
 
+/* ── Calculator 8: Second Loan / HELOC ── */
+function SecondLoanCalc() {
+  const [mode, setMode] = useState<"amortized" | "interestOnly">("amortized");
+  const [balance, setBalance] = useState(50000);
+  const [rate, setRate] = useState(8.5);
+  const [term, setTerm] = useState(20);
+
+  const monthlyAmortized = balance > 0 && rate > 0 && term > 0 ? calculateMonthlyPayment(balance, rate, term) : 0;
+  const monthlyInterestOnly = balance > 0 && rate > 0 ? (balance * (rate / 100)) / 12 : 0;
+  const monthly = mode === "interestOnly" ? monthlyInterestOnly : monthlyAmortized;
+
+  // Total cost / interest over term (amortized only — interest-only never pays principal)
+  const totalPaidAmortized = monthlyAmortized * term * 12;
+  const totalInterestAmortized = Math.max(0, totalPaidAmortized - balance);
+
+  const modeBtn = (m: "amortized" | "interestOnly", label: string, sub: string) => {
+    const isActive = mode === m;
+    return (
+      <button
+        onClick={() => setMode(m)}
+        style={{
+          flex: 1,
+          padding: "10px 14px",
+          borderRadius: "10px",
+          border: isActive ? "1.5px solid #C8202A" : "1.5px solid #E8E8E8",
+          background: isActive ? "#FFF8F8" : "#FFFFFF",
+          color: isActive ? "#C8202A" : "#6B6B6B",
+          fontWeight: isActive ? 600 : 500,
+          fontSize: "0.875rem",
+          cursor: "pointer",
+          textAlign: "left",
+          transition: "border-color 100ms, background 100ms, color 100ms",
+        }}
+      >
+        <div>{label}</div>
+        <div style={{ fontSize: "0.6875rem", color: "#9B9B9B", marginTop: 2, fontWeight: 500 }}>{sub}</div>
+      </button>
+    );
+  };
+
+  return (
+    <div>
+      <h3 className="text-lg font-bold mb-1" style={{ color: "#111111", letterSpacing: "-0.01em" }}>
+        Second Loan / HELOC Calculator
+      </h3>
+      <p className="text-xs text-gray-500 mb-5">Estimate the monthly payment on a 2nd lien, HELOC, or any simple loan.</p>
+
+      {/* Mode toggle */}
+      <div className="flex gap-2 mb-5">
+        {modeBtn("amortized", "Amortized", "Principal + Interest over term")}
+        {modeBtn("interestOnly", "Interest-Only", "Typical HELOC draw period")}
+      </div>
+
+      {/* Inputs */}
+      <div className="grid md:grid-cols-3 gap-4 mb-6">
+        <MoneyInput label="Loan Balance" value={balance} onChange={setBalance} placeholder="50000" />
+        <NumberInput label="Interest Rate %" value={rate} onChange={setRate} suffix="%" step="0.125" placeholder="8.5" />
+        {mode === "amortized" ? (
+          <NumberInput label="Term (years)" value={term} onChange={setTerm} suffix="yr" step="1" placeholder="20" />
+        ) : (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 text-sm">
+            <div className="font-semibold text-blue-800 mb-1">Interest-Only Mode</div>
+            <div className="text-blue-700 text-xs">No principal paid. Monthly payment = balance × rate ÷ 12. Common during a HELOC&apos;s draw period.</div>
+          </div>
+        )}
+      </div>
+
+      {/* Result */}
+      <div className="grid md:grid-cols-2 gap-3 mb-6">
+        <ResultCard
+          label="Estimated Monthly Payment"
+          value={fmt(monthly)}
+          sub={mode === "interestOnly" ? "Interest-only — principal unchanged" : `${term}-year fully amortized`}
+          highlight
+        />
+        {mode === "amortized" ? (
+          <ResultCard label="Total Interest Over Term" value={fmt(totalInterestAmortized)} sub={`Total paid: ${fmt(totalPaidAmortized)}`} />
+        ) : (
+          <ResultCard label="Annual Interest Cost" value={fmt(monthlyInterestOnly * 12)} sub="If balance stays flat for a full year" />
+        )}
+      </div>
+
+      <div className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-xs text-gray-600">
+        <strong>Use this for:</strong> down-payment-assistance 2nd liens, HELOCs, solar loans, or any simple secondary financing. Copy the monthly figure into the Monthly Payment calculator if you want a combined total.
+      </div>
+    </div>
+  );
+}
+
 /* ── Main Calculators Tab ── */
 export default function Calculators() {
   const [active, setActive] = useState("payment");
@@ -2308,6 +2397,7 @@ export default function Calculators() {
     { id: "dti", label: "DTI" },
     { id: "newbuild", label: "New Build vs Resale" },
     { id: "bizowner", label: "Business Owner" },
+    { id: "secondloan", label: "2nd Loan / HELOC" },
   ];
 
   const sellerTabs = [
@@ -2364,6 +2454,7 @@ export default function Calculators() {
         <div style={{ display: active === "solar"    ? "block" : "none" }}><SolarCalc /></div>
         <div style={{ display: active === "newbuild" ? "block" : "none" }}><NewBuildCalc /></div>
         <div style={{ display: active === "bizowner" ? "block" : "none" }}><BusinessOwnerCalc /></div>
+        <div style={{ display: active === "secondloan" ? "block" : "none" }}><SecondLoanCalc /></div>
         <div style={{ display: active === "payoff"   ? "block" : "none" }}><LoanPayoffCalc onPayoffCalculated={(amt) => { setPayoffAmount(amt); }} /></div>
         <div style={{ display: active === "sellernet"? "block" : "none" }}><SellerNetCalc importedPayoff={payoffAmount} /></div>
       </div>
