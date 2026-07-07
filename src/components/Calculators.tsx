@@ -383,7 +383,10 @@ function PaymentCalc() {
   const [hoa, setHoa] = useState(0);
   const [pmiRate, setPmiRate] = useState(0.55); // Conventional PMI — adjustable, default 0.55%
   const [vaDisabilityWaiver, setVaDisabilityWaiver] = useState(false);
-  const [fhaDpaPayment, setFhaDpaPayment] = useState(0); // FHA DPA 2nd-loan monthly payment (dollar entry)
+  // FHA add-ons
+  const [fhaDpaEnabled, setFhaDpaEnabled] = useState(false);       // DPA 2nd — auto-fills down%, adds separate 2nd payment
+  const [fhaSolarEnabled, setFhaSolarEnabled] = useState(false);   // Solar — dollar amount folded into main P&I
+  const [fhaSolarAmount, setFhaSolarAmount] = useState(0);
   const [clientName, setClientName] = useState("");
   const [propertyAddress, setPropertyAddress] = useState("");
 
@@ -447,21 +450,31 @@ function PaymentCalc() {
   // Funding fees rolled into loan principal
   const fhaUpfrontMIP = loanMode === "fha" ? baseLoan * 0.0175 : 0;         // 1.75% — fixed, not editable
   const vaFundingFee  = loanMode === "va"  ? (vaDisabilityWaiver ? 0 : baseLoan * 0.0215) : 0; // 2.15% or waived
-  const totalLoan = baseLoan + fhaUpfrontMIP + vaFundingFee;
+
+  // Solar (FHA only) — dollar amount financed into the main loan; does NOT change purchase price.
+  // Folds into P&I so the client sees one combined payment.
+  const solarFinanced = loanMode === "fha" && fhaSolarEnabled ? Math.max(0, fhaSolarAmount) : 0;
+
+  const totalLoan = baseLoan + fhaUpfrontMIP + vaFundingFee + solarFinanced;
 
   const monthlyPI  = calculateMonthlyPayment(totalLoan, rate, term);
   const monthlyTax = (price * (tax / 100)) / 12;
   const monthlyIns = insurance / 12;
 
-  // Monthly mortgage insurance
+  // Monthly mortgage insurance — MIP based on baseLoan only (solar not FHA-insured)
   const monthlyMI =
     loanMode === "conventional" && downPct < 20 ? (baseLoan * (pmiRate / 100)) / 12 :
     loanMode === "fha"                           ? (baseLoan * 0.0055) / 12 :   // FHA annual MIP 0.55% — fixed
     0; // VA: no MI
 
+  // DPA 2nd loan (FHA only) — separate payment. Balance = down payment $, rate = main + 2%, 30-year amortized.
+  const dpa2ndBalance = loanMode === "fha" && fhaDpaEnabled ? downPayment : 0;
+  const dpa2ndRate    = rate + 2;
+  const dpa2ndTerm    = 30;
+  const dpa2ndPayment = dpa2ndBalance > 0 ? calculateMonthlyPayment(dpa2ndBalance, dpa2ndRate, dpa2ndTerm) : 0;
+
   const piti  = monthlyPI + monthlyTax + monthlyIns + monthlyMI;
-  const fhaDpaMonthly = loanMode === "fha" ? Math.max(0, fhaDpaPayment) : 0;
-  const total = piti + hoa + fhaDpaMonthly;
+  const total = piti + hoa + dpa2ndPayment;
 
   const modeLabel = loanMode === "conventional" ? "Conv" : loanMode === "fha" ? "FHA" : "VA";
   const currentRate =
@@ -507,7 +520,8 @@ function PaymentCalc() {
     hoa > 0 ? { label: "Monthly HOA", value: fmt(hoa) } : null,
     loanMode === "conventional" && downPct < 20 ? { label: `Monthly PMI (${pmiRate}%/yr)`, value: fmt(monthlyMI) } : null,
     loanMode === "fha" ? { label: "Monthly MIP (0.55%/yr)", value: fmt(monthlyMI) } : null,
-    loanMode === "fha" && fhaDpaMonthly > 0 ? { label: "Monthly DPA 2nd Payment", value: fmt(fhaDpaMonthly) } : null,
+    loanMode === "fha" && solarFinanced > 0 ? { label: `Solar Financed (${fmt(solarFinanced)})`, value: "Included in P&I" } : null,
+    loanMode === "fha" && dpa2ndPayment > 0 ? { label: `Monthly DPA 2nd Payment (${(dpa2ndRate).toFixed(3)}%, 30yr)`, value: fmt(dpa2ndPayment) } : null,
   ] as ({ label: string; value: string } | null)[]).filter((r): r is { label: string; value: string } => r !== null);
 
   return (
@@ -570,7 +584,7 @@ function PaymentCalc() {
           <div style={{ margin: "0 20px 20px", border: "2px solid #C8202A", borderRadius: 12, padding: "18px 20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div>
               <div style={{ color: "#C8202A", fontSize: 10, fontWeight: 600, textTransform: "uppercase" as const, letterSpacing: "0.1em" }}>Total Monthly Payment</div>
-              <div style={{ color: "#666", fontSize: 11, marginTop: 2 }}>Principal, Interest, Taxes, Insurance{hoa > 0 ? ", HOA" : ""}{fhaDpaMonthly > 0 ? " & DPA 2nd Payment" : ""}</div>
+              <div style={{ color: "#666", fontSize: 11, marginTop: 2 }}>Principal, Interest, Taxes, Insurance{hoa > 0 ? ", HOA" : ""}{dpa2ndPayment > 0 ? " & DPA 2nd Payment" : ""}</div>
             </div>
             <div style={{ color: "#C8202A", fontSize: 28, fontWeight: 800, fontVariantNumeric: "tabular-nums" }}>{fmt(total)}</div>
           </div>
@@ -704,14 +718,69 @@ function PaymentCalc() {
           </div>
         )}
 
-        {/* FHA — Down Payment Assistance 2nd-loan monthly payment (agent-entered $) */}
+        {/* FHA — Add-on options (DPA 2nd and Solar) */}
         {loanMode === "fha" && (
-          <MoneyInput
-            label="DPA 2nd Payment ($/mo, optional)"
-            value={fhaDpaPayment}
-            onChange={setFhaDpaPayment}
-            placeholder="0"
-          />
+          <div className="md:col-span-2 border rounded-lg" style={{ borderColor: "#E8E8E8", padding: "14px 16px", background: "#FAFAF9" }}>
+            <div className="text-xs font-semibold mb-3" style={{ color: "#C8202A", letterSpacing: "0.08em", textTransform: "uppercase" }}>
+              FHA Add-Ons
+            </div>
+
+            {/* DPA toggle */}
+            <label style={{ display: "flex", alignItems: "flex-start", gap: 10, cursor: "pointer", marginBottom: fhaDpaEnabled ? 10 : 8 }}>
+              <input
+                type="checkbox"
+                checked={fhaDpaEnabled}
+                onChange={(e) => {
+                  const on = e.target.checked;
+                  setFhaDpaEnabled(on);
+                  if (on) setFhaModeDown(3.5); // pre-fill down payment to FHA min (DPA covers it)
+                }}
+                style={{ marginTop: 3, accentColor: "#C8202A" }}
+              />
+              <div style={{ fontSize: "0.875rem", color: "#111" }}>
+                <div style={{ fontWeight: 600 }}>Include DPA (Down Payment Assistance)</div>
+                <div style={{ fontSize: "0.75rem", color: "#6B6B6B", marginTop: 2 }}>
+                  Pre-fills down payment to 3.5%. 2nd loan = down payment amount at main rate + 2% (30-year). Shows as a separate payment.
+                </div>
+              </div>
+            </label>
+            {fhaDpaEnabled && (
+              <div style={{ marginLeft: 26, marginBottom: 12, fontSize: "0.75rem", color: "#4B4B4B" }}>
+                <div>2nd loan balance: <strong>{fmt(dpa2ndBalance)}</strong> · rate: <strong>{dpa2ndRate.toFixed(3)}%</strong> · term: <strong>{dpa2ndTerm} yr</strong></div>
+                <div>Monthly 2nd payment: <strong style={{ color: "#C8202A" }}>{fmt(dpa2ndPayment)}</strong></div>
+              </div>
+            )}
+
+            {/* Solar toggle */}
+            <label style={{ display: "flex", alignItems: "flex-start", gap: 10, cursor: "pointer", marginBottom: fhaSolarEnabled ? 10 : 0 }}>
+              <input
+                type="checkbox"
+                checked={fhaSolarEnabled}
+                onChange={(e) => {
+                  const on = e.target.checked;
+                  setFhaSolarEnabled(on);
+                  if (!on) setFhaSolarAmount(0);
+                }}
+                style={{ marginTop: 3, accentColor: "#C8202A" }}
+              />
+              <div style={{ fontSize: "0.875rem", color: "#111" }}>
+                <div style={{ fontWeight: 600 }}>Include Solar</div>
+                <div style={{ fontSize: "0.75rem", color: "#6B6B6B", marginTop: 2 }}>
+                  Folds into the main loan at the same rate/term. Purchase price stays the same — payment shows as one combined amount.
+                </div>
+              </div>
+            </label>
+            {fhaSolarEnabled && (
+              <div style={{ marginLeft: 26 }}>
+                <MoneyInput
+                  label="Solar Amount"
+                  value={fhaSolarAmount}
+                  onChange={setFhaSolarAmount}
+                  placeholder="15000"
+                />
+              </div>
+            )}
+          </div>
         )}
 
         {/* FHA loan limit warning */}
@@ -799,7 +868,8 @@ function PaymentCalc() {
               setTerm(30); setTax(0.45); setTaxDollars(Math.round(450000 * 0.0045));
               setInsurance(1350); setHoa(0); setPmiRate(0.55);
               setVaDisabilityWaiver(false);
-              setFhaDpaPayment(0);
+              setFhaDpaEnabled(false);
+              setFhaSolarEnabled(false); setFhaSolarAmount(0);
               setClientName(""); setPropertyAddress("");
             }}
             style={{ padding: "12px 28px", borderRadius: "10px", background: "#FFFFFF", color: "#6B6B6B", fontWeight: 600, fontSize: "0.9375rem", border: "1.5px solid #E8E8E8", cursor: "pointer" }}
