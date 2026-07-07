@@ -765,7 +765,10 @@ function PaymentCalc() {
                 onChange={(e) => {
                   const on = e.target.checked;
                   setFhaSolarEnabled(on);
-                  if (on) setFhaDpaEnabled(false); // mutually exclusive with DPA (solar amount preserved)
+                  if (on) {
+                    setFhaDpaEnabled(false); // mutually exclusive with DPA (solar amount preserved)
+                    if (fhaSolarAmount === 0) setFhaSolarAmount(35000); // rehydrate default if cleared
+                  }
                 }}
                 style={{ marginTop: 3, accentColor: "#C8202A" }}
               />
@@ -782,7 +785,7 @@ function PaymentCalc() {
                   label="Solar Amount"
                   value={fhaSolarAmount}
                   onChange={setFhaSolarAmount}
-                  placeholder="15000"
+                  placeholder="35000"
                 />
               </div>
             )}
