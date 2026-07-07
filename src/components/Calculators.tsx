@@ -718,11 +718,14 @@ function PaymentCalc() {
           </div>
         )}
 
-        {/* FHA — Add-on options (DPA 2nd and Solar) */}
+        {/* FHA — DPA options (DPA 2nd and Solar are mutually exclusive) */}
         {loanMode === "fha" && (
           <div className="md:col-span-2 border rounded-lg" style={{ borderColor: "#E8E8E8", padding: "14px 16px", background: "#FAFAF9" }}>
-            <div className="text-xs font-semibold mb-3" style={{ color: "#C8202A", letterSpacing: "0.08em", textTransform: "uppercase" }}>
-              FHA Add-Ons
+            <div className="text-xs font-semibold mb-1" style={{ color: "#C8202A", letterSpacing: "0.08em", textTransform: "uppercase" }}>
+              FHA DPA
+            </div>
+            <div className="text-xs mb-3" style={{ color: "#6B6B6B" }}>
+              Choose one — or leave both off to remove entirely.
             </div>
 
             {/* DPA toggle */}
@@ -733,7 +736,11 @@ function PaymentCalc() {
                 onChange={(e) => {
                   const on = e.target.checked;
                   setFhaDpaEnabled(on);
-                  if (on) setFhaModeDown(3.5); // pre-fill down payment to FHA min (DPA covers it)
+                  if (on) {
+                    setFhaModeDown(3.5);       // pre-fill down payment to FHA min (DPA covers it)
+                    setFhaSolarEnabled(false); // mutually exclusive with Solar
+                    setFhaSolarAmount(0);
+                  }
                 }}
                 style={{ marginTop: 3, accentColor: "#C8202A" }}
               />
@@ -759,7 +766,11 @@ function PaymentCalc() {
                 onChange={(e) => {
                   const on = e.target.checked;
                   setFhaSolarEnabled(on);
-                  if (!on) setFhaSolarAmount(0);
+                  if (on) {
+                    setFhaDpaEnabled(false);   // mutually exclusive with DPA
+                  } else {
+                    setFhaSolarAmount(0);
+                  }
                 }}
                 style={{ marginTop: 3, accentColor: "#C8202A" }}
               />
