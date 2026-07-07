@@ -467,10 +467,10 @@ function PaymentCalc() {
     loanMode === "fha"                           ? (baseLoan * 0.0055) / 12 :   // FHA annual MIP 0.55% — fixed
     0; // VA: no MI
 
-  // DPA 2nd loan (FHA only) — separate payment. Balance = down payment $, rate = main + 2%, 30-year amortized.
+  // DPA 2nd loan (FHA only) — separate payment. Balance = down payment $, rate = main + 2%, 10-year fully amortized.
   const dpa2ndBalance = loanMode === "fha" && fhaDpaEnabled ? downPayment : 0;
   const dpa2ndRate    = rate + 2;
-  const dpa2ndTerm    = 30;
+  const dpa2ndTerm    = 10;
   const dpa2ndPayment = dpa2ndBalance > 0 ? calculateMonthlyPayment(dpa2ndBalance, dpa2ndRate, dpa2ndTerm) : 0;
 
   const piti  = monthlyPI + monthlyTax + monthlyIns + monthlyMI;
@@ -740,7 +740,7 @@ function PaymentCalc() {
               <div style={{ fontSize: "0.875rem", color: "#111" }}>
                 <div style={{ fontWeight: 600 }}>Include DPA (Down Payment Assistance)</div>
                 <div style={{ fontSize: "0.75rem", color: "#6B6B6B", marginTop: 2 }}>
-                  Pre-fills down payment to 3.5%. 2nd loan = down payment amount at main rate + 2% (30-year). Shows as a separate payment.
+                  Pre-fills down payment to 3.5%. 2nd loan = down payment amount at main rate + 2%, fully amortized over 10 years. Shows as a separate payment.
                 </div>
               </div>
             </label>
