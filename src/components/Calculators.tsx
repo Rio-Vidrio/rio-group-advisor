@@ -386,7 +386,7 @@ function PaymentCalc() {
   // FHA add-ons
   const [fhaDpaEnabled, setFhaDpaEnabled] = useState(false);       // DPA 2nd — auto-fills down%, adds separate 2nd payment
   const [fhaSolarEnabled, setFhaSolarEnabled] = useState(false);   // Solar — dollar amount folded into main P&I
-  const [fhaSolarAmount, setFhaSolarAmount] = useState(0);
+  const [fhaSolarAmount, setFhaSolarAmount] = useState(35000);     // Default $35K — sticks across toggles
   const [clientName, setClientName] = useState("");
   const [propertyAddress, setPropertyAddress] = useState("");
 
@@ -738,8 +738,7 @@ function PaymentCalc() {
                   setFhaDpaEnabled(on);
                   if (on) {
                     setFhaModeDown(3.5);       // pre-fill down payment to FHA min (DPA covers it)
-                    setFhaSolarEnabled(false); // mutually exclusive with Solar
-                    setFhaSolarAmount(0);
+                    setFhaSolarEnabled(false); // mutually exclusive with Solar (solar amount preserved)
                   }
                 }}
                 style={{ marginTop: 3, accentColor: "#C8202A" }}
@@ -766,11 +765,7 @@ function PaymentCalc() {
                 onChange={(e) => {
                   const on = e.target.checked;
                   setFhaSolarEnabled(on);
-                  if (on) {
-                    setFhaDpaEnabled(false);   // mutually exclusive with DPA
-                  } else {
-                    setFhaSolarAmount(0);
-                  }
+                  if (on) setFhaDpaEnabled(false); // mutually exclusive with DPA (solar amount preserved)
                 }}
                 style={{ marginTop: 3, accentColor: "#C8202A" }}
               />
@@ -880,7 +875,7 @@ function PaymentCalc() {
               setInsurance(1350); setHoa(0); setPmiRate(0.55);
               setVaDisabilityWaiver(false);
               setFhaDpaEnabled(false);
-              setFhaSolarEnabled(false); setFhaSolarAmount(0);
+              setFhaSolarEnabled(false); setFhaSolarAmount(35000);
               setClientName(""); setPropertyAddress("");
             }}
             style={{ padding: "12px 28px", borderRadius: "10px", background: "#FFFFFF", color: "#6B6B6B", fontWeight: 600, fontSize: "0.9375rem", border: "1.5px solid #E8E8E8", cursor: "pointer" }}
