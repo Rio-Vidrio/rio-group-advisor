@@ -359,12 +359,18 @@ function TaxInput({
   );
 }
 
-function ResultCard({ label, value, sub, highlight }: { label: string; value: string; sub?: string; highlight?: boolean }) {
+function ResultCard({ label, value, sub, highlight, tone }: { label: string; value: string; sub?: string; highlight?: boolean; tone?: "green" }) {
+  const isGreen = tone === "green";
+  const bg     = isGreen ? "#ECFDF5" : "#F7F6F4";
+  const border = isGreen ? "#A7F3D0" : "#E8E8E8";
+  const labelColor = isGreen ? "#065F46" : "#6B6B6B";
+  const valueColor = isGreen ? "#047857" : highlight ? "#C8202A" : "#111111";
+  const subColor = isGreen ? "#059669" : "#9B9B9B";
   return (
-    <div style={{ background: "#F7F6F4", borderRadius: "10px", padding: "14px 16px", border: "1px solid #E8E8E8" }}>
-      <div style={{ fontSize: "0.6875rem", color: "#6B6B6B", marginBottom: "4px", textTransform: "uppercase", letterSpacing: "0.06em" }}>{label}</div>
-      <div style={{ fontSize: "1.25rem", fontWeight: 700, color: highlight ? "#C8202A" : "#111111" }}>{value}</div>
-      {sub && <div style={{ fontSize: "0.6875rem", color: "#9B9B9B", marginTop: "2px" }}>{sub}</div>}
+    <div style={{ background: bg, borderRadius: "10px", padding: "14px 16px", border: `1px solid ${border}` }}>
+      <div style={{ fontSize: "0.6875rem", color: labelColor, marginBottom: "4px", textTransform: "uppercase", letterSpacing: "0.06em" }}>{label}</div>
+      <div style={{ fontSize: "1.25rem", fontWeight: 700, color: valueColor }}>{value}</div>
+      {sub && <div style={{ fontSize: "0.6875rem", color: subColor, marginTop: "2px" }}>{sub}</div>}
     </div>
   );
 }
@@ -836,12 +842,23 @@ function PaymentCalc() {
       </div>
 
       {/* Results — screen only; print table above already shows all values */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4 no-print">
-        <ResultCard label="Monthly P&I" value={fmt(monthlyPI)} sub="Principal and Interest only — does not include taxes, insurance, or HOA" />
-        <ResultCard label="Monthly PITI" value={fmt(piti)} sub="Includes Principal, Interest, Taxes and Insurance" />
-        <ResultCard label="Total w/ HOA" value={fmt(total)} sub="PITI plus monthly HOA" />
-        <ResultCard label="Down Payment" value={loanMode === "va" ? "$0" : fmt(downPayment)} sub="Required funds at closing" />
-      </div>
+      {(() => {
+        const pitiWithHoa = piti + hoa;
+        const showAddOnTotal = loanMode === "fha" && (fhaDpaEnabled || (fhaSolarEnabled && solarFinanced > 0));
+        const addOnLabel = fhaDpaEnabled ? "Total with DPA" : "Total with Solar";
+        const addOnSub = fhaDpaEnabled
+          ? "PITI + HOA + DPA 2nd payment"
+          : "Solar already folded into Principal & Interest";
+        return (
+          <div className={`grid grid-cols-1 gap-3 mb-4 no-print ${showAddOnTotal ? "md:grid-cols-3" : "md:grid-cols-2"}`}>
+            <ResultCard label="Monthly P&I" value={fmt(monthlyPI)} sub={fhaSolarEnabled && solarFinanced > 0 ? "Includes Solar folded into the main loan" : "Principal and Interest only — does not include taxes, insurance, or HOA"} />
+            <ResultCard label="Monthly PITI" value={fmt(pitiWithHoa)} sub={hoa > 0 ? "Principal, Interest, Taxes, Insurance & HOA" : "Principal, Interest, Taxes & Insurance"} />
+            {showAddOnTotal && (
+              <ResultCard label={addOnLabel} value={fmt(total)} sub={addOnSub} tone="green" />
+            )}
+          </div>
+        );
+      })()}
 
       {/* Loan summary strip */}
       <div className="bg-rio-gray rounded-lg px-4 py-2.5 text-xs text-gray-600 border border-gray-200 no-print">
