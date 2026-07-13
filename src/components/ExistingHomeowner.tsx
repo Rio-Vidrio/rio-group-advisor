@@ -6,9 +6,11 @@ import React, { useState } from "react";
 
 type TreeState = {
   currentLoan: "fha" | "conventional" | null;
-  // Bankruptcy & citizenship — asked before any other branch questions
-  bankruptcyFHA: "yes" | "no" | null;   // FHA branch: within last 2 years?
-  bankruptcyConv: "yes" | "no" | null;  // Conventional branch: within last 4 years?
+  // Bankruptcy — first ask if any BK history, then chapter, then whether waiting period is met
+  bankruptcyFHA: "yes" | "no" | null;
+  bankruptcyConv: "yes" | "no" | null;
+  bankruptcyChapter: "ch7" | "ch13" | null;      // Ch 7 or Ch 13 (asked when BK = yes)
+  bankruptcyMet: "yes" | "no" | null;            // Waiting period met? (Ch 7 = 2yr from discharge, Ch 13 = 12mo from filing)
   citizenship: "citizen" | "daca" | null;
   // FHA branch
   purchaseTiming: "recent" | "longago" | null;
@@ -20,12 +22,16 @@ type TreeState = {
   // Conventional branch
   nextLoanType: "fha" | "conventional" | null;
   convToFHAEquity: "yes" | "no" | null;
+  // Conv → FHA no-equity path: rental income on prior year taxes?
+  convToFHARentalTaxes: "yes" | "no" | null;
 };
 
 const initialState: TreeState = {
   currentLoan: null,
   bankruptcyFHA: null,
   bankruptcyConv: null,
+  bankruptcyChapter: null,
+  bankruptcyMet: null,
   citizenship: null,
   purchaseTiming: null,
   familySizeIncreased: null,
@@ -34,6 +40,7 @@ const initialState: TreeState = {
   vacated: null,
   nextLoanType: null,
   convToFHAEquity: null,
+  convToFHARentalTaxes: null,
 };
 
 // Downstream fields to clear when citizenship changes
@@ -45,7 +52,9 @@ const clearFromCitizenship = {
   vacated: null,
   nextLoanType: null,
   convToFHAEquity: null,
+  convToFHARentalTaxes: null,
 };
+
 
 // ─── Program Data ─────────────────────────────────────────────────────────────
 
@@ -353,51 +362,6 @@ function DisqualifierCard({ reason }: { reason: string }) {
   );
 }
 
-// ─── BankruptcyWarningBanner — shown inline when BK=yes, flow continues ───────
-
-function BankruptcyWarningBanner({ years, loanType }: { years: 2 | 4; loanType: string }) {
-  return (
-    <div style={{ background: "#FFFBEB", borderLeft: "4px solid #F59E0B", borderRadius: "0 10px 10px 0", padding: "14px 16px", display: "flex", gap: "12px", alignItems: "flex-start" }}>
-      <span style={{ color: "#F59E0B", fontWeight: 700, flexShrink: 0, marginTop: "1px" }}>⚠</span>
-      <div>
-        <div style={{ fontWeight: 700, color: "#92400E", fontSize: "0.8125rem", marginBottom: "4px" }}>Currently Ineligible — Planning View</div>
-        <p style={{ fontSize: "0.875rem", color: "#78350F", lineHeight: 1.5, margin: 0 }}>
-          {loanType} requires <strong>{years} years post-bankruptcy discharge</strong>. This client does not yet meet
-          the minimum time requirement. Options shown below are for planning purposes only — the client must
-          reach the {years}-year mark before submitting an application.
-        </p>
-      </div>
-    </div>
-  );
-}
-
-// ─── PlanningDisclaimer — compact banner shown on every result card when BK=yes
-
-function PlanningDisclaimer({ years, loanType }: { years: 2 | 4; loanType: string }) {
-  return (
-    <div style={{ background: "#FFFBEB", borderLeft: "4px solid #F59E0B", borderRadius: "0 8px 8px 0", padding: "8px 12px", fontSize: "0.75rem", color: "#92400E", display: "flex", gap: "8px", alignItems: "flex-start" }}>
-      <span style={{ flexShrink: 0, fontWeight: 700 }}>⚠</span>
-      <span>
-        <strong>Planning only</strong> — {loanType} {years}-year post-bankruptcy requirement must be met before applying.
-      </span>
-    </div>
-  );
-}
-
-// ─── NoPrograms card ──────────────────────────────────────────────────────────
-
-function NoProgramsCard() {
-  return (
-    <div style={{ background: "#111111", borderRadius: "12px", padding: "20px", color: "#FFFFFF" }}>
-      <div style={{ fontWeight: 700, fontSize: "0.9375rem", marginBottom: "8px" }}>No Programs Currently Available</div>
-      <p style={{ fontSize: "0.875rem", color: "#9B9B9B", lineHeight: 1.6, margin: 0 }}>
-        This client does not qualify for any available programs at this time.
-        Recommend a credit and financial recovery plan before reapplying.
-      </p>
-    </div>
-  );
-}
-
 // ─── Section Connector ────────────────────────────────────────────────────────
 
 function SectionConnector() {
@@ -406,11 +370,28 @@ function SectionConnector() {
 
 // ─── Breadcrumb ───────────────────────────────────────────────────────────────
 
+function bankruptcyCrumb(state: TreeState): string | null {
+  const bkAny = state.bankruptcyFHA === "yes" || state.bankruptcyConv === "yes";
+  if (!bkAny) return null;
+  if (state.bankruptcyChapter === "ch7" && state.bankruptcyMet === "no") return "Ch 7 — waiting period not met";
+  if (state.bankruptcyChapter === "ch13" && state.bankruptcyMet === "no") return "Ch 13 — waiting period not met";
+  if (state.bankruptcyChapter === "ch7" && state.bankruptcyMet === "yes") return "Ch 7 — 2yr discharge met";
+  if (state.bankruptcyChapter === "ch13" && state.bankruptcyMet === "yes") return "Ch 13 — 12mo file met";
+  if (state.bankruptcyChapter === "ch7") return "Ch 7";
+  if (state.bankruptcyChapter === "ch13") return "Ch 13";
+  return "Bankruptcy history";
+}
+
 function buildBreadcrumb(state: TreeState): string[] {
   const crumbs: string[] = [];
+  const bkBlocked =
+    (state.bankruptcyFHA === "yes" || state.bankruptcyConv === "yes") &&
+    state.bankruptcyChapter !== null && state.bankruptcyMet === "no";
   if (state.currentLoan === "fha") {
     crumbs.push("FHA");
-    if (state.bankruptcyFHA === "yes") { crumbs.push("Bankruptcy < 2yr"); return crumbs; }
+    const bkc = bankruptcyCrumb(state);
+    if (bkc) crumbs.push(bkc);
+    if (bkBlocked) return crumbs;
     if (state.citizenship === "daca") { crumbs.push("DACA"); return crumbs; }
     if (state.purchaseTiming === "recent") {
       crumbs.push("2021 or Later");
@@ -421,12 +402,16 @@ function buildBreadcrumb(state: TreeState): string[] {
     }
   } else if (state.currentLoan === "conventional") {
     crumbs.push("Conventional");
-    if (state.bankruptcyConv === "yes") { crumbs.push("Bankruptcy < 4yr"); return crumbs; }
+    const bkc = bankruptcyCrumb(state);
+    if (bkc) crumbs.push(bkc);
+    if (bkBlocked) return crumbs;
     if (state.citizenship === "daca") { crumbs.push("DACA"); return crumbs; }
     if (state.nextLoanType === "fha") {
       crumbs.push("Next: FHA");
       if (state.convToFHAEquity === "yes") crumbs.push("Has 25%+ Equity");
       if (state.convToFHAEquity === "no") crumbs.push("No 25%+ Equity");
+      if (state.convToFHARentalTaxes === "yes") crumbs.push("Rental Income on Taxes");
+      if (state.convToFHARentalTaxes === "no") crumbs.push("No Rental Income Filed");
     } else if (state.nextLoanType === "conventional") {
       crumbs.push("Next: Conventional");
     }
@@ -445,8 +430,12 @@ export default function ExistingHomeowner() {
       if (prev[key] === value) {
         if (key === "currentLoan") return { ...initialState };
         if (key === "bankruptcyFHA" || key === "bankruptcyConv") {
-          return { ...prev, [key]: null, citizenship: null, ...clearFromCitizenship };
+          return { ...prev, [key]: null, bankruptcyChapter: null, bankruptcyMet: null, citizenship: null, ...clearFromCitizenship };
         }
+        if (key === "bankruptcyChapter") {
+          return { ...prev, bankruptcyChapter: null, bankruptcyMet: null };
+        }
+        if (key === "bankruptcyMet") return { ...prev, bankruptcyMet: null };
         if (key === "citizenship") {
           return { ...prev, citizenship: null, ...clearFromCitizenship };
         }
@@ -454,8 +443,9 @@ export default function ExistingHomeowner() {
           return { ...prev, purchaseTiming: null, familySizeIncreased: null, hasEquity25: null, familySizeIncreasedLong: null, vacated: null };
         }
         if (key === "familySizeIncreased") return { ...prev, familySizeIncreased: null };
-        if (key === "nextLoanType") return { ...prev, nextLoanType: null, convToFHAEquity: null };
-        if (key === "convToFHAEquity") return { ...prev, convToFHAEquity: null };
+        if (key === "nextLoanType") return { ...prev, nextLoanType: null, convToFHAEquity: null, convToFHARentalTaxes: null };
+        if (key === "convToFHAEquity") return { ...prev, convToFHAEquity: null, convToFHARentalTaxes: null };
+        if (key === "convToFHARentalTaxes") return { ...prev, convToFHARentalTaxes: null };
         return { ...prev, [key]: null };
       }
 
@@ -464,7 +454,13 @@ export default function ExistingHomeowner() {
         return { ...initialState, currentLoan: value as TreeState["currentLoan"] };
       }
       if (key === "bankruptcyFHA" || key === "bankruptcyConv") {
-        return { ...prev, [key]: value, citizenship: null, ...clearFromCitizenship };
+        return { ...prev, [key]: value, bankruptcyChapter: null, bankruptcyMet: null, citizenship: null, ...clearFromCitizenship };
+      }
+      if (key === "bankruptcyChapter") {
+        return { ...prev, bankruptcyChapter: value as TreeState["bankruptcyChapter"], bankruptcyMet: null };
+      }
+      if (key === "bankruptcyMet") {
+        return { ...prev, bankruptcyMet: value as TreeState["bankruptcyMet"] };
       }
       if (key === "citizenship") {
         return { ...prev, citizenship: value as TreeState["citizenship"], ...clearFromCitizenship };
@@ -476,10 +472,13 @@ export default function ExistingHomeowner() {
         return { ...prev, familySizeIncreased: value as TreeState["familySizeIncreased"] };
       }
       if (key === "nextLoanType") {
-        return { ...prev, nextLoanType: value as TreeState["nextLoanType"], convToFHAEquity: null };
+        return { ...prev, nextLoanType: value as TreeState["nextLoanType"], convToFHAEquity: null, convToFHARentalTaxes: null };
       }
       if (key === "convToFHAEquity") {
-        return { ...prev, convToFHAEquity: value as TreeState["convToFHAEquity"] };
+        return { ...prev, convToFHAEquity: value as TreeState["convToFHAEquity"], convToFHARentalTaxes: null };
+      }
+      if (key === "convToFHARentalTaxes") {
+        return { ...prev, convToFHARentalTaxes: value as TreeState["convToFHARentalTaxes"] };
       }
       return { ...prev, [key]: value };
     });
@@ -536,34 +535,57 @@ export default function ExistingHomeowner() {
     />
   );
 
-  const convToFHANoEquityCard = (
-    <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-      <div style={{ background: "#FFFBEB", borderLeft: "4px solid #F59E0B", borderRadius: "0 8px 8px 0", padding: "12px 16px", fontSize: "0.875rem", color: "#92400E" }}>
-        The client can still proceed but must qualify carrying both mortgage payments. Review debt-to-income impact carefully.
-      </div>
-      <ProgramRow programs={["fhaDPA", "fhaSolar"]} />
-    </div>
+  const convToFHACarryBothCard = (
+    <PathCard
+      title="Option A — Qualify Carrying Both Mortgages"
+      borderColor="gray"
+      bullets={[
+        { icon: "✅", text: "No equity requirement, no rental history required" },
+        { icon: "✅", text: "Client can rent current home once moved out" },
+        { icon: "⚠️", text: "Must qualify with both mortgage payments in DTI — review carefully" },
+      ]}
+      programs={["fhaDPA", "fhaSolar"]}
+    />
+  );
+
+  const convToFHARentalTaxCard = (
+    <PathCard
+      title="Option B — 12 Months Rental Income on Prior-Year Taxes"
+      badge={{ text: "Preferred", color: "green" }}
+      borderColor="green"
+      bullets={[
+        { icon: "✅", text: "No 25%+ equity requirement" },
+        { icon: "✅", text: "Current mortgage payment can be excluded from DTI" },
+        { icon: "✅", text: "Positive rental income (net) can be added to qualifying income instead" },
+        { icon: "⚠️", text: "Requires 12 months of rental income filed on the previous year's tax return" },
+      ]}
+      programs={["fhaDPA", "fhaSolar"]}
+    />
   );
 
   // ── Visibility flags ───────────────────────────────────────────────────────
 
+  // Bankruptcy sub-flow — chapter shown after BK=yes, met shown after chapter answered.
+  // Waiting-period rules: Ch 7 = 2 years from discharge, Ch 13 = 12 months from filing.
+  const bkAnyYes         = state.bankruptcyFHA === "yes" || state.bankruptcyConv === "yes";
+  const bkChapterAnswered = state.bankruptcyChapter !== null;
+  const bkClean          = !bkAnyYes || (bkChapterAnswered && state.bankruptcyMet === "yes"); // No BK, or BK with waiting period met
+
   // FHA branch
   const showBankruptcyFHA        = state.currentLoan === "fha";
-  const fhaHasBankruptcy         = state.currentLoan === "fha" && state.bankruptcyFHA === "yes";
-  const showCitizenshipFHA       = state.currentLoan === "fha" && state.bankruptcyFHA !== null;
-  // DACA block: FHA + bankruptcy answered + DACA selected
-  const fhaDacaBlocked           = state.currentLoan === "fha" && state.bankruptcyFHA !== null && state.citizenship === "daca";
-  // Main flow: FHA + bankruptcy answered + citizen (continues regardless of BK=yes)
-  const showFHAMainFlow          = state.currentLoan === "fha" && state.bankruptcyFHA !== null && state.citizenship === "citizen";
+  const showChapterFHA           = state.currentLoan === "fha" && state.bankruptcyFHA === "yes";
+  const showBkMetFHA             = state.currentLoan === "fha" && state.bankruptcyFHA === "yes" && bkChapterAnswered;
+  const showCitizenshipFHA       = state.currentLoan === "fha" && state.bankruptcyFHA !== null && bkClean;
+  const fhaDacaBlocked           = state.currentLoan === "fha" && state.bankruptcyFHA !== null && bkClean && state.citizenship === "daca";
+  const showFHAMainFlow          = state.currentLoan === "fha" && state.bankruptcyFHA !== null && bkClean && state.citizenship === "citizen";
 
   // Conventional branch
   const showBankruptcyConv       = state.currentLoan === "conventional";
-  const convHasBankruptcy        = state.currentLoan === "conventional" && state.bankruptcyConv === "yes";
-  const showCitizenshipConv      = state.currentLoan === "conventional" && state.bankruptcyConv !== null;
-  // DACA block: conv + bankruptcy answered + DACA selected
-  const convDacaBlocked          = state.currentLoan === "conventional" && state.bankruptcyConv !== null && state.citizenship === "daca";
-  // Main flow: conv + bankruptcy answered + citizen (continues regardless of BK=yes)
-  const showConvMainFlow         = state.currentLoan === "conventional" && state.bankruptcyConv !== null && state.citizenship === "citizen";
+  const showChapterConv          = state.currentLoan === "conventional" && state.bankruptcyConv === "yes";
+  const showBkMetConv            = state.currentLoan === "conventional" && state.bankruptcyConv === "yes" && bkChapterAnswered;
+  const showCitizenshipConv      = state.currentLoan === "conventional" && state.bankruptcyConv !== null && bkClean;
+  const convDacaBlocked          = state.currentLoan === "conventional" && state.bankruptcyConv !== null && bkClean && state.citizenship === "daca";
+  const showConvMainFlow         = state.currentLoan === "conventional" && state.bankruptcyConv !== null && bkClean && state.citizenship === "citizen";
 
   // ─── Render ────────────────────────────────────────────────────────────────
   return (
@@ -642,29 +664,52 @@ export default function ExistingHomeowner() {
             <SectionConnector />
             <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
               <p style={{ fontSize: "0.875rem", fontWeight: 600, color: "#111111", margin: 0 }}>
-                Has the client had a bankruptcy discharged within the last 2 years?
+                Does the client have any bankruptcy history?
               </p>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-                <SelectionCard
-                  title="Yes"
-                  selected={state.bankruptcyFHA === "yes"}
-                  onClick={() => selectCard("bankruptcyFHA", "yes")}
-                />
-                <SelectionCard
-                  title="No"
-                  selected={state.bankruptcyFHA === "no"}
-                  onClick={() => selectCard("bankruptcyFHA", "no")}
-                />
+                <SelectionCard title="Yes" selected={state.bankruptcyFHA === "yes"} onClick={() => selectCard("bankruptcyFHA", "yes")} />
+                <SelectionCard title="No" selected={state.bankruptcyFHA === "no"} onClick={() => selectCard("bankruptcyFHA", "no")} />
               </div>
             </div>
           </>
         )}
 
-        {/* FHA: Bankruptcy = Yes → inline warning banner (flow continues below) */}
-        {fhaHasBankruptcy && (
+        {/* FHA: Bankruptcy = Yes → chapter question */}
+        {showChapterFHA && (
           <>
             <SectionConnector />
-            <BankruptcyWarningBanner years={2} loanType="FHA" />
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              <p style={{ fontSize: "0.875rem", fontWeight: 600, color: "#111111", margin: 0 }}>Which chapter?</p>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                <SelectionCard title="Chapter 7" note="Liquidation" selected={state.bankruptcyChapter === "ch7"} onClick={() => selectCard("bankruptcyChapter", "ch7")} />
+                <SelectionCard title="Chapter 13" note="Reorganization" selected={state.bankruptcyChapter === "ch13"} onClick={() => selectCard("bankruptcyChapter", "ch13")} />
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* FHA: Bankruptcy waiting-period question */}
+        {showBkMetFHA && (
+          <>
+            <SectionConnector />
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              <p style={{ fontSize: "0.875rem", fontWeight: 600, color: "#111111", margin: 0 }}>
+                {state.bankruptcyChapter === "ch7"
+                  ? "Has it been 2+ years since the discharge date?"
+                  : "Has it been 12+ months since the file date?"}
+              </p>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                <SelectionCard title="Yes" selected={state.bankruptcyMet === "yes"} onClick={() => selectCard("bankruptcyMet", "yes")} />
+                <SelectionCard title="No" selected={state.bankruptcyMet === "no"} onClick={() => selectCard("bankruptcyMet", "no")} />
+              </div>
+              {state.bankruptcyMet === "no" && (
+                <DisqualifierCard reason={
+                  state.bankruptcyChapter === "ch7"
+                    ? "Chapter 7 requires a full 2 years from the discharge date. Client is not eligible until that waiting period is met."
+                    : "Chapter 13 requires a full 12 months from the file date. Client is not eligible until that waiting period is met."
+                } />
+              )}
+            </div>
           </>
         )}
 
@@ -692,32 +737,16 @@ export default function ExistingHomeowner() {
           </>
         )}
 
-        {/* FHA: DACA → FHA disqualifier + conventional only (with BK planning note if applicable) */}
+        {/* FHA: DACA → FHA disqualifier + conventional-only fallback */}
         {fhaDacaBlocked && (
           <>
             <SectionConnector />
             <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
               <DisqualifierCard reason="FHA financing is not available for DACA or work permit holders. All FHA programs are ineligible." />
-              {fhaHasBankruptcy ? (
-                <>
-                  <NoProgramsCard />
-                  <div style={{ background: "#FFFBEB", borderLeft: "4px solid #F59E0B", borderRadius: "0 8px 8px 0", padding: "8px 12px", fontSize: "0.75rem", color: "#92400E" }}>
-                    ⚠ Conventional financing is also affected by the bankruptcy discharge timeline — recommend consulting once the 2-year FHA requirement is met.
-                  </div>
-                </>
-              ) : (
-                <>
-                  <h3 style={{ fontSize: "0.9375rem", fontWeight: 700, color: "#111111", margin: 0 }}>Available Path — Conventional</h3>
-                  {fhaToConvCard}
-                </>
-              )}
+              <h3 style={{ fontSize: "0.9375rem", fontWeight: 700, color: "#111111", margin: 0 }}>Available Path — Conventional</h3>
+              {fhaToConvCard}
             </div>
           </>
-        )}
-
-        {/* FHA: Citizen → main FHA flow (with planning disclaimer if BK=yes) ── */}
-        {showFHAMainFlow && fhaHasBankruptcy && (
-          <SectionConnector />
         )}
         {showFHAMainFlow && (
           <>
@@ -772,7 +801,7 @@ export default function ExistingHomeowner() {
                 <SectionConnector />
                 <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
                   <DisqualifierCard reason="FHA to FHA — Hard Stop. Family size has not increased. This is a non-negotiable requirement for a second FHA loan on a home within 100 miles. There is no workaround." />
-                  {fhaHasBankruptcy && <PlanningDisclaimer years={2} loanType="FHA" />}
+                  
                   <h3 style={{ fontSize: "0.9375rem", fontWeight: 700, color: "#111111", margin: 0 }}>Available Paths</h3>
                   <PathCard
                     title="Option A — Refinance Current FHA → Conventional"
@@ -819,7 +848,7 @@ export default function ExistingHomeowner() {
                   <>
                     <SectionConnector />
                     <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                      {fhaHasBankruptcy && <PlanningDisclaimer years={2} loanType="FHA" />}
+                      
                       <DisqualifierCard reason="FHA to FHA — Hard Stop. The client's current home does not have 25%+ equity. Without equity, the existing FHA payment cannot be excluded from DTI — both payments must be fully carried. There is no workaround." />
                       <h3 style={{ fontSize: "0.9375rem", fontWeight: 700, color: "#111111", margin: 0 }}>Available Paths</h3>
                       <PathCard
@@ -843,7 +872,7 @@ export default function ExistingHomeowner() {
                   <>
                     <SectionConnector />
                     <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                      {fhaHasBankruptcy && <PlanningDisclaimer years={2} loanType="FHA" />}
+                      
                       <h3 style={{ fontSize: "0.9375rem", fontWeight: 700, color: "#111111", margin: 0 }}>Available Options</h3>
                       <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
                         <PathCard
@@ -922,7 +951,7 @@ export default function ExistingHomeowner() {
                 <>
                   <SectionConnector />
                   <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                    {fhaHasBankruptcy && <PlanningDisclaimer years={2} loanType="FHA" />}
+                    
                     {(() => {
                       const c = getLongAgoCase();
 
@@ -1058,11 +1087,42 @@ export default function ExistingHomeowner() {
           </>
         )}
 
-        {/* Conventional: Bankruptcy = Yes → inline warning banner (flow continues) */}
-        {convHasBankruptcy && (
+        {/* Conventional: Bankruptcy = Yes → chapter question */}
+        {showChapterConv && (
           <>
             <SectionConnector />
-            <BankruptcyWarningBanner years={4} loanType="Conventional" />
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              <p style={{ fontSize: "0.875rem", fontWeight: 600, color: "#111111", margin: 0 }}>Which chapter?</p>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                <SelectionCard title="Chapter 7" note="Liquidation" selected={state.bankruptcyChapter === "ch7"} onClick={() => selectCard("bankruptcyChapter", "ch7")} />
+                <SelectionCard title="Chapter 13" note="Reorganization" selected={state.bankruptcyChapter === "ch13"} onClick={() => selectCard("bankruptcyChapter", "ch13")} />
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Conventional: Bankruptcy waiting-period question */}
+        {showBkMetConv && (
+          <>
+            <SectionConnector />
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              <p style={{ fontSize: "0.875rem", fontWeight: 600, color: "#111111", margin: 0 }}>
+                {state.bankruptcyChapter === "ch7"
+                  ? "Has it been 2+ years since the discharge date?"
+                  : "Has it been 12+ months since the file date?"}
+              </p>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                <SelectionCard title="Yes" selected={state.bankruptcyMet === "yes"} onClick={() => selectCard("bankruptcyMet", "yes")} />
+                <SelectionCard title="No" selected={state.bankruptcyMet === "no"} onClick={() => selectCard("bankruptcyMet", "no")} />
+              </div>
+              {state.bankruptcyMet === "no" && (
+                <DisqualifierCard reason={
+                  state.bankruptcyChapter === "ch7"
+                    ? "Chapter 7 requires a full 2 years from the discharge date. Client is not eligible until that waiting period is met."
+                    : "Chapter 13 requires a full 12 months from the file date. Client is not eligible until that waiting period is met."
+                } />
+              )}
+            </div>
           </>
         )}
 
@@ -1090,37 +1150,26 @@ export default function ExistingHomeowner() {
           </>
         )}
 
-        {/* Conventional: DACA → FHA disqualifier + conventional only (or no programs if BK=yes) */}
+        {/* Conventional: DACA → FHA disqualifier + Conventional-only fallback */}
         {convDacaBlocked && (
           <>
             <SectionConnector />
             <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
               <DisqualifierCard reason="FHA financing is not available for DACA or work permit holders. All FHA programs are ineligible." />
-              {convHasBankruptcy ? (
-                <>
-                  <NoProgramsCard />
-                  <div style={{ background: "#FFFBEB", borderLeft: "4px solid #F59E0B", borderRadius: "0 8px 8px 0", padding: "8px 12px", fontSize: "0.75rem", color: "#92400E" }}>
-                    ⚠ Conventional financing is also in the 4-year post-bankruptcy waiting period — recommend consulting once the requirement is met.
-                  </div>
-                </>
-              ) : (
-                <>
-                  <h3 style={{ fontSize: "0.9375rem", fontWeight: 700, color: "#111111", margin: 0 }}>Available Path — Conventional Only</h3>
-                  <PathCard
-                    title="Conventional → Conventional ✅"
-                    badge={{ text: "Only Available Path", color: "red" }}
-                    borderColor="red"
-                    bullets={[
-                      { icon: "✅", text: "Zero FHA restrictions" },
-                      { icon: "✅", text: "Simply rent current home to offset mortgage" },
-                      { icon: "✅", text: "No equity requirement" },
-                      { icon: "✅", text: "No rental history requirement" },
-                      { icon: "✅", text: "No family size or vacating rules" },
-                    ]}
-                    programs={["ccConvDPA", "selfConv"]}
-                  />
-                </>
-              )}
+              <h3 style={{ fontSize: "0.9375rem", fontWeight: 700, color: "#111111", margin: 0 }}>Available Path — Conventional Only</h3>
+              <PathCard
+                title="Conventional → Conventional ✅"
+                badge={{ text: "Only Available Path", color: "red" }}
+                borderColor="red"
+                bullets={[
+                  { icon: "✅", text: "Zero FHA restrictions" },
+                  { icon: "✅", text: "Simply rent current home to offset mortgage" },
+                  { icon: "✅", text: "No equity requirement" },
+                  { icon: "✅", text: "No rental history requirement" },
+                  { icon: "✅", text: "No family size or vacating rules" },
+                ]}
+                programs={["ccConvDPA", "selfConv"]}
+              />
             </div>
           </>
         )}
@@ -1175,7 +1224,7 @@ export default function ExistingHomeowner() {
               <>
                 <SectionConnector />
                 <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                  {convHasBankruptcy && <PlanningDisclaimer years={4} loanType="Conventional" />}
+                  
                   <h3 style={{ fontSize: "0.9375rem", fontWeight: 700, color: "#111111", margin: 0 }}>Client&apos;s Path</h3>
                   {convToFHAAvailableCard}
                 </div>
@@ -1186,10 +1235,42 @@ export default function ExistingHomeowner() {
               <>
                 <SectionConnector />
                 <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                  {convHasBankruptcy && <PlanningDisclaimer years={4} loanType="Conventional" />}
-                  <h3 style={{ fontSize: "0.9375rem", fontWeight: 700, color: "#111111", margin: 0 }}>Proceeding Without Full Equity</h3>
-                  {convToFHANoEquityCard}
+                  <p style={{ fontSize: "0.875rem", fontWeight: 600, color: "#111111", margin: 0 }}>
+                    Did the client file 12+ months of rental income from this property on their prior-year tax return?
+                  </p>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                    <SelectionCard
+                      title="Yes"
+                      selected={state.convToFHARentalTaxes === "yes"}
+                      onClick={() => selectCard("convToFHARentalTaxes", "yes")}
+                    />
+                    <SelectionCard
+                      title="No"
+                      selected={state.convToFHARentalTaxes === "no"}
+                      onClick={() => selectCard("convToFHARentalTaxes", "no")}
+                    />
+                  </div>
                 </div>
+
+                {state.convToFHARentalTaxes === "yes" && (
+                  <>
+                    <SectionConnector />
+                    <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                      <h3 style={{ fontSize: "0.9375rem", fontWeight: 700, color: "#111111", margin: 0 }}>Client&apos;s Path — 12-Month Rental Income Filed</h3>
+                      {convToFHARentalTaxCard}
+                    </div>
+                  </>
+                )}
+
+                {state.convToFHARentalTaxes === "no" && (
+                  <>
+                    <SectionConnector />
+                    <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                      <h3 style={{ fontSize: "0.9375rem", fontWeight: 700, color: "#111111", margin: 0 }}>Available Options</h3>
+                      {convToFHACarryBothCard}
+                    </div>
+                  </>
+                )}
               </>
             )}
           </>
@@ -1200,7 +1281,7 @@ export default function ExistingHomeowner() {
           <>
             <SectionConnector />
             <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-              {convHasBankruptcy && <PlanningDisclaimer years={4} loanType="Conventional" />}
+              
               <h3 style={{ fontSize: "0.9375rem", fontWeight: 700, color: "#111111", margin: 0 }}>Client&apos;s Path</h3>
               <PathCard
                 title="Conventional → Conventional ✅"
