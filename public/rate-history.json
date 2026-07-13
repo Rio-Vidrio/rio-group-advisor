@@ -1,12 +1,6 @@
 {
-  "updated": "2026-07-09",
+  "updated": "2026-07-13",
   "3months": [
-    {
-      "date": "2026-04-09",
-      "conventional": 6.37,
-      "fha": 6.12,
-      "va": 5.87
-    },
     {
       "date": "2026-04-16",
       "conventional": 6.3,
@@ -87,12 +81,6 @@
     }
   ],
   "6months": [
-    {
-      "date": "2026-01-08",
-      "conventional": 6.16,
-      "fha": 5.91,
-      "va": 5.66
-    },
     {
       "date": "2026-01-15",
       "conventional": 6.06,
@@ -251,12 +239,6 @@
     }
   ],
   "1year": [
-    {
-      "date": "2025-07-10",
-      "conventional": 6.72,
-      "fha": 6.47,
-      "va": 6.22
-    },
     {
       "date": "2025-07-17",
       "conventional": 6.75,
@@ -571,12 +553,6 @@
     }
   ],
   "2years": [
-    {
-      "date": "2024-07-11",
-      "conventional": 6.89,
-      "fha": 6.64,
-      "va": 6.39
-    },
     {
       "date": "2024-07-18",
       "conventional": 6.77,
