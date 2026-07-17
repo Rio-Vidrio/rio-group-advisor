@@ -1147,6 +1147,9 @@ function NewBuildCalc() {
   // Loan-mode per side — lets the agent compare e.g. VA new build vs VA resale, or FHA new build vs conventional new build
   const [nbLoanMode, setNbLoanMode] = useState<LoanMode>("fha");
   const [rsLoanMode, setRsLoanMode] = useState<LoanMode>("fha");
+  // PMI on/off per side — lets agents model lender-paid PMI or single-premium scenarios on conventional
+  const [nbPmiOn, setNbPmiOn] = useState(true);
+  const [rsPmiOn, setRsPmiOn] = useState(true);
 
   const [nbPrice, setNbPrice] = useState(450000);
   const [nbRate, setNbRate] = useState(3.75);
@@ -1233,7 +1236,7 @@ function NewBuildCalc() {
 
   const insurance = 1350;
 
-  const calc = (price: number, rate: number, hoa: number, downPct: number, taxRate: number, mode: LoanMode) => {
+  const calc = (price: number, rate: number, hoa: number, downPct: number, taxRate: number, mode: LoanMode, pmiOn = true) => {
     const effectiveDownPct = mode === "va" ? 0 : downPct;
     const down = price * (effectiveDownPct / 100);
     const baseLoan = price - down;
@@ -1244,8 +1247,8 @@ function NewBuildCalc() {
     const tax = (price * (taxRate / 100)) / 12;
     const ins = insurance / 12;
     const mi =
-      mode === "conventional" && effectiveDownPct < 20 ? (baseLoan * 0.007) / 12 :
-      mode === "fha"                                   ? (baseLoan * 0.0055) / 12 :
+      mode === "conventional" && effectiveDownPct < 20 && pmiOn ? (baseLoan * 0.007) / 12 :
+      mode === "fha"                                            ? (baseLoan * 0.0055) / 12 :
       0;
     const piti = pi + tax + ins + mi;
     const total = piti + hoa;
@@ -1253,8 +1256,8 @@ function NewBuildCalc() {
     return { pi, piti, total, lifetimeInterest, down, loan: totalLoan, baseLoan, mi };
   };
 
-  const nb = calc(nbPrice, nbRate, nbHoa, nbDownPct, nbTaxRate, nbLoanMode);
-  const rs = calc(rsPrice, rsRate, rsHoa, rsDownPct, rsTaxRate, rsLoanMode);
+  const nb = calc(nbPrice, nbRate, nbHoa, nbDownPct, nbTaxRate, nbLoanMode, nbPmiOn);
+  const rs = calc(rsPrice, rsRate, rsHoa, rsDownPct, rsTaxRate, rsLoanMode, rsPmiOn);
 
   // Payment-equivalent: what resale price = same payment as new build at market rate
   let equivalentResalePrice = 0;
@@ -1262,7 +1265,7 @@ function NewBuildCalc() {
     let lo = 0, hi = 1500000;
     for (let i = 0; i < 50; i++) {
       const mid = (lo + hi) / 2;
-      const c = calc(mid, rsRate, rsHoa, rsDownPct, rsTaxRate, rsLoanMode);
+      const c = calc(mid, rsRate, rsHoa, rsDownPct, rsTaxRate, rsLoanMode, rsPmiOn);
       if (c.total < nb.total) lo = mid;
       else hi = mid;
     }
@@ -1275,7 +1278,7 @@ function NewBuildCalc() {
     let lo = 0, hi = 1500000;
     for (let i = 0; i < 50; i++) {
       const mid = (lo + hi) / 2;
-      const c = calc(mid, nbRate, nbHoa, nbDownPct, nbTaxRate, nbLoanMode);
+      const c = calc(mid, nbRate, nbHoa, nbDownPct, nbTaxRate, nbLoanMode, nbPmiOn);
       if (c.total < rs.total) lo = mid;
       else hi = mid;
     }
@@ -1396,7 +1399,11 @@ function NewBuildCalc() {
                   { label: nbLoanMode === "fha" ? "Rate (buydown)" : "Rate", value: `${nbRate}%` },
                   { label: "Tax Rate",        value: `${nbTaxRate}%` },
                   { label: "Monthly HOA",     value: nbHoa > 0 ? fmt(nbHoa) : "None" },
-                  nb.mi > 0 ? { label: nbLoanMode === "fha" ? "Monthly MIP" : "Monthly PMI", value: fmt(nb.mi) } : null,
+                  nb.mi > 0
+                    ? { label: nbLoanMode === "fha" ? "Monthly MIP" : "Monthly PMI", value: fmt(nb.mi) }
+                    : (nbLoanMode === "conventional" && nbDownPct < 20 && !nbPmiOn)
+                      ? { label: "PMI", value: "Off — LPMI / single-premium" }
+                      : null,
                   { label: "P&I",             value: fmt(nb.pi) },
                   { label: "PITI",            value: fmt(nb.piti) },
                 ].filter(Boolean).map((r, i) => (
@@ -1428,7 +1435,11 @@ function NewBuildCalc() {
                   { label: "Rate (market)",   value: `${rsRate.toFixed(2)}%` },
                   { label: "Tax Rate",        value: `${rsTaxRate}%` },
                   { label: "Monthly HOA",     value: rsHoa > 0 ? fmt(rsHoa) : "None" },
-                  rs.mi > 0 ? { label: rsLoanMode === "fha" ? "Monthly MIP" : "Monthly PMI", value: fmt(rs.mi) } : null,
+                  rs.mi > 0
+                    ? { label: rsLoanMode === "fha" ? "Monthly MIP" : "Monthly PMI", value: fmt(rs.mi) }
+                    : (rsLoanMode === "conventional" && rsDownPct < 20 && !rsPmiOn)
+                      ? { label: "PMI", value: "Off — LPMI / single-premium" }
+                      : null,
                   { label: "P&I",             value: fmt(rs.pi) },
                   { label: "PITI",            value: fmt(rs.piti) },
                 ].filter(Boolean).map((r, i) => (
@@ -1553,6 +1564,18 @@ function NewBuildCalc() {
                 </div>
               </div>
             )}
+            {/* Conventional + <20% down: allow agent to model lender-paid / single-premium PMI by turning it off */}
+            {nbLoanMode === "conventional" && nbDownPct < 20 && (
+              <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.8125rem", color: "#1E3A8A", background: "#DBEAFE", border: "1px solid #93C5FD", borderRadius: 6, padding: "8px 10px", cursor: "pointer" }}>
+                <input type="checkbox" checked={nbPmiOn} onChange={(e) => setNbPmiOn(e.target.checked)} style={{ accentColor: "#1E40AF" }} />
+                <span>
+                  Include PMI in payment
+                  <span style={{ color: "#1D4ED8", fontWeight: 500, marginLeft: 6, fontSize: "0.75rem" }}>
+                    {nbPmiOn ? `(+${fmt(nb.mi)}/mo)` : "off — modeling LPMI or single-premium"}
+                  </span>
+                </span>
+              </label>
+            )}
             {nbLoanMode === "va" && (
               <div className="text-xs text-blue-700 font-medium bg-blue-100 border border-blue-200 rounded px-3 py-2">
                 VA: no down payment. 2.15% funding fee ({fmt(nb.loan - nbPrice)}) rolled into the loan. Loan total {fmt(nb.loan)}.
@@ -1595,6 +1618,17 @@ function NewBuildCalc() {
                   = {fmt(rs.down)} down · Loan {fmt(rs.loan)}
                 </div>
               </div>
+            )}
+            {rsLoanMode === "conventional" && rsDownPct < 20 && (
+              <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.8125rem", color: "#14532D", background: "#DCFCE7", border: "1px solid #86EFAC", borderRadius: 6, padding: "8px 10px", cursor: "pointer" }}>
+                <input type="checkbox" checked={rsPmiOn} onChange={(e) => setRsPmiOn(e.target.checked)} style={{ accentColor: "#166534" }} />
+                <span>
+                  Include PMI in payment
+                  <span style={{ color: "#15803D", fontWeight: 500, marginLeft: 6, fontSize: "0.75rem" }}>
+                    {rsPmiOn ? `(+${fmt(rs.mi)}/mo)` : "off — modeling LPMI or single-premium"}
+                  </span>
+                </span>
+              </label>
             )}
             {rsLoanMode === "va" && (
               <div className="text-xs text-green-800 font-medium bg-green-100 border border-green-200 rounded px-3 py-2">
