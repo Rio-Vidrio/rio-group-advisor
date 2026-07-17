@@ -1144,6 +1144,10 @@ function NewBuildCalc() {
 
   useEffect(() => { setRates(getRates()); }, []);
 
+  // Loan-mode per side — lets the agent compare e.g. VA new build vs VA resale, or FHA new build vs conventional new build
+  const [nbLoanMode, setNbLoanMode] = useState<LoanMode>("fha");
+  const [rsLoanMode, setRsLoanMode] = useState<LoanMode>("fha");
+
   const [nbPrice, setNbPrice] = useState(450000);
   const [nbRate, setNbRate] = useState(3.75);
   const [nbHoa, setNbHoa] = useState(100);
@@ -1159,6 +1163,23 @@ function NewBuildCalc() {
   const [rsTaxDollars, setRsTaxDollars] = useState(Math.round(450000 * 0.0045));
 
   useEffect(() => { setRsRate(rates.fha); }, [rates]);
+
+  // Loan-mode switcher — auto-adjusts down %, funding fees flow through calc()
+  const defaultDownForMode = (m: LoanMode) => (m === "va" ? 0 : m === "fha" ? 3.5 : 5);
+  const setNbMode = (m: LoanMode) => {
+    setNbLoanMode(m);
+    setNbDownPct(defaultDownForMode(m));
+    if (m === "conventional") setNbRate(rates.conventional);
+    else if (m === "fha")     setNbRate(3.75); // builder buydown default
+    else                       setNbRate(rates.va);
+  };
+  const setRsMode = (m: LoanMode) => {
+    setRsLoanMode(m);
+    setRsDownPct(defaultDownForMode(m));
+    if (m === "conventional") setRsRate(rates.conventional);
+    else if (m === "fha")     setRsRate(rates.fha);
+    else                       setRsRate(rates.va);
+  };
 
   const [clientName, setClientName] = useState("");
   const [propertyAddress, setPropertyAddress] = useState("");
@@ -1212,21 +1233,28 @@ function NewBuildCalc() {
 
   const insurance = 1350;
 
-  const calc = (price: number, rate: number, hoa: number, downPct: number, taxRate: number) => {
-    const down = price * (downPct / 100);
-    const loan = price - down;
-    const pi = calculateMonthlyPayment(loan, rate, 30);
+  const calc = (price: number, rate: number, hoa: number, downPct: number, taxRate: number, mode: LoanMode) => {
+    const effectiveDownPct = mode === "va" ? 0 : downPct;
+    const down = price * (effectiveDownPct / 100);
+    const baseLoan = price - down;
+    const ufmip = mode === "fha" ? baseLoan * 0.0175 : 0;         // FHA upfront MIP
+    const vaFee = mode === "va"  ? baseLoan * 0.0215 : 0;         // VA funding fee (standard, no disability waiver here)
+    const totalLoan = baseLoan + ufmip + vaFee;
+    const pi = calculateMonthlyPayment(totalLoan, rate, 30);
     const tax = (price * (taxRate / 100)) / 12;
     const ins = insurance / 12;
-    const pmi = downPct < 20 ? (loan * 0.007) / 12 : 0;
-    const piti = pi + tax + ins + pmi;
+    const mi =
+      mode === "conventional" && effectiveDownPct < 20 ? (baseLoan * 0.007) / 12 :
+      mode === "fha"                                   ? (baseLoan * 0.0055) / 12 :
+      0;
+    const piti = pi + tax + ins + mi;
     const total = piti + hoa;
-    const lifetimeInterest = pi * 360 - loan;
-    return { pi, piti, total, lifetimeInterest, down, loan };
+    const lifetimeInterest = pi * 360 - totalLoan;
+    return { pi, piti, total, lifetimeInterest, down, loan: totalLoan, baseLoan, mi };
   };
 
-  const nb = calc(nbPrice, nbRate, nbHoa, nbDownPct, nbTaxRate);
-  const rs = calc(rsPrice, rsRate, rsHoa, rsDownPct, rsTaxRate);
+  const nb = calc(nbPrice, nbRate, nbHoa, nbDownPct, nbTaxRate, nbLoanMode);
+  const rs = calc(rsPrice, rsRate, rsHoa, rsDownPct, rsTaxRate, rsLoanMode);
 
   // Payment-equivalent: what resale price = same payment as new build at market rate
   let equivalentResalePrice = 0;
@@ -1234,7 +1262,7 @@ function NewBuildCalc() {
     let lo = 0, hi = 1500000;
     for (let i = 0; i < 50; i++) {
       const mid = (lo + hi) / 2;
-      const c = calc(mid, rsRate, rsHoa, rsDownPct, rsTaxRate);
+      const c = calc(mid, rsRate, rsHoa, rsDownPct, rsTaxRate, rsLoanMode);
       if (c.total < nb.total) lo = mid;
       else hi = mid;
     }
@@ -1247,12 +1275,50 @@ function NewBuildCalc() {
     let lo = 0, hi = 1500000;
     for (let i = 0; i < 50; i++) {
       const mid = (lo + hi) / 2;
-      const c = calc(mid, nbRate, nbHoa, nbDownPct, nbTaxRate);
+      const c = calc(mid, nbRate, nbHoa, nbDownPct, nbTaxRate, nbLoanMode);
       if (c.total < rs.total) lo = mid;
       else hi = mid;
     }
     maxNewBuildForResalePayment = Math.floor(lo);
   }
+
+  // Small reusable loan-mode toggle used above each side's inputs
+  const ModeToggle = ({ mode, onSelect, tone }: { mode: LoanMode; onSelect: (m: LoanMode) => void; tone: "blue" | "green" }) => {
+    const modes: LoanMode[] = ["conventional", "fha", "va"];
+    const activeText = tone === "blue" ? "#1E3A8A" : "#14532D";
+    const activeBg = tone === "blue" ? "#DBEAFE" : "#DCFCE7";
+    const activeBorder = tone === "blue" ? "#1E40AF" : "#166534";
+    return (
+      <div style={{ display: "flex", gap: "6px", marginBottom: "10px" }}>
+        {modes.map((m) => {
+          const on = mode === m;
+          return (
+            <button
+              key={m}
+              onClick={() => onSelect(m)}
+              style={{
+                flex: 1,
+                padding: "6px 10px",
+                borderRadius: "6px",
+                fontSize: "0.75rem",
+                fontWeight: on ? 700 : 500,
+                border: on ? `1.5px solid ${activeBorder}` : "1px solid #E8E8E8",
+                background: on ? activeBg : "#FFFFFF",
+                color: on ? activeText : "#6B6B6B",
+                cursor: "pointer",
+                textTransform: "uppercase" as const,
+                letterSpacing: "0.06em",
+                transition: "background 100ms, color 100ms, border-color 100ms",
+              }}
+            >
+              {m === "conventional" ? "Conv" : m.toUpperCase()}
+            </button>
+          );
+        })}
+      </div>
+    );
+  };
+  const modeLabel = (m: LoanMode) => (m === "conventional" ? "Conventional" : m.toUpperCase());
 
   return (
     <div>
@@ -1292,70 +1358,146 @@ function NewBuildCalc() {
             </div>
           )}
 
+          {/* Large total-monthly headline cards */}
+          <div style={{ padding: "16px 28px 0" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+              <div style={{ border: "2px solid #60A5FA", background: "#EFF6FF", borderRadius: 12, padding: "12px 14px", textAlign: "center" as const }}>
+                <div style={{ fontSize: 9, color: "#1D4ED8", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const }}>New Build Monthly</div>
+                <div style={{ fontSize: 22, fontWeight: 800, color: "#1E3A8A", marginTop: 2 }}>{fmt(nb.total)}</div>
+                <div style={{ fontSize: 9, color: "#1E40AF", marginTop: 2 }}>P&amp;I {fmt(nb.pi)} + Tax/Ins{nbHoa > 0 ? " + HOA" : ""}</div>
+              </div>
+              <div style={{ border: "2px solid #4ADE80", background: "#F0FDF4", borderRadius: 12, padding: "12px 14px", textAlign: "center" as const }}>
+                <div style={{ fontSize: 9, color: "#15803D", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const }}>Resale Monthly</div>
+                <div style={{ fontSize: 22, fontWeight: 800, color: "#14532D", marginTop: 2 }}>{fmt(rs.total)}</div>
+                <div style={{ fontSize: 9, color: "#166534", marginTop: 2 }}>P&amp;I {fmt(rs.pi)} + Tax/Ins{rsHoa > 0 ? " + HOA" : ""}</div>
+              </div>
+            </div>
+          </div>
+
           {/* Side-by-side comparison */}
-          <div style={{ padding: "20px 28px 0" }}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+          <div style={{ padding: "14px 28px 0" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
               {/* New Build column */}
-              <div style={{ border: "1px solid #BFDBFE", borderRadius: 12, padding: 16, background: "#EFF6FF" }}>
-                <div style={{ fontWeight: 700, color: "#1E40AF", marginBottom: 12, fontSize: 13, textTransform: "uppercase" as const, letterSpacing: "0.05em" }}>New Build</div>
+              <div style={{ border: "1px solid #BFDBFE", borderRadius: 12, padding: 14, background: "#EFF6FF" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                  <div style={{ fontWeight: 700, color: "#1E40AF", fontSize: 12, textTransform: "uppercase" as const, letterSpacing: "0.05em" }}>New Build</div>
+                  <span style={{ fontSize: 8, fontWeight: 700, color: "#1E3A8A", background: "#DBEAFE", padding: "2px 7px", borderRadius: 20, letterSpacing: "0.08em" }}>
+                    {modeLabel(nbLoanMode)}
+                  </span>
+                </div>
                 {[
                   { label: "Purchase Price",  value: fmt(nbPrice) },
-                  { label: `Down (${nbDownPct}%)`, value: fmt(nb.down) },
+                  nbLoanMode === "va"
+                    ? { label: "Down (VA)",     value: "$0" }
+                    : { label: `Down (${nbDownPct}%)`, value: fmt(nb.down) },
+                  nbLoanMode === "fha" ? { label: "UFMIP (1.75%)", value: `+ ${fmt(nb.loan - (nbPrice - nb.down))}` } : null,
+                  nbLoanMode === "va"  ? { label: "Funding Fee (2.15%)", value: `+ ${fmt(nb.loan - nbPrice)}` } : null,
                   { label: "Loan Amount",     value: fmt(nb.loan) },
-                  { label: "Rate (buydown)",  value: `${nbRate}%` },
+                  { label: nbLoanMode === "fha" ? "Rate (buydown)" : "Rate", value: `${nbRate}%` },
                   { label: "Tax Rate",        value: `${nbTaxRate}%` },
-                  { label: "Monthly HOA",     value: fmt(nbHoa) },
+                  { label: "Monthly HOA",     value: nbHoa > 0 ? fmt(nbHoa) : "None" },
+                  nb.mi > 0 ? { label: nbLoanMode === "fha" ? "Monthly MIP" : "Monthly PMI", value: fmt(nb.mi) } : null,
                   { label: "P&I",             value: fmt(nb.pi) },
                   { label: "PITI",            value: fmt(nb.piti) },
-                ].map((r, i) => (
-                  <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: 12, padding: "5px 0", borderBottom: "1px solid #DBEAFE" }}>
-                    <span style={{ color: "#1D4ED8" }}>{r.label}</span>
-                    <span style={{ fontWeight: 600, color: "#1E3A8A" }}>{r.value}</span>
+                ].filter(Boolean).map((r, i) => (
+                  <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: 11, padding: "4px 0", borderBottom: "1px solid #DBEAFE" }}>
+                    <span style={{ color: "#1D4ED8" }}>{r!.label}</span>
+                    <span style={{ fontWeight: 600, color: "#1E3A8A" }}>{r!.value}</span>
                   </div>
                 ))}
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, fontWeight: 700, marginTop: 8, paddingTop: 8, color: "#1E3A8A" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, fontWeight: 800, marginTop: 8, paddingTop: 6, borderTop: "2px solid #93C5FD", color: "#1E3A8A" }}>
                   <span>Total Monthly</span><span>{fmt(nb.total)}</span>
                 </div>
               </div>
               {/* Resale column */}
-              <div style={{ border: "1px solid #BBF7D0", borderRadius: 12, padding: 16, background: "#F0FDF4" }}>
-                <div style={{ fontWeight: 700, color: "#166534", marginBottom: 12, fontSize: 13, textTransform: "uppercase" as const, letterSpacing: "0.05em" }}>Resale</div>
+              <div style={{ border: "1px solid #BBF7D0", borderRadius: 12, padding: 14, background: "#F0FDF4" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                  <div style={{ fontWeight: 700, color: "#166534", fontSize: 12, textTransform: "uppercase" as const, letterSpacing: "0.05em" }}>Resale</div>
+                  <span style={{ fontSize: 8, fontWeight: 700, color: "#14532D", background: "#DCFCE7", padding: "2px 7px", borderRadius: 20, letterSpacing: "0.08em" }}>
+                    {modeLabel(rsLoanMode)}
+                  </span>
+                </div>
                 {[
                   { label: "Purchase Price",  value: fmt(rsPrice) },
-                  { label: `Down (${rsDownPct}%)`, value: fmt(rs.down) },
+                  rsLoanMode === "va"
+                    ? { label: "Down (VA)",     value: "$0" }
+                    : { label: `Down (${rsDownPct}%)`, value: fmt(rs.down) },
+                  rsLoanMode === "fha" ? { label: "UFMIP (1.75%)", value: `+ ${fmt(rs.loan - (rsPrice - rs.down))}` } : null,
+                  rsLoanMode === "va"  ? { label: "Funding Fee (2.15%)", value: `+ ${fmt(rs.loan - rsPrice)}` } : null,
                   { label: "Loan Amount",     value: fmt(rs.loan) },
                   { label: "Rate (market)",   value: `${rsRate.toFixed(2)}%` },
                   { label: "Tax Rate",        value: `${rsTaxRate}%` },
                   { label: "Monthly HOA",     value: rsHoa > 0 ? fmt(rsHoa) : "None" },
+                  rs.mi > 0 ? { label: rsLoanMode === "fha" ? "Monthly MIP" : "Monthly PMI", value: fmt(rs.mi) } : null,
                   { label: "P&I",             value: fmt(rs.pi) },
                   { label: "PITI",            value: fmt(rs.piti) },
-                ].map((r, i) => (
-                  <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: 12, padding: "5px 0", borderBottom: "1px solid #DCFCE7" }}>
-                    <span style={{ color: "#15803D" }}>{r.label}</span>
-                    <span style={{ fontWeight: 600, color: "#14532D" }}>{r.value}</span>
+                ].filter(Boolean).map((r, i) => (
+                  <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: 11, padding: "4px 0", borderBottom: "1px solid #DCFCE7" }}>
+                    <span style={{ color: "#15803D" }}>{r!.label}</span>
+                    <span style={{ fontWeight: 600, color: "#14532D" }}>{r!.value}</span>
                   </div>
                 ))}
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, fontWeight: 700, marginTop: 8, paddingTop: 8, color: "#14532D" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, fontWeight: 800, marginTop: 8, paddingTop: 6, borderTop: "2px solid #86EFAC", color: "#14532D" }}>
                   <span>Total Monthly</span><span>{fmt(rs.total)}</span>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Difference strip */}
-          <div style={{ margin: "16px 28px", border: "2px solid #C8202A", borderRadius: 12, padding: "14px 20px" }}>
-            <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4, color: "#C8202A" }}>
-              Monthly Difference: {nb.total > rs.total
-                ? `Resale saves ${fmt(nb.total - rs.total)}/mo (${fmt((nb.total - rs.total) * 12)}/yr)`
-                : `New Build saves ${fmt(rs.total - nb.total)}/mo (${fmt((rs.total - nb.total) * 12)}/yr)`}
+          {/* Monthly savings banner (colored per winner) */}
+          <div style={{
+            margin: "14px 28px 0",
+            borderRadius: 12,
+            padding: "12px 18px",
+            border: `2px solid ${nb.total > rs.total ? "#4ADE80" : "#60A5FA"}`,
+            background: nb.total > rs.total ? "#F0FDF4" : "#EFF6FF",
+            color: nb.total > rs.total ? "#14532D" : "#1E3A8A",
+            fontSize: 13, fontWeight: 700, textAlign: "center" as const,
+          }}>
+            {nb.total > rs.total
+              ? `Resale saves ${fmt(nb.total - rs.total)}/mo (${fmt((nb.total - rs.total) * 12)}/yr)`
+              : `New Build saves ${fmt(rs.total - nb.total)}/mo (${fmt((rs.total - nb.total) * 12)}/yr)`}
+          </div>
+
+          {/* Rio-red key-insight card — New Build Price Suggestion */}
+          <div style={{ margin: "14px 28px 0", border: "2px solid #C8202A", background: "#FEF2F2", borderRadius: 12, padding: "12px 16px" }}>
+            <div style={{ fontSize: 10, color: "#C8202A", fontWeight: 700, textTransform: "uppercase" as const, letterSpacing: "0.1em", marginBottom: 4 }}>New Build Price Suggestion</div>
+            <div style={{ fontSize: 12, color: "#111", lineHeight: 1.5 }}>
+              To match the resale payment of <strong>{fmt(rs.total)}/mo</strong>, the client could purchase a new build up to <strong style={{ color: "#C8202A", fontSize: 15 }}>{fmt(maxNewBuildForResalePayment)}</strong> at {nbRate}%.
             </div>
-            <div style={{ fontSize: 11, color: "#666" }}>
+            <div style={{ fontSize: 10, color: "#666", marginTop: 6 }}>
               Payment-equivalent: {fmt(nbPrice)} new build at {nbRate}% = same payment as a {fmt(equivalentResalePrice)} resale at {rsRate.toFixed(2)}%
             </div>
           </div>
 
+          {/* Notes cards side-by-side, matching on-screen tiles */}
+          <div style={{ padding: "14px 28px 0" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+              <div style={{ background: "#EFF6FF", border: "1px solid #BFDBFE", borderRadius: 10, padding: "10px 12px" }}>
+                <div style={{ fontWeight: 700, color: "#1E40AF", fontSize: 11, marginBottom: 4 }}>New Build Notes</div>
+                <ul style={{ fontSize: 10, color: "#1D4ED8", margin: 0, paddingLeft: 14, lineHeight: 1.5 }}>
+                  <li>Lower payment due to builder buydown</li>
+                  <li>New construction — no repair costs</li>
+                  <li>Must use builder&apos;s lender</li>
+                  <li>5–7% price premium over resale</li>
+                  <li>HOA required</li>
+                </ul>
+              </div>
+              <div style={{ background: "#F0FDF4", border: "1px solid #BBF7D0", borderRadius: 10, padding: "10px 12px" }}>
+                <div style={{ fontWeight: 700, color: "#166534", fontSize: 11, marginBottom: 4 }}>Resale Notes</div>
+                <ul style={{ fontSize: 10, color: "#15803D", margin: 0, paddingLeft: 14, lineHeight: 1.5 }}>
+                  <li>Lower purchase price</li>
+                  <li>More lender flexibility</li>
+                  <li>Established neighborhoods</li>
+                  <li>Pool / larger lot options</li>
+                  <li>May need repairs/updates</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
           {/* Footer */}
-          <div style={{ padding: "12px 28px 16px", borderTop: "1px solid #E8E8E8", textAlign: "center" as const, fontSize: 9, color: "#999" }}>
+          <div style={{ padding: "14px 28px 16px", marginTop: 12, borderTop: "1px solid #E8E8E8", textAlign: "center" as const, fontSize: 9, color: "#999" }}>
             AZ &amp; Associates — Home Buying Advisor. All figures are estimates for informational purposes only.
           </div>
         </div>
@@ -1393,17 +1535,30 @@ function NewBuildCalc() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 no-print">
           {/* New Build inputs */}
           <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-          <h4 className="font-bold text-blue-800 mb-3">New Build</h4>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px" }}>
+            <h4 className="font-bold text-blue-800">New Build</h4>
+            <span style={{ fontSize: "0.6875rem", fontWeight: 700, color: "#1E3A8A", background: "#DBEAFE", padding: "2px 8px", borderRadius: "20px", letterSpacing: "0.08em" }}>
+              {modeLabel(nbLoanMode)}
+            </span>
+          </div>
+          <ModeToggle mode={nbLoanMode} onSelect={setNbMode} tone="blue" />
           <div className="space-y-3">
             <MoneyInput label="Purchase Price" value={nbPrice} onChange={setNbPrice} />
             {/* Down payment */}
-            <div>
-              <DownPaymentInput price={nbPrice} pct={nbDownPct} onChange={setNbDownPct} label="Down Payment" />
-              <div className="mt-1 text-xs text-blue-600 font-medium pl-1">
-                = {fmt(nb.down)} down · Loan {fmt(nb.loan)}
+            {nbLoanMode !== "va" && (
+              <div>
+                <DownPaymentInput price={nbPrice} pct={nbDownPct} onChange={setNbDownPct} label="Down Payment" />
+                <div className="mt-1 text-xs text-blue-600 font-medium pl-1">
+                  = {fmt(nb.down)} down · Loan {fmt(nb.loan)}
+                </div>
               </div>
-            </div>
-            <NumberInput label="Rate (builder buydown)" value={nbRate} onChange={setNbRate} suffix="%" step="0.125" />
+            )}
+            {nbLoanMode === "va" && (
+              <div className="text-xs text-blue-700 font-medium bg-blue-100 border border-blue-200 rounded px-3 py-2">
+                VA: no down payment. 2.15% funding fee ({fmt(nb.loan - nbPrice)}) rolled into the loan. Loan total {fmt(nb.loan)}.
+              </div>
+            )}
+            <NumberInput label={nbLoanMode === "fha" ? "Rate (builder buydown)" : "Rate"} value={nbRate} onChange={setNbRate} suffix="%" step="0.125" />
             {/* Tax rate with first-year note */}
             <TaxInput
               price={nbPrice}
@@ -1423,16 +1578,29 @@ function NewBuildCalc() {
         </div>
         {/* Resale inputs */}
         <div className="bg-green-50 border border-green-200 rounded-xl p-4">
-          <h4 className="font-bold text-green-800 mb-3">Resale</h4>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px" }}>
+            <h4 className="font-bold text-green-800">Resale</h4>
+            <span style={{ fontSize: "0.6875rem", fontWeight: 700, color: "#14532D", background: "#DCFCE7", padding: "2px 8px", borderRadius: "20px", letterSpacing: "0.08em" }}>
+              {modeLabel(rsLoanMode)}
+            </span>
+          </div>
+          <ModeToggle mode={rsLoanMode} onSelect={setRsMode} tone="green" />
           <div className="space-y-3">
             <MoneyInput label="Purchase Price" value={rsPrice} onChange={setRsPrice} />
             {/* Down payment */}
-            <div>
-              <DownPaymentInput price={rsPrice} pct={rsDownPct} onChange={setRsDownPct} label="Down Payment" />
-              <div className="mt-1 text-xs text-green-700 font-medium pl-1">
-                = {fmt(rs.down)} down · Loan {fmt(rs.loan)}
+            {rsLoanMode !== "va" && (
+              <div>
+                <DownPaymentInput price={rsPrice} pct={rsDownPct} onChange={setRsDownPct} label="Down Payment" />
+                <div className="mt-1 text-xs text-green-700 font-medium pl-1">
+                  = {fmt(rs.down)} down · Loan {fmt(rs.loan)}
+                </div>
               </div>
-            </div>
+            )}
+            {rsLoanMode === "va" && (
+              <div className="text-xs text-green-800 font-medium bg-green-100 border border-green-200 rounded px-3 py-2">
+                VA: no down payment. 2.15% funding fee ({fmt(rs.loan - rsPrice)}) rolled into the loan. Loan total {fmt(rs.loan)}.
+              </div>
+            )}
             <NumberInput label="Rate (market)" value={rsRate} onChange={setRsRate} suffix="%" step="0.125" />
             <TaxInput
               price={rsPrice}
