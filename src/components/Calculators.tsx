@@ -568,37 +568,125 @@ function PaymentCalc() {
             </div>
           )}
 
-          {/* Loan type badge */}
-          <div style={{ padding: "14px 28px 6px", display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ background: "#C8202A", color: "#fff", fontSize: 10, fontWeight: 700, padding: "3px 10px", borderRadius: 4, textTransform: "uppercase" as const, letterSpacing: "0.06em" }}>
-              {loanMode === "conventional" ? "Conventional" : loanMode === "fha" ? "FHA" : "VA"}
-            </span>
-            <span style={{ fontSize: 11, color: "#9B9B9B" }}>{rate.toFixed(2)}% · {term} Year Fixed</span>
-          </div>
-
-          {/* Breakdown table */}
-          <div style={{ margin: "12px 20px 20px", border: "1px solid #E8E8E8", borderRadius: 12, overflow: "hidden" }}>
-            {paymentRows.map((row, i) => (
-              <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "11px 18px", background: i % 2 === 0 ? "#FFFFFF" : "#FAFAF9", borderBottom: "1px solid #F0F0F0" }}>
-                <span style={{ fontSize: 13, color: "#6B6B6B" }}>{row.label}</span>
-                <span style={{ fontSize: 13, fontWeight: 600, color: "#111111" }}>{row.value}</span>
+          {/* Large colored headline total — mirrors the on-screen Total Monthly Payment card */}
+          {(() => {
+            const palette = loanMode === "fha"
+              ? { border: "#60A5FA", bg: "#EFF6FF", label: "#1D4ED8", value: "#1E3A8A", sub: "#1E40AF" }
+              : loanMode === "va"
+              ? { border: "#4ADE80", bg: "#F0FDF4", label: "#15803D", value: "#14532D", sub: "#166534" }
+              : { border: "#C8202A", bg: "#FEF2F2", label: "#B91C1C", value: "#7F1D1D", sub: "#991B1B" };
+            const subLine = `Principal, Interest, Taxes, Insurance${hoa > 0 ? ", HOA" : ""}${dpa2ndPayment > 0 ? " & DPA 2nd Payment" : ""}`;
+            return (
+              <div style={{ padding: "16px 28px 0" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                  <div style={{ border: `2px solid ${palette.border}`, background: palette.bg, borderRadius: 12, padding: "12px 14px" }}>
+                    <div style={{ fontSize: 9, color: palette.label, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const }}>Total Monthly Payment</div>
+                    <div style={{ fontSize: 24, fontWeight: 800, color: palette.value, marginTop: 2 }}>{fmt(total)}</div>
+                    <div style={{ fontSize: 9, color: palette.sub, marginTop: 4 }}>{subLine}</div>
+                  </div>
+                  <div style={{ border: "1px solid #E8E8E8", background: "#FAFAF9", borderRadius: 12, padding: "12px 14px", display: "flex", flexDirection: "column", justifyContent: "center" }}>
+                    <div style={{ fontSize: 9, color: "#6B6B6B", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const }}>Loan Snapshot</div>
+                    <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: "4px 12px", marginTop: 6, fontSize: 11 }}>
+                      <span style={{ color: "#6B6B6B" }}>Loan Type</span>
+                      <span style={{ fontWeight: 700, color: palette.value }}>{loanMode === "conventional" ? "Conventional" : loanMode === "fha" ? "FHA" : "VA"}</span>
+                      <span style={{ color: "#6B6B6B" }}>Rate / Term</span>
+                      <span style={{ fontWeight: 600, color: "#111" }}>{rate.toFixed(2)}% · {term} yr</span>
+                      <span style={{ color: "#6B6B6B" }}>Purchase Price</span>
+                      <span style={{ fontWeight: 600, color: "#111" }}>{fmt(price)}</span>
+                    </div>
+                  </div>
+                </div>
               </div>
-            ))}
+            );
+          })()}
+
+          {/* Detail breakdown — colored to match the mode's tone (light-tinted borders/labels) */}
+          {(() => {
+            const t = loanMode === "fha"
+              ? { border: "#BFDBFE", label: "#1D4ED8", value: "#1E3A8A", row: "#DBEAFE", bg: "#EFF6FF" }
+              : loanMode === "va"
+              ? { border: "#BBF7D0", label: "#15803D", value: "#14532D", row: "#DCFCE7", bg: "#F0FDF4" }
+              : { border: "#FECACA", label: "#B91C1C", value: "#7F1D1D", row: "#FEE2E2", bg: "#FEF2F2" };
+            return (
+              <div style={{ padding: "14px 28px 0" }}>
+                <div style={{ border: `1px solid ${t.border}`, background: t.bg, borderRadius: 12, padding: 14 }}>
+                  <div style={{ fontWeight: 700, color: t.value, fontSize: 12, textTransform: "uppercase" as const, letterSpacing: "0.05em", marginBottom: 8 }}>
+                    Payment Breakdown
+                  </div>
+                  {paymentRows.map((r, i) => (
+                    <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: 11, padding: "5px 0", borderBottom: `1px solid ${t.row}` }}>
+                      <span style={{ color: t.label }}>{r.label}</span>
+                      <span style={{ fontWeight: 600, color: t.value }}>{r.value}</span>
+                    </div>
+                  ))}
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, fontWeight: 800, marginTop: 8, paddingTop: 6, borderTop: `2px solid ${t.border}`, color: t.value }}>
+                    <span>Total Monthly</span><span>{fmt(total)}</span>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* Rio-red key-insight — DPA 2nd or Solar summary when active, otherwise a rate-vs-monthly note */}
+          <div style={{ margin: "14px 28px 0", border: "2px solid #C8202A", background: "#FEF2F2", borderRadius: 12, padding: "12px 16px" }}>
+            <div style={{ fontSize: 10, color: "#C8202A", fontWeight: 700, textTransform: "uppercase" as const, letterSpacing: "0.1em", marginBottom: 4 }}>
+              {fhaDpaEnabled ? "DPA 2nd Loan Detail" : fhaSolarEnabled && solarFinanced > 0 ? "Solar Financing Detail" : "Rate & Loan Detail"}
+            </div>
+            <div style={{ fontSize: 12, color: "#111", lineHeight: 1.5 }}>
+              {fhaDpaEnabled && (
+                <>2nd loan of <strong>{fmt(dpa2ndBalance)}</strong> at <strong>{dpa2ndRate.toFixed(3)}%</strong> over <strong>{dpa2ndTerm} years</strong> = <strong style={{ color: "#C8202A" }}>{fmt(dpa2ndPayment)}/mo</strong> in addition to the main FHA payment above.</>
+              )}
+              {!fhaDpaEnabled && fhaSolarEnabled && solarFinanced > 0 && (
+                <>Solar of <strong>{fmt(solarFinanced)}</strong> financed at the main rate, folded into P&amp;I. Total financed loan is <strong>{fmt(totalLoan)}</strong>.</>
+              )}
+              {!fhaDpaEnabled && !(fhaSolarEnabled && solarFinanced > 0) && (
+                <>Financed loan: <strong>{fmt(totalLoan)}</strong>. Every 0.125% shift in rate ≈ <strong>{fmt(calculateMonthlyPayment(totalLoan, rate + 0.125, term) - monthlyPI)}/mo</strong> change in P&amp;I.</>
+              )}
+            </div>
           </div>
 
-          {/* Total payment highlight */}
-          <div style={{ margin: "0 20px 20px", border: "2px solid #C8202A", borderRadius: 12, padding: "18px 20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <div>
-              <div style={{ color: "#C8202A", fontSize: 10, fontWeight: 600, textTransform: "uppercase" as const, letterSpacing: "0.1em" }}>Total Monthly Payment</div>
-              <div style={{ color: "#666", fontSize: 11, marginTop: 2 }}>Principal, Interest, Taxes, Insurance{hoa > 0 ? ", HOA" : ""}{dpa2ndPayment > 0 ? " & DPA 2nd Payment" : ""}</div>
-            </div>
-            <div style={{ color: "#C8202A", fontSize: 28, fontWeight: 800, fontVariantNumeric: "tabular-nums" }}>{fmt(total)}</div>
-          </div>
+          {/* Loan-type notes — mirrors the on-screen FHA fees / VA funding fee / Conv PMI callouts */}
+          {(() => {
+            const bullets = loanMode === "fha"
+              ? [
+                  "Upfront MIP: 1.75% rolled into loan",
+                  "Annual MIP: 0.55%/yr paid monthly",
+                  "Min down 3.5% — DPA available with red flags",
+                  "FHA loan limit for Maricopa County: $578,000",
+                ]
+              : loanMode === "va"
+              ? [
+                  "Zero down — no PMI or monthly MI",
+                  "2.15% funding fee rolled into the loan (waived w/ 10%+ disability)",
+                  "Cheapest total cost of any loan type for eligible vets",
+                  "Rate typically 0.25–0.50% below conventional",
+                ]
+              : [
+                  "5% down minimum (some programs offer 1%–3%)",
+                  downPct < 20 ? `PMI applies at ~${pmiRate}%/yr until 20% equity` : "No PMI — 20%+ down",
+                  "Best rates for 700+ credit; 660+ required",
+                  "No upfront mortgage insurance fee",
+                ];
+            const t = loanMode === "fha"
+              ? { border: "#BFDBFE", label: "#1D4ED8", value: "#1E3A8A", bg: "#EFF6FF", title: "FHA Details" }
+              : loanMode === "va"
+              ? { border: "#BBF7D0", label: "#15803D", value: "#14532D", bg: "#F0FDF4", title: "VA Details" }
+              : { border: "#FECACA", label: "#B91C1C", value: "#7F1D1D", bg: "#FEF2F2", title: "Conventional Details" };
+            return (
+              <div style={{ padding: "14px 28px 0" }}>
+                <div style={{ background: t.bg, border: `1px solid ${t.border}`, borderRadius: 10, padding: "10px 12px" }}>
+                  <div style={{ fontWeight: 700, color: t.value, fontSize: 11, marginBottom: 4 }}>{t.title}</div>
+                  <ul style={{ fontSize: 10, color: t.label, margin: 0, paddingLeft: 14, lineHeight: 1.5 }}>
+                    {bullets.map((b, i) => <li key={i}>{b}</li>)}
+                  </ul>
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Footer */}
-          <div style={{ borderTop: "2px solid #C8202A", padding: "12px 28px 16px", textAlign: "center" as const }}>
-            <div style={{ fontSize: 10, color: "#6B6B6B", fontWeight: 500 }}>AZ &amp; Associates — Home Buying Advisor</div>
-            <div style={{ fontSize: 8, color: "#ABABAB", marginTop: 3 }}>All figures are estimates for informational purposes only. Subject to lender approval and qualification.</div>
+          <div style={{ padding: "14px 28px 16px", marginTop: 12, borderTop: "1px solid #E8E8E8", textAlign: "center" as const, fontSize: 9, color: "#999" }}>
+            AZ &amp; Associates — Home Buying Advisor. All figures are estimates for informational purposes only. Subject to lender approval and qualification.
           </div>
         </div>
 
@@ -1899,72 +1987,130 @@ function BusinessOwnerCalc() {
             </div>
           )}
 
-          {/* Side-by-side */}
-          <div style={{ padding: "20px 28px 0" }}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+          {/* Large total-monthly headline cards */}
+          <div style={{ padding: "16px 28px 0" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+              <div style={{ border: "2px solid #60A5FA", background: "#EFF6FF", borderRadius: 12, padding: "12px 14px", textAlign: "center" as const }}>
+                <div style={{ fontSize: 9, color: "#1D4ED8", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const }}>Full Doc Monthly</div>
+                <div style={{ fontSize: 22, fontWeight: 800, color: "#1E3A8A", marginTop: 2 }}>{fmt(fdCalc.total)}</div>
+                <div style={{ fontSize: 9, color: "#1E40AF", marginTop: 2 }}>P&amp;I {fmt(fdCalc.pi)} + Tax/Ins{fdCalc.pmi > 0 ? " + PMI" : ""}{fdHoa > 0 ? " + HOA" : ""}</div>
+              </div>
+              <div style={{ border: "2px solid #FB923C", background: "#FFF7ED", borderRadius: 12, padding: "12px 14px", textAlign: "center" as const }}>
+                <div style={{ fontSize: 9, color: "#C2410C", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const }}>Bank Statement Monthly</div>
+                <div style={{ fontSize: 22, fontWeight: 800, color: "#7C2D12", marginTop: 2 }}>{fmt(bsCalc.total)}</div>
+                <div style={{ fontSize: 9, color: "#9A3412", marginTop: 2 }}>P&amp;I {fmt(bsCalc.pi)} + Tax/Ins{bsHoa > 0 ? " + HOA" : ""}</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Side-by-side detail with badges */}
+          <div style={{ padding: "14px 28px 0" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
               {/* Full Doc column */}
-              <div style={{ border: "1px solid #BFDBFE", borderRadius: 12, padding: 16, background: "#EFF6FF" }}>
-                <div style={{ fontWeight: 700, color: "#1E40AF", marginBottom: 12, fontSize: 13, textTransform: "uppercase" as const, letterSpacing: "0.05em" }}>Full Doc (Conv)</div>
+              <div style={{ border: "1px solid #BFDBFE", borderRadius: 12, padding: 14, background: "#EFF6FF" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                  <div style={{ fontWeight: 700, color: "#1E40AF", fontSize: 12, textTransform: "uppercase" as const, letterSpacing: "0.05em" }}>Full Doc</div>
+                  <span style={{ fontSize: 8, fontWeight: 700, color: "#1E3A8A", background: "#DBEAFE", padding: "2px 7px", borderRadius: 20, letterSpacing: "0.08em" }}>CONVENTIONAL</span>
+                </div>
                 {[
                   { label: "Purchase Price", value: fmt(fdPrice) },
                   { label: `Down (${fdDownPct}%)`, value: fmt(fdCalc.down) },
                   { label: "Loan Amount", value: fmt(fdCalc.loan) },
-                  { label: "Rate (Conv)", value: `${fdRate.toFixed(2)}%` },
+                  { label: "Rate", value: `${fdRate.toFixed(2)}%` },
                   { label: "Tax Rate", value: `${fdTaxRate}%` },
-                  { label: "PMI", value: fdCalc.pmi > 0 ? `${fmt(fdCalc.pmi)}/mo` : "None" },
                   { label: "Monthly HOA", value: fdHoa > 0 ? fmt(fdHoa) : "None" },
+                  fdCalc.pmi > 0 ? { label: "Monthly PMI", value: fmt(fdCalc.pmi) } : null,
                   { label: "P&I", value: fmt(fdCalc.pi) },
-                  { label: "PITI + PMI", value: fmt(fdCalc.piti) },
-                ].map((r, i) => (
-                  <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: 12, padding: "5px 0", borderBottom: "1px solid #DBEAFE" }}>
-                    <span style={{ color: "#1D4ED8" }}>{r.label}</span>
-                    <span style={{ fontWeight: 600, color: "#1E3A8A" }}>{r.value}</span>
+                  { label: "PITI", value: fmt(fdCalc.piti) },
+                ].filter(Boolean).map((r, i) => (
+                  <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: 11, padding: "4px 0", borderBottom: "1px solid #DBEAFE" }}>
+                    <span style={{ color: "#1D4ED8" }}>{r!.label}</span>
+                    <span style={{ fontWeight: 600, color: "#1E3A8A" }}>{r!.value}</span>
                   </div>
                 ))}
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, fontWeight: 700, marginTop: 8, paddingTop: 8, color: "#1E3A8A" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, fontWeight: 800, marginTop: 8, paddingTop: 6, borderTop: "2px solid #93C5FD", color: "#1E3A8A" }}>
                   <span>Total Monthly</span><span>{fmt(fdCalc.total)}</span>
                 </div>
-
               </div>
 
               {/* Bank Statement column */}
-              <div style={{ border: "1px solid #FED7AA", borderRadius: 12, padding: 16, background: "#FFF7ED" }}>
-                <div style={{ fontWeight: 700, color: "#9A3412", marginBottom: 12, fontSize: 13, textTransform: "uppercase" as const, letterSpacing: "0.05em" }}>Bank Statement</div>
+              <div style={{ border: "1px solid #FED7AA", borderRadius: 12, padding: 14, background: "#FFF7ED" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                  <div style={{ fontWeight: 700, color: "#9A3412", fontSize: 12, textTransform: "uppercase" as const, letterSpacing: "0.05em" }}>Bank Statement</div>
+                  <span style={{ fontSize: 8, fontWeight: 700, color: "#7C2D12", background: "#FED7AA", padding: "2px 7px", borderRadius: 20, letterSpacing: "0.08em" }}>SELF-EMPLOYED</span>
+                </div>
                 {[
                   { label: "Purchase Price", value: fmt(bsPrice) },
                   { label: `Down (${bsDownPct}%)`, value: fmt(bsCalc.down) },
                   { label: "Loan Amount", value: fmt(bsCalc.loan) },
                   { label: "Rate (+1.5%)", value: `${bsRateAdj.toFixed(2)}%` },
                   { label: "Tax Rate", value: `${bsTaxRate}%` },
-                  { label: "PMI/MIP", value: "None" },
                   { label: "Monthly HOA", value: bsHoa > 0 ? fmt(bsHoa) : "None" },
+                  { label: "PMI/MIP", value: "None" },
                   { label: "P&I", value: fmt(bsCalc.pi) },
                   { label: "PITI", value: fmt(bsCalc.piti) },
                 ].map((r, i) => (
-                  <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: 12, padding: "5px 0", borderBottom: "1px solid #FED7AA" }}>
+                  <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: 11, padding: "4px 0", borderBottom: "1px solid #FED7AA" }}>
                     <span style={{ color: "#C2410C" }}>{r.label}</span>
                     <span style={{ fontWeight: 600, color: "#7C2D12" }}>{r.value}</span>
                   </div>
                 ))}
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, fontWeight: 700, marginTop: 8, paddingTop: 8, color: "#7C2D12" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, fontWeight: 800, marginTop: 8, paddingTop: 6, borderTop: "2px solid #FDBA74", color: "#7C2D12" }}>
                   <span>Total Monthly</span><span>{fmt(bsCalc.total)}</span>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Difference strip */}
-          <div style={{ margin: "16px 28px", border: "2px solid #C8202A", borderRadius: 12, padding: "14px 20px" }}>
-            <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4, color: "#C8202A" }}>
-              Monthly Difference: Bank statement is {fmt(Math.abs(paymentDiff))}/mo {paymentDiff > 0 ? "more" : "less"} than full doc
+          {/* Monthly savings banner */}
+          <div style={{
+            margin: "14px 28px 0",
+            borderRadius: 12,
+            padding: "12px 18px",
+            border: `2px solid ${paymentDiff > 0 ? "#60A5FA" : "#FB923C"}`,
+            background: paymentDiff > 0 ? "#EFF6FF" : "#FFF7ED",
+            color: paymentDiff > 0 ? "#1E3A8A" : "#7C2D12",
+            fontSize: 13, fontWeight: 700, textAlign: "center" as const,
+          }}>
+            {paymentDiff > 0
+              ? `Full Doc saves ${fmt(paymentDiff)}/mo (${fmt(paymentDiff * 12)}/yr)`
+              : `Bank Statement saves ${fmt(Math.abs(paymentDiff))}/mo (${fmt(Math.abs(paymentDiff) * 12)}/yr)`}
+          </div>
+
+          {/* Rio-red key insight */}
+          <div style={{ margin: "14px 28px 0", border: "2px solid #C8202A", background: "#FEF2F2", borderRadius: 12, padding: "12px 16px" }}>
+            <div style={{ fontSize: 10, color: "#C8202A", fontWeight: 700, textTransform: "uppercase" as const, letterSpacing: "0.1em", marginBottom: 4 }}>Trade-Off Summary</div>
+            <div style={{ fontSize: 12, color: "#111", lineHeight: 1.5 }}>
+              Bank Statement requires <strong>{fmt(Math.abs(downDiff))} {downDiff > 0 ? "more" : "less"}</strong> down and carries a <strong>+1.5% rate premium</strong>, but skips PMI entirely {fdCalc.pmi > 0 ? <>(saves <strong style={{ color: "#C8202A" }}>{fmt(fdCalc.pmi)}/mo</strong>)</> : "(no PMI on either path here)"}.
             </div>
-            <div style={{ fontSize: 11, color: "#666" }}>
-              Down payment difference: Bank statement requires {fmt(Math.abs(downDiff))} {downDiff > 0 ? "more" : "less"} upfront. No PMI on bank statement saves {fmt(fdCalc.pmi)}/mo.
+          </div>
+
+          {/* Notes cards */}
+          <div style={{ padding: "14px 28px 0" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+              <div style={{ background: "#EFF6FF", border: "1px solid #BFDBFE", borderRadius: 10, padding: "10px 12px" }}>
+                <div style={{ fontWeight: 700, color: "#1E40AF", fontSize: 11, marginBottom: 4 }}>Full Doc Notes</div>
+                <ul style={{ fontSize: 10, color: "#1D4ED8", margin: 0, paddingLeft: 14, lineHeight: 1.5 }}>
+                  <li>Qualifies on tax return net income (Schedule C Line 31)</li>
+                  <li>2-year average — write-offs hurt qualifying income</li>
+                  <li>PMI applies at &lt;20% down (~0.7%/yr)</li>
+                  <li>Best rates available for well-documented borrowers</li>
+                </ul>
+              </div>
+              <div style={{ background: "#FFF7ED", border: "1px solid #FED7AA", borderRadius: 10, padding: "10px 12px" }}>
+                <div style={{ fontWeight: 700, color: "#9A3412", fontSize: 11, marginBottom: 4 }}>Bank Statement Notes</div>
+                <ul style={{ fontSize: 10, color: "#C2410C", margin: 0, paddingLeft: 14, lineHeight: 1.5 }}>
+                  <li>Qualifies on 12–24 months of bank deposits</li>
+                  <li>Ignores tax-return write-offs — deposits drive income</li>
+                  <li>No PMI on any down payment percentage</li>
+                  <li>10% down minimum, rate ~1.5% above conventional</li>
+                </ul>
+              </div>
             </div>
           </div>
 
           {/* Footer */}
-          <div style={{ padding: "12px 28px 16px", borderTop: "1px solid #E8E8E8", textAlign: "center" as const, fontSize: 9, color: "#999" }}>
+          <div style={{ padding: "14px 28px 16px", marginTop: 12, borderTop: "1px solid #E8E8E8", textAlign: "center" as const, fontSize: 9, color: "#999" }}>
             AZ &amp; Associates — Home Buying Advisor. All figures are estimates for informational purposes only. Subject to lender approval.
           </div>
         </div>
@@ -2343,35 +2489,92 @@ function SellerNetCalc({ importedPayoff }: { importedPayoff: number | null }) {
             </div>
           )}
 
-          {/* Breakdown table */}
-          <div style={{ margin: "16px 20px 20px", border: "1px solid #E8E8E8", borderRadius: 12, overflow: "hidden" }}>
-            {sellerRows.map((row, i) => (
-              <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "11px 18px", background: i % 2 === 0 ? "#FFFFFF" : "#FAFAF9", borderBottom: "1px solid #F0F0F0" }}>
-                <span style={{ fontSize: 13, color: "#6B6B6B" }}>{row.label}</span>
-                <span style={{ fontSize: 13, fontWeight: 600, color: row.isDeduction ? "#DC2626" : "#111111" }}>{row.value}</span>
+          {/* Large colored headline — green for positive, red for negative net */}
+          {(() => {
+            const totalDeductions = payoff + secondLienAmt + proratedTaxes + hoaDues + concessionsAmt + buyerAgentAmt + listingAgentAmt + titleFees;
+            const p = isNegative
+              ? { border: "#DC2626", bg: "#FEF2F2", label: "#B91C1C", value: "#7F1D1D", sub: "#991B1B" }
+              : { border: "#4ADE80", bg: "#F0FDF4", label: "#15803D", value: "#14532D", sub: "#166534" };
+            return (
+              <div style={{ padding: "16px 28px 0" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                  <div style={{ border: `2px solid ${p.border}`, background: p.bg, borderRadius: 12, padding: "12px 14px" }}>
+                    <div style={{ fontSize: 9, color: p.label, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const }}>Estimated Net Proceeds</div>
+                    <div style={{ fontSize: 24, fontWeight: 800, color: p.value, marginTop: 2 }}>{isNegative ? "−" : ""}{fmt(Math.abs(netProceeds))}</div>
+                    <div style={{ fontSize: 9, color: p.sub, marginTop: 4 }}>After all deductions &amp; commissions</div>
+                  </div>
+                  <div style={{ border: "1px solid #E8E8E8", background: "#FAFAF9", borderRadius: 12, padding: "12px 14px", display: "flex", flexDirection: "column", justifyContent: "center" }}>
+                    <div style={{ fontSize: 9, color: "#6B6B6B", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const }}>Transaction Snapshot</div>
+                    <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: "4px 12px", marginTop: 6, fontSize: 11 }}>
+                      <span style={{ color: "#6B6B6B" }}>Offer Price</span>
+                      <span style={{ fontWeight: 600, color: "#111" }}>{fmt(offerPrice)}</span>
+                      <span style={{ color: "#6B6B6B" }}>Total Deductions</span>
+                      <span style={{ fontWeight: 600, color: "#DC2626" }}>− {fmt(totalDeductions)}</span>
+                      <span style={{ color: "#6B6B6B" }}>Net %</span>
+                      <span style={{ fontWeight: 700, color: p.value }}>{offerPrice > 0 ? `${((netProceeds / offerPrice) * 100).toFixed(1)}%` : "—"}</span>
+                    </div>
+                  </div>
+                </div>
               </div>
-            ))}
-          </div>
+            );
+          })()}
 
-          {/* Net proceeds highlight */}
-          <div style={{ margin: "0 20px 20px", border: `2px solid ${isNegative ? "#DC2626" : "#C8202A"}`, borderRadius: 12, padding: "18px 20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <div>
-              <div style={{ color: isNegative ? "#DC2626" : "#C8202A", fontSize: 10, fontWeight: 600, textTransform: "uppercase" as const, letterSpacing: "0.1em" }}>Estimated Net Proceeds</div>
-              <div style={{ color: "#666", fontSize: 11, marginTop: 2 }}>After all deductions and commissions</div>
+          {/* Detail breakdown — deductions highlighted red, offer price emphasized */}
+          <div style={{ padding: "14px 28px 0" }}>
+            <div style={{ border: "1px solid #FECACA", background: "#FEF2F2", borderRadius: 12, padding: 14 }}>
+              <div style={{ fontWeight: 700, color: "#7F1D1D", fontSize: 12, textTransform: "uppercase" as const, letterSpacing: "0.05em", marginBottom: 8 }}>
+                Sale &amp; Deductions
+              </div>
+              {sellerRows.map((row, i) => (
+                <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: 11, padding: "5px 0", borderBottom: "1px solid #FEE2E2" }}>
+                  <span style={{ color: row.isDeduction ? "#B91C1C" : "#166534" }}>{row.label}</span>
+                  <span style={{ fontWeight: 600, color: row.isDeduction ? "#7F1D1D" : "#14532D" }}>{row.value}</span>
+                </div>
+              ))}
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, fontWeight: 800, marginTop: 8, paddingTop: 6, borderTop: `2px solid ${isNegative ? "#DC2626" : "#4ADE80"}`, color: isNegative ? "#7F1D1D" : "#14532D" }}>
+                <span>Net to Seller</span><span>{isNegative ? "−" : ""}{fmt(Math.abs(netProceeds))}</span>
+              </div>
             </div>
-            <div style={{ color: isNegative ? "#DC2626" : "#C8202A", fontSize: 28, fontWeight: 800, fontVariantNumeric: "tabular-nums" }}>{isNegative ? "−" : ""}{fmt(Math.abs(netProceeds))}</div>
           </div>
 
           {isNegative && (
-            <div style={{ margin: "0 20px 16px", padding: "10px 14px", border: "1px solid #FECACA", borderRadius: 8, fontSize: 11, color: "#991B1B", fontWeight: 600 }}>
-              ⚠ Estimated proceeds are negative — review payoff, concessions, and commission structure.
+            <div style={{ margin: "14px 28px 0", border: "2px solid #C8202A", background: "#FEF2F2", borderRadius: 12, padding: "12px 16px" }}>
+              <div style={{ fontSize: 10, color: "#C8202A", fontWeight: 700, textTransform: "uppercase" as const, letterSpacing: "0.1em", marginBottom: 4 }}>
+                Negative Proceeds — Action Required
+              </div>
+              <div style={{ fontSize: 12, color: "#111", lineHeight: 1.5 }}>
+                Estimated proceeds are <strong style={{ color: "#DC2626" }}>{fmt(netProceeds)}</strong>. Seller will owe cash at closing. Review payoff amount, seller concessions, and commission structure before proceeding — or increase offer price by <strong>{fmt(Math.abs(netProceeds))}+</strong> to break even.
+              </div>
             </div>
           )}
 
+          {/* Notes card — mirrors the on-screen tips */}
+          <div style={{ padding: "14px 28px 0" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+              <div style={{ background: "#F0FDF4", border: "1px solid #BBF7D0", borderRadius: 10, padding: "10px 12px" }}>
+                <div style={{ fontWeight: 700, color: "#166534", fontSize: 11, marginBottom: 4 }}>What's Included</div>
+                <ul style={{ fontSize: 10, color: "#15803D", margin: 0, paddingLeft: 14, lineHeight: 1.5 }}>
+                  <li>Loan payoff (1st + 2nd liens / HELOC / DPA)</li>
+                  <li>Prorated property taxes to closing date</li>
+                  <li>HOA dues at closing</li>
+                  <li>Both agent commissions + title fees (1%)</li>
+                </ul>
+              </div>
+              <div style={{ background: "#FEF2F2", border: "1px solid #FECACA", borderRadius: 10, padding: "10px 12px" }}>
+                <div style={{ fontWeight: 700, color: "#B91C1C", fontSize: 11, marginBottom: 4 }}>Not Included</div>
+                <ul style={{ fontSize: 10, color: "#DC2626", margin: 0, paddingLeft: 14, lineHeight: 1.5 }}>
+                  <li>Home warranty / repair credits</li>
+                  <li>Buyer inspection concessions (add manually)</li>
+                  <li>Escrow reserve refunds (received post-closing)</li>
+                  <li>State transfer taxes (varies by county)</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
           {/* Footer */}
-          <div style={{ borderTop: "2px solid #C8202A", padding: "12px 28px 16px", textAlign: "center" as const }}>
-            <div style={{ fontSize: 10, color: "#6B6B6B", fontWeight: 500 }}>AZ &amp; Associates — Home Buying Advisor</div>
-            <div style={{ fontSize: 8, color: "#ABABAB", marginTop: 3 }}>All figures are estimates for informational purposes only. Subject to lender approval and qualification.</div>
+          <div style={{ padding: "14px 28px 16px", marginTop: 12, borderTop: "1px solid #E8E8E8", textAlign: "center" as const, fontSize: 9, color: "#999" }}>
+            AZ &amp; Associates — Home Buying Advisor. All figures are estimates for informational purposes only. Contact your lender for the official payoff amount.
           </div>
         </div>
 
