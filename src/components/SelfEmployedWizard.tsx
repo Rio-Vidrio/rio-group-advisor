@@ -498,12 +498,31 @@ export default function SelfEmployedWizard({ onTabChange }: SelfEmployedWizardPr
             <span style={{ color: "#C8202A", fontSize: 14, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase" }}>Business Owner — Loan Qualification</span>
             <span style={{ color: "#999", fontSize: 11 }}>{todayStr}</span>
           </div>
-          {(firstName || lastName) && (
-            <div style={{ padding: "10px 0", borderBottom: "1px solid #E8E8E8" }}>
-              <div style={{ fontSize: 9, color: "#C8202A", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 3 }}>Prepared For</div>
-              <div style={{ fontWeight: 700, fontSize: 14, color: "#111" }}>{firstName} {lastName}</div>
+
+          {/* Client + business snapshot cards side-by-side, matching the NB/Payment PDF style */}
+          <div style={{ padding: "14px 0 0" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              {(firstName || lastName) && (
+                <div style={{ border: "1px solid #FECACA", background: "#FEF2F2", borderRadius: 10, padding: "10px 12px" }}>
+                  <div style={{ fontSize: 9, color: "#C8202A", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" }}>Prepared For</div>
+                  <div style={{ fontWeight: 700, fontSize: 14, color: "#111", marginTop: 2 }}>{firstName} {lastName}</div>
+                  {hasCosigner === "yes" && <div style={{ fontSize: 10, color: "#7F1D1D", marginTop: 2 }}>+ Co-signer</div>}
+                </div>
+              )}
+              <div style={{ border: "1px solid #E8E8E8", background: "#FAFAF9", borderRadius: 10, padding: "10px 12px" }}>
+                <div style={{ fontSize: 9, color: "#6B6B6B", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" }}>Client Snapshot</div>
+                <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: "3px 10px", marginTop: 4, fontSize: 10 }}>
+                  {businessType && <><span style={{ color: "#6B6B6B" }}>Business</span><span style={{ fontWeight: 600, color: "#111" }}>{businessType}</span></>}
+                  {creditScore > 0 && <><span style={{ color: "#6B6B6B" }}>Credit</span><span style={{ fontWeight: 600, color: "#111" }}>{creditScore}</span></>}
+                  {(prevYearIncome > 0 || recentYearIncome > 0) && (
+                    <><span style={{ color: "#6B6B6B" }}>2-yr Avg Income</span><span style={{ fontWeight: 600, color: "#111" }}>{fmt(((prevYearIncome + recentYearIncome) / 2))}/yr</span></>
+                  )}
+                  {monthlyDebts > 0 && <><span style={{ color: "#6B6B6B" }}>Monthly Debts</span><span style={{ fontWeight: 600, color: "#111" }}>{fmt(monthlyDebts)}/mo</span></>}
+                  {purchasePrice > 0 && <><span style={{ color: "#6B6B6B" }}>Purchase Price</span><span style={{ fontWeight: 600, color: "#111" }}>{fmt(purchasePrice)}</span></>}
+                </div>
+              </div>
             </div>
-          )}
+          </div>
         </div>
 
         {/* ════════════════════════════════════════════════════════════════════ */}

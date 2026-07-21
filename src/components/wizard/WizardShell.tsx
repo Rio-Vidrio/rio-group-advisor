@@ -1333,24 +1333,39 @@ export default function WizardShell({ onTabChange }: Props) {
             <div ref={printRef} className="print-container">
               {/* Print Header — base64 logos for reliable print */}
               <div className="print-only mb-6">
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingBottom: 12, borderBottom: "3px solid #C8202A", marginBottom: 12 }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingBottom: 12, borderBottom: "3px solid #C8202A", marginBottom: 0 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={TRG_LOGO_BLACK_B64} alt="The Rio Group" style={{ height: 44, width: "auto", display: "block" }} />
+                    <img src={AZ_LOGO_BLACK_B64} alt="AZ & Associates" style={{ height: 44, width: "auto", display: "block" }} />
                     <div>
-                      <div style={{ color: "#111", fontSize: 11, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase" as const }}>The Rio Group</div>
-                      <div style={{ color: "#999", fontSize: 9, fontWeight: 500, letterSpacing: "0.08em", textTransform: "uppercase" as const }}>Built Different</div>
+                      <div style={{ color: "#111", fontSize: 13, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const }}>AZ &amp; Associates</div>
+                      <div style={{ color: "#999", fontSize: 10, fontWeight: 500, letterSpacing: "0.08em", textTransform: "uppercase" as const }}>Client Advisor</div>
                     </div>
                   </div>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={AZ_LOGO_BLACK_B64} alt="AZ & Associates" style={{ height: 36, width: "auto", display: "block" }} />
-                </div>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <div>
-                    <div style={{ fontSize: 9, color: "#C8202A", fontWeight: 600, textTransform: "uppercase" as const, letterSpacing: "0.1em", marginBottom: 4 }}>Prepared For</div>
-                    <div style={{ fontWeight: 700, fontSize: 15, color: "#111" }}>{client.firstName} {client.lastName}</div>
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 3 }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={TRG_LOGO_BLACK_B64} alt="The Rio Group" style={{ height: 20, width: "auto", display: "block", opacity: 0.55 }} />
+                    <div style={{ color: "#bbb", fontSize: 8, letterSpacing: "0.15em", textTransform: "uppercase" as const }}>Designed by The Rio Group</div>
                   </div>
-                  <div style={{ fontSize: 12, color: "#999" }}>{client.date}</div>
+                </div>
+                <div style={{ borderBottom: "2px solid #C8202A", padding: "8px 0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span style={{ color: "#C8202A", fontSize: 14, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase" as const }}>Client Wizard — Recommendations</span>
+                  <span style={{ color: "#999", fontSize: 11 }}>{client.date}</span>
+                </div>
+                {/* Prepared For + Client Snapshot side-by-side */}
+                <div style={{ paddingTop: 14, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                  <div style={{ border: "1px solid #FECACA", background: "#FEF2F2", borderRadius: 10, padding: "10px 12px" }}>
+                    <div style={{ fontSize: 9, color: "#C8202A", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const }}>Prepared For</div>
+                    <div style={{ fontWeight: 700, fontSize: 15, color: "#111", marginTop: 2 }}>{client.firstName} {client.lastName}</div>
+                    {client.hasCosigner === "yes" && <div style={{ fontSize: 10, color: "#7F1D1D", marginTop: 2 }}>+ Co-signer</div>}
+                  </div>
+                  {bestMatch && (
+                    <div style={{ border: "2px solid #C8202A", background: "#FEF2F2", borderRadius: 10, padding: "10px 12px" }}>
+                      <div style={{ fontSize: 9, color: "#C8202A", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const }}>Recommended Path</div>
+                      <div style={{ fontWeight: 700, fontSize: 13, color: "#111", marginTop: 2 }}>{bestMatch.program.name}</div>
+                      <div style={{ fontSize: 11, color: "#7F1D1D", marginTop: 2 }}>{fmt(bestMatch.totalMonthly)}/mo · {fmt(bestMatch.downPaymentRequired)} down</div>
+                    </div>
+                  )}
                 </div>
               </div>
 
