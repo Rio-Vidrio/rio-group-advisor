@@ -61,7 +61,7 @@ const clearFromCitizenship = {
 const PROGRAMS = {
   fhaDPA: {
     name: "FHA Down Payment Assistance",
-    minScore: "600+",
+    minScore: "580+",
     bullets: [
       "Down payment covered via 2nd loan",
       "Most flexible on credit history",

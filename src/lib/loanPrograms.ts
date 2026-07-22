@@ -147,7 +147,7 @@ export const loanPrograms: LoanProgram[] = [
     hasPMI: true,
     maxDTI: 57,
     housingDTI: 46,
-    minCreditScore: 600,
+    minCreditScore: 580,
     incomeLimit: null,
     latePaymentsAllowed: true,
     collectionsAllowed: true,

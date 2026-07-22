@@ -1078,7 +1078,7 @@ export default function WizardShell({ onTabChange }: Props) {
                 <p className="mt-1">
                   Refer to Cross Country Mortgage for credit repair pathway.
                   Show client their target score and estimated max home price
-                  once they reach 600+.
+                  once they reach 580+.
                 </p>
               </AlertBox>
             )}
