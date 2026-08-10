@@ -1253,6 +1253,12 @@ function NewBuildCalc() {
   const [rsTaxRate, setRsTaxRate] = useState(0.45);
   const [rsTaxDollars, setRsTaxDollars] = useState(Math.round(450000 * 0.0045));
 
+  // Loan term per side — sticky across loan-mode switches so agents can
+  // compare e.g. 40-yr Conventional (like the $1,000 Down program) against
+  // a 30-yr FHA.
+  const [nbTerm, setNbTerm] = useState(30);
+  const [rsTerm, setRsTerm] = useState(30);
+
   useEffect(() => { setRsRate(rates.fha); }, [rates]);
 
   // Loan-mode switcher — auto-adjusts down %, funding fees flow through calc()
@@ -1324,14 +1330,14 @@ function NewBuildCalc() {
 
   const insurance = 1350;
 
-  const calc = (price: number, rate: number, hoa: number, downPct: number, taxRate: number, mode: LoanMode, pmiOn = true) => {
+  const calc = (price: number, rate: number, hoa: number, downPct: number, taxRate: number, mode: LoanMode, pmiOn = true, term = 30) => {
     const effectiveDownPct = mode === "va" ? 0 : downPct;
     const down = price * (effectiveDownPct / 100);
     const baseLoan = price - down;
     const ufmip = mode === "fha" ? baseLoan * 0.0175 : 0;         // FHA upfront MIP
     const vaFee = mode === "va"  ? baseLoan * 0.0215 : 0;         // VA funding fee (standard, no disability waiver here)
     const totalLoan = baseLoan + ufmip + vaFee;
-    const pi = calculateMonthlyPayment(totalLoan, rate, 30);
+    const pi = calculateMonthlyPayment(totalLoan, rate, term);
     const tax = (price * (taxRate / 100)) / 12;
     const ins = insurance / 12;
     const mi =
@@ -1340,12 +1346,12 @@ function NewBuildCalc() {
       0;
     const piti = pi + tax + ins + mi;
     const total = piti + hoa;
-    const lifetimeInterest = pi * 360 - totalLoan;
+    const lifetimeInterest = pi * (term * 12) - totalLoan;
     return { pi, piti, total, lifetimeInterest, down, loan: totalLoan, baseLoan, mi };
   };
 
-  const nb = calc(nbPrice, nbRate, nbHoa, nbDownPct, nbTaxRate, nbLoanMode, nbPmiOn);
-  const rs = calc(rsPrice, rsRate, rsHoa, rsDownPct, rsTaxRate, rsLoanMode, rsPmiOn);
+  const nb = calc(nbPrice, nbRate, nbHoa, nbDownPct, nbTaxRate, nbLoanMode, nbPmiOn, nbTerm);
+  const rs = calc(rsPrice, rsRate, rsHoa, rsDownPct, rsTaxRate, rsLoanMode, rsPmiOn, rsTerm);
 
   // Payment-equivalent: what resale price = same payment as new build at market rate
   let equivalentResalePrice = 0;
@@ -1353,7 +1359,7 @@ function NewBuildCalc() {
     let lo = 0, hi = 1500000;
     for (let i = 0; i < 50; i++) {
       const mid = (lo + hi) / 2;
-      const c = calc(mid, rsRate, rsHoa, rsDownPct, rsTaxRate, rsLoanMode, rsPmiOn);
+      const c = calc(mid, rsRate, rsHoa, rsDownPct, rsTaxRate, rsLoanMode, rsPmiOn, rsTerm);
       if (c.total < nb.total) lo = mid;
       else hi = mid;
     }
@@ -1366,7 +1372,7 @@ function NewBuildCalc() {
     let lo = 0, hi = 1500000;
     for (let i = 0; i < 50; i++) {
       const mid = (lo + hi) / 2;
-      const c = calc(mid, nbRate, nbHoa, nbDownPct, nbTaxRate, nbLoanMode, nbPmiOn);
+      const c = calc(mid, nbRate, nbHoa, nbDownPct, nbTaxRate, nbLoanMode, nbPmiOn, nbTerm);
       if (c.total < rs.total) lo = mid;
       else hi = mid;
     }
@@ -1484,7 +1490,7 @@ function NewBuildCalc() {
                   nbLoanMode === "fha" ? { label: "UFMIP (1.75%)", value: `+ ${fmt(nb.loan - (nbPrice - nb.down))}` } : null,
                   nbLoanMode === "va"  ? { label: "Funding Fee (2.15%)", value: `+ ${fmt(nb.loan - nbPrice)}` } : null,
                   { label: "Loan Amount",     value: fmt(nb.loan) },
-                  { label: nbLoanMode === "fha" ? "Rate (buydown)" : "Rate", value: `${nbRate}%` },
+                  { label: nbLoanMode === "fha" ? "Rate (buydown)" : "Rate", value: `${nbRate}% · ${nbTerm}yr` },
                   { label: "Tax Rate",        value: `${nbTaxRate}%` },
                   { label: "Monthly HOA",     value: nbHoa > 0 ? fmt(nbHoa) : "None" },
                   nb.mi > 0
@@ -1520,7 +1526,7 @@ function NewBuildCalc() {
                   rsLoanMode === "fha" ? { label: "UFMIP (1.75%)", value: `+ ${fmt(rs.loan - (rsPrice - rs.down))}` } : null,
                   rsLoanMode === "va"  ? { label: "Funding Fee (2.15%)", value: `+ ${fmt(rs.loan - rsPrice)}` } : null,
                   { label: "Loan Amount",     value: fmt(rs.loan) },
-                  { label: "Rate (market)",   value: `${rsRate.toFixed(2)}%` },
+                  { label: "Rate (market)",   value: `${rsRate.toFixed(2)}% · ${rsTerm}yr` },
                   { label: "Tax Rate",        value: `${rsTaxRate}%` },
                   { label: "Monthly HOA",     value: rsHoa > 0 ? fmt(rsHoa) : "None" },
                   rs.mi > 0
@@ -1670,6 +1676,35 @@ function NewBuildCalc() {
               </div>
             )}
             <NumberInput label={nbLoanMode === "fha" ? "Rate (builder buydown)" : "Rate"} value={nbRate} onChange={setNbRate} suffix="%" step="0.125" />
+            {/* Term — sticky across loan-mode switches */}
+            <div>
+              <label style={labelStyle}>Term (years)</label>
+              <div style={{ display: "flex", gap: "6px" }}>
+                {[30, 40].map((t) => {
+                  const on = nbTerm === t;
+                  return (
+                    <button
+                      key={t}
+                      onClick={() => setNbTerm(t)}
+                      style={{
+                        flex: 1,
+                        padding: "8px 10px",
+                        borderRadius: "8px",
+                        fontSize: "0.8125rem",
+                        fontWeight: on ? 700 : 500,
+                        border: on ? "1.5px solid #1E40AF" : "1px solid #E8E8E8",
+                        background: on ? "#DBEAFE" : "#FFFFFF",
+                        color: on ? "#1E3A8A" : "#6B6B6B",
+                        cursor: "pointer",
+                        transition: "background 100ms, color 100ms, border-color 100ms",
+                      }}
+                    >
+                      {t}-year
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
             {/* Tax rate with first-year note */}
             <TaxInput
               price={nbPrice}
@@ -1724,6 +1759,35 @@ function NewBuildCalc() {
               </div>
             )}
             <NumberInput label="Rate (market)" value={rsRate} onChange={setRsRate} suffix="%" step="0.125" />
+            {/* Term — sticky across loan-mode switches */}
+            <div>
+              <label style={labelStyle}>Term (years)</label>
+              <div style={{ display: "flex", gap: "6px" }}>
+                {[30, 40].map((t) => {
+                  const on = rsTerm === t;
+                  return (
+                    <button
+                      key={t}
+                      onClick={() => setRsTerm(t)}
+                      style={{
+                        flex: 1,
+                        padding: "8px 10px",
+                        borderRadius: "8px",
+                        fontSize: "0.8125rem",
+                        fontWeight: on ? 700 : 500,
+                        border: on ? "1.5px solid #166534" : "1px solid #E8E8E8",
+                        background: on ? "#DCFCE7" : "#FFFFFF",
+                        color: on ? "#14532D" : "#6B6B6B",
+                        cursor: "pointer",
+                        transition: "background 100ms, color 100ms, border-color 100ms",
+                      }}
+                    >
+                      {t}-year
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
             <TaxInput
               price={rsPrice}
               taxDollars={rsTaxDollars}
@@ -1866,6 +1930,10 @@ function BusinessOwnerCalc() {
   const [bsTaxDollars, setBsTaxDollars] = useState(Math.round(450000 * 0.0045));
   const [bsHoa, setBsHoa] = useState(0);
 
+  // Term per side — sticky across mode changes
+  const [fdTerm, setFdTerm] = useState(30);
+  const [bsTerm, setBsTerm] = useState(30);
+
   useEffect(() => { setFdRate(convRate); }, [convRate]);
   useEffect(() => { setBsRateAdj(bsRate); }, [bsRate]);
 
@@ -1925,7 +1993,7 @@ function BusinessOwnerCalc() {
   const fdCalc = (() => {
     const down = fdPrice * (fdDownPct / 100);
     const loan = fdPrice - down;
-    const pi = calculateMonthlyPayment(loan, fdRate, 30);
+    const pi = calculateMonthlyPayment(loan, fdRate, fdTerm);
     const tax = (fdPrice * (fdTaxRate / 100)) / 12;
     const ins = insurance / 12;
     const pmi = fdDownPct < 20 ? (loan * convPmiRate) / 12 : 0;
@@ -1938,7 +2006,7 @@ function BusinessOwnerCalc() {
   const bsCalc = (() => {
     const down = bsPrice * (bsDownPct / 100);
     const loan = bsPrice - down;
-    const pi = calculateMonthlyPayment(loan, bsRateAdj, 30);
+    const pi = calculateMonthlyPayment(loan, bsRateAdj, bsTerm);
     const tax = (bsPrice * (bsTaxRate / 100)) / 12;
     const ins = insurance / 12;
     const piti = pi + tax + ins;
@@ -2016,7 +2084,7 @@ function BusinessOwnerCalc() {
                   { label: "Purchase Price", value: fmt(fdPrice) },
                   { label: `Down (${fdDownPct}%)`, value: fmt(fdCalc.down) },
                   { label: "Loan Amount", value: fmt(fdCalc.loan) },
-                  { label: "Rate", value: `${fdRate.toFixed(2)}%` },
+                  { label: "Rate", value: `${fdRate.toFixed(2)}% · ${fdTerm}yr` },
                   { label: "Tax Rate", value: `${fdTaxRate}%` },
                   { label: "Monthly HOA", value: fdHoa > 0 ? fmt(fdHoa) : "None" },
                   fdCalc.pmi > 0 ? { label: "Monthly PMI", value: fmt(fdCalc.pmi) } : null,
@@ -2043,7 +2111,7 @@ function BusinessOwnerCalc() {
                   { label: "Purchase Price", value: fmt(bsPrice) },
                   { label: `Down (${bsDownPct}%)`, value: fmt(bsCalc.down) },
                   { label: "Loan Amount", value: fmt(bsCalc.loan) },
-                  { label: "Rate (+1.5%)", value: `${bsRateAdj.toFixed(2)}%` },
+                  { label: "Rate (+1.5%)", value: `${bsRateAdj.toFixed(2)}% · ${bsTerm}yr` },
                   { label: "Tax Rate", value: `${bsTaxRate}%` },
                   { label: "Monthly HOA", value: bsHoa > 0 ? fmt(bsHoa) : "None" },
                   { label: "PMI/MIP", value: "None" },
@@ -2143,6 +2211,17 @@ function BusinessOwnerCalc() {
                 <div className="mt-1 text-xs text-blue-600 font-medium pl-1">= {fmt(fdCalc.down)} down · Loan {fmt(fdCalc.loan)}</div>
               </div>
               <NumberInput label="Rate (Conv)" value={fdRate} onChange={setFdRate} suffix="%" step="0.125" />
+              <div>
+                <label style={labelStyle}>Term (years)</label>
+                <div style={{ display: "flex", gap: "6px" }}>
+                  {[30, 40].map((t) => {
+                    const on = fdTerm === t;
+                    return (
+                      <button key={t} onClick={() => setFdTerm(t)} style={{ flex: 1, padding: "8px 10px", borderRadius: "8px", fontSize: "0.8125rem", fontWeight: on ? 700 : 500, border: on ? "1.5px solid #1E40AF" : "1px solid #E8E8E8", background: on ? "#DBEAFE" : "#FFFFFF", color: on ? "#1E3A8A" : "#6B6B6B", cursor: "pointer" }}>{t}-year</button>
+                    );
+                  })}
+                </div>
+              </div>
               <TaxInput price={fdPrice} taxDollars={fdTaxDollars} onTaxDollarsChange={setFdTaxDollars} taxRate={fdTaxRate} onTaxRateChange={setFdTaxRate} label="Property Taxes" />
               <MoneyInput label="Monthly HOA" value={fdHoa} onChange={setFdHoa} />
             </div>
@@ -2159,6 +2238,17 @@ function BusinessOwnerCalc() {
                 <div className="mt-1 text-xs text-orange-600 font-medium pl-1">= {fmt(bsCalc.down)} down · Loan {fmt(bsCalc.loan)}</div>
               </div>
               <NumberInput label="Rate (conv + 1.5%)" value={bsRateAdj} onChange={setBsRateAdj} suffix="%" step="0.125" />
+              <div>
+                <label style={labelStyle}>Term (years)</label>
+                <div style={{ display: "flex", gap: "6px" }}>
+                  {[30, 40].map((t) => {
+                    const on = bsTerm === t;
+                    return (
+                      <button key={t} onClick={() => setBsTerm(t)} style={{ flex: 1, padding: "8px 10px", borderRadius: "8px", fontSize: "0.8125rem", fontWeight: on ? 700 : 500, border: on ? "1.5px solid #9A3412" : "1px solid #E8E8E8", background: on ? "#FED7AA" : "#FFFFFF", color: on ? "#7C2D12" : "#6B6B6B", cursor: "pointer" }}>{t}-year</button>
+                    );
+                  })}
+                </div>
+              </div>
               <TaxInput price={bsPrice} taxDollars={bsTaxDollars} onTaxDollarsChange={setBsTaxDollars} taxRate={bsTaxRate} onTaxRateChange={setBsTaxRate} label="Property Taxes" />
               <MoneyInput label="Monthly HOA" value={bsHoa} onChange={setBsHoa} />
             </div>
