@@ -6,6 +6,7 @@ import html2canvas from "html2canvas";
 import { calculateMonthlyPayment } from "@/lib/loanPrograms";
 import { getRates, Rates, defaultRates } from "@/lib/rateStore";
 import { AZ_LOGO_BLACK_B64, TRG_LOGO_BLACK_B64 } from "@/lib/printLogos";
+import { saveCanvasAsJpg } from "@/lib/saveImage";
 
 /* ── Floating Quick Calculator ── */
 function FloatingCalc() {
@@ -105,6 +106,7 @@ function safeName(s: string) {
 function fmt(n: number) {
   return "$" + n.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
+
 
 const inputStyle: React.CSSProperties = {
   width: "100%",
@@ -494,16 +496,12 @@ function PaymentCalc() {
     const el = summaryRef.current;
     if (!el) return;
     setImgLoading(true);
-    // Temporarily show the print-only summary card so html2canvas can capture it
     el.style.display = "block";
     el.style.position = "fixed";
     el.style.left = "-9999px";
     try {
       const canvas = await html2canvas(el, { scale: 2, backgroundColor: "#ffffff", useCORS: true, logging: false });
-      const link = document.createElement("a");
-      link.download = `${pdfTitle}.jpg`;
-      link.href = canvas.toDataURL("image/jpeg", 0.95);
-      link.click();
+      await saveCanvasAsJpg(canvas, `${pdfTitle}.jpg`);
     } finally {
       el.style.display = "";
       el.style.position = "";
@@ -1295,10 +1293,7 @@ function NewBuildCalc() {
     el.style.left = "-9999px";
     try {
       const canvas = await html2canvas(el, { scale: 2, backgroundColor: "#ffffff", useCORS: true, logging: false });
-      const link = document.createElement("a");
-      link.download = `Rio-Group-NB-vs-Resale${clientName ? `-${safeName(clientName)}` : ""}.jpg`;
-      link.href = canvas.toDataURL("image/jpeg", 0.95);
-      link.click();
+      await saveCanvasAsJpg(canvas, `Rio-Group-NB-vs-Resale${clientName ? `-${safeName(clientName)}` : ""}.jpg`);
     } finally {
       el.style.display = "";
       el.style.position = "";
@@ -1954,10 +1949,7 @@ function BusinessOwnerCalc() {
     el.style.left = "-9999px";
     try {
       const canvas = await html2canvas(el, { scale: 2, backgroundColor: "#ffffff", useCORS: true, logging: false });
-      const link = document.createElement("a");
-      link.download = `Rio-Group-FullDoc-vs-BankStmt${clientName ? `-${safeName(clientName)}` : ""}.jpg`;
-      link.href = canvas.toDataURL("image/jpeg", 0.95);
-      link.click();
+      await saveCanvasAsJpg(canvas, `Rio-Group-FullDoc-vs-BankStmt${clientName ? `-${safeName(clientName)}` : ""}.jpg`);
     } finally {
       el.style.display = ""; el.style.position = ""; el.style.left = "";
       setImgLoading(false);
@@ -2484,10 +2476,7 @@ function SellerNetCalc({ importedPayoff }: { importedPayoff: number | null }) {
     el.style.left = "-9999px";
     try {
       const canvas = await html2canvas(el, { scale: 2, backgroundColor: "#ffffff", useCORS: true, logging: false });
-      const link = document.createElement("a");
-      link.download = `${sellerPdfTitle}.jpg`;
-      link.href = canvas.toDataURL("image/jpeg", 0.95);
-      link.click();
+      await saveCanvasAsJpg(canvas, `${sellerPdfTitle}.jpg`);
     } finally {
       el.style.display = "";
       el.style.position = "";
