@@ -2,10 +2,9 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useReactToPrint } from "react-to-print";
-import html2canvas from "html2canvas";
 import { getRates, Rates, defaultRates } from "@/lib/rateStore";
 import { AZ_LOGO_BLACK_B64, TRG_LOGO_BLACK_B64 } from "@/lib/printLogos";
-import { saveCanvasAsJpg } from "@/lib/saveImage";
+import { captureAndSave } from "@/lib/saveImage";
 
 /* ── Helpers ── */
 const fmt = (n: number) => "$" + Math.round(n).toLocaleString("en-US");
@@ -292,13 +291,9 @@ export default function SelfEmployedWizard({ onTabChange }: SelfEmployedWizardPr
     const el = printRef.current;
     if (!el) return;
     setImgLoading(true);
-    try {
-      const canvas = await html2canvas(el, { scale: 2, backgroundColor: "#ffffff", useCORS: true, logging: false });
-      const namePart = [firstName, lastName].filter(Boolean).join("-").replace(/[^a-zA-Z0-9-]/g, "");
-      await saveCanvasAsJpg(canvas, `Rio-Group-BusinessOwner${namePart ? `-${namePart}` : ""}.jpg`);
-    } finally {
-      setImgLoading(false);
-    }
+    const namePart = [firstName, lastName].filter(Boolean).join("-").replace(/[^a-zA-Z0-9-]/g, "");
+    try { await captureAndSave(el, `Rio-Group-BusinessOwner${namePart ? `-${namePart}` : ""}.jpg`); }
+    finally { setImgLoading(false); }
   };
 
   /* ── Derived calculations ── */

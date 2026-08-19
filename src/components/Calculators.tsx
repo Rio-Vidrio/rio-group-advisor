@@ -2,11 +2,10 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useReactToPrint } from "react-to-print";
-import html2canvas from "html2canvas";
 import { calculateMonthlyPayment } from "@/lib/loanPrograms";
 import { getRates, Rates, defaultRates } from "@/lib/rateStore";
 import { AZ_LOGO_BLACK_B64, TRG_LOGO_BLACK_B64 } from "@/lib/printLogos";
-import { saveCanvasAsJpg } from "@/lib/saveImage";
+import { captureAndSave } from "@/lib/saveImage";
 
 /* ── Floating Quick Calculator ── */
 function FloatingCalc() {
@@ -496,18 +495,8 @@ function PaymentCalc() {
     const el = summaryRef.current;
     if (!el) return;
     setImgLoading(true);
-    el.style.display = "block";
-    el.style.position = "fixed";
-    el.style.left = "-9999px";
-    try {
-      const canvas = await html2canvas(el, { scale: 2, backgroundColor: "#ffffff", useCORS: true, logging: false });
-      await saveCanvasAsJpg(canvas, `${pdfTitle}.jpg`);
-    } finally {
-      el.style.display = "";
-      el.style.position = "";
-      el.style.left = "";
-      setImgLoading(false);
-    }
+    try { await captureAndSave(el, `${pdfTitle}.jpg`); }
+    finally { setImgLoading(false); }
   };
 
   const paymentRows = ([
@@ -525,7 +514,7 @@ function PaymentCalc() {
     loanMode === "conventional" && downPct < 20 ? { label: `Monthly PMI (${pmiRate}%/yr)`, value: fmt(monthlyMI) } : null,
     loanMode === "fha" ? { label: "Monthly MIP (0.55%/yr)", value: fmt(monthlyMI) } : null,
     loanMode === "fha" && solarFinanced > 0 ? { label: `Solar Financed (${fmt(solarFinanced)})`, value: "Included in P&I" } : null,
-    loanMode === "fha" && dpa2ndPayment > 0 ? { label: `Monthly DPA 2nd Payment (${(dpa2ndRate).toFixed(3)}%, 30yr)`, value: fmt(dpa2ndPayment) } : null,
+    loanMode === "fha" && dpa2ndPayment > 0 ? { label: `Monthly DPA 2nd Payment (${(dpa2ndRate).toFixed(3)}%, ${dpa2ndTerm}yr)`, value: fmt(dpa2ndPayment) } : null,
   ] as ({ label: string; value: string } | null)[]).filter((r): r is { label: string; value: string } => r !== null);
 
   return (
@@ -1288,18 +1277,8 @@ function NewBuildCalc() {
     const el = summaryRef.current;
     if (!el) return;
     setImgLoading(true);
-    el.style.display = "block";
-    el.style.position = "fixed";
-    el.style.left = "-9999px";
-    try {
-      const canvas = await html2canvas(el, { scale: 2, backgroundColor: "#ffffff", useCORS: true, logging: false });
-      await saveCanvasAsJpg(canvas, `Rio-Group-NB-vs-Resale${clientName ? `-${safeName(clientName)}` : ""}.jpg`);
-    } finally {
-      el.style.display = "";
-      el.style.position = "";
-      el.style.left = "";
-      setImgLoading(false);
-    }
+    try { await captureAndSave(el, `Rio-Group-NB-vs-Resale${clientName ? `-${safeName(clientName)}` : ""}.jpg`); }
+    finally { setImgLoading(false); }
   };
 
   const nbPdfTitle = `Rio-Group-NB-vs-Resale${clientName ? `-${safeName(clientName)}` : ""}`;
@@ -1944,16 +1923,8 @@ function BusinessOwnerCalc() {
     const el = summaryRef.current;
     if (!el) return;
     setImgLoading(true);
-    el.style.display = "block";
-    el.style.position = "fixed";
-    el.style.left = "-9999px";
-    try {
-      const canvas = await html2canvas(el, { scale: 2, backgroundColor: "#ffffff", useCORS: true, logging: false });
-      await saveCanvasAsJpg(canvas, `Rio-Group-FullDoc-vs-BankStmt${clientName ? `-${safeName(clientName)}` : ""}.jpg`);
-    } finally {
-      el.style.display = ""; el.style.position = ""; el.style.left = "";
-      setImgLoading(false);
-    }
+    try { await captureAndSave(el, `Rio-Group-FullDoc-vs-BankStmt${clientName ? `-${safeName(clientName)}` : ""}.jpg`); }
+    finally { setImgLoading(false); }
   };
 
   const boPdfTitle = `Rio-Group-FullDoc-vs-BankStmt${clientName ? `-${safeName(clientName)}` : ""}`;
@@ -2471,18 +2442,8 @@ function SellerNetCalc({ importedPayoff }: { importedPayoff: number | null }) {
     const el = summaryRef.current;
     if (!el) return;
     setImgLoading(true);
-    el.style.display = "block";
-    el.style.position = "fixed";
-    el.style.left = "-9999px";
-    try {
-      const canvas = await html2canvas(el, { scale: 2, backgroundColor: "#ffffff", useCORS: true, logging: false });
-      await saveCanvasAsJpg(canvas, `${sellerPdfTitle}.jpg`);
-    } finally {
-      el.style.display = "";
-      el.style.position = "";
-      el.style.left = "";
-      setImgLoading(false);
-    }
+    try { await captureAndSave(el, `${sellerPdfTitle}.jpg`); }
+    finally { setImgLoading(false); }
   };
 
   const parseLocalDate = (s: string) => {
