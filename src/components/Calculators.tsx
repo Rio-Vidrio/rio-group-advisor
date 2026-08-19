@@ -2592,7 +2592,7 @@ function SellerNetCalc({ importedPayoff }: { importedPayoff: number | null }) {
           <div style={{ padding: "14px 28px 0" }}>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
               <div style={{ background: "#F0FDF4", border: "1px solid #BBF7D0", borderRadius: 10, padding: "10px 12px" }}>
-                <div style={{ fontWeight: 700, color: "#166534", fontSize: 11, marginBottom: 4 }}>What's Included</div>
+                <div style={{ fontWeight: 700, color: "#166534", fontSize: 11, marginBottom: 4 }}>What&apos;s Included</div>
                 <ul style={{ fontSize: 10, color: "#15803D", margin: 0, paddingLeft: 14, lineHeight: 1.5 }}>
                   <li>Loan payoff (1st + 2nd liens / HELOC / DPA)</li>
                   <li>Prorated property taxes to closing date</li>
