@@ -19,8 +19,8 @@ const AUTH_KEY = `rio-advisor-auth-v${AUTH_VERSION}`;
 // SHA-256 of "Dothework3!"
 const CORRECT_HASH = "0cf9fee2590a65dd8bbb3272d3ad0dce968764a7d6656210ec9e90d7aa17f2f7";
 
-// Where "Message Rio" opens. Update as needed.
-const CONTACT_HREF = "mailto:silverio.vidrio@gmail.com?subject=Rio%20Group%20Client%20Advisor%20-%20Access%20Request&body=Hi%20Rio%2C%0A%0AI%27d%20like%20access%20to%20the%20Client%20Advisor.%0A%0AName%3A%0ARole%3A%0A";
+// Where the "Text Rio" button opens. sms: with a pre-filled body works on iOS and Android messaging apps.
+const CONTACT_HREF = "sms:+16028720267?body=Hi%20Rio%2C%20I%27d%20like%20the%20Client%20Advisor%20password.%20Name%3A";
 
 async function sha256Hex(input: string): Promise<string> {
   const buf = new TextEncoder().encode(input);
@@ -61,7 +61,7 @@ export default function PasswordGate({ children }: { children: React.ReactNode }
         try { window.localStorage.setItem(AUTH_KEY, "unlocked"); } catch { /* ignore quota / disabled */ }
         setUnlocked(true);
       } else {
-        setError("That password isn't right. Message Rio if you need one.");
+        setError("That password isn't right. Text Rio if you need one.");
       }
     } catch {
       setError("Couldn't check the password on this device. Please try again.");
@@ -180,7 +180,7 @@ export default function PasswordGate({ children }: { children: React.ReactNode }
 
         <div style={{ marginTop: "18px", paddingTop: "16px", borderTop: "1px solid #F0EEE9", textAlign: "center" }}>
           <div style={{ fontSize: "0.8125rem", color: "#6B6B6B", marginBottom: "10px" }}>
-            Don&apos;t have access?
+            Don&apos;t have access? Text <span style={{ fontWeight: 700, color: "#111111" }}>602-872-0267</span>
           </div>
           <a
             href={CONTACT_HREF}
@@ -196,7 +196,7 @@ export default function PasswordGate({ children }: { children: React.ReactNode }
               letterSpacing: "0.02em",
             }}
           >
-            ✉ Message Rio for a Password
+            💬 Text Rio for a Password
           </a>
         </div>
       </form>
