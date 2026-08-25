@@ -632,44 +632,6 @@ function PaymentCalc() {
             </div>
           </div>
 
-          {/* Loan-type notes — mirrors the on-screen FHA fees / VA funding fee / Conv PMI callouts */}
-          {(() => {
-            const bullets = loanMode === "fha"
-              ? [
-                  "Upfront MIP: 1.75% rolled into loan",
-                  "Annual MIP: 0.55%/yr paid monthly",
-                  "Min down 3.5% — DPA available with red flags",
-                  "FHA loan limit for Maricopa County: $578,000",
-                ]
-              : loanMode === "va"
-              ? [
-                  "Zero down — no PMI or monthly MI",
-                  "2.15% funding fee rolled into the loan (waived w/ 10%+ disability)",
-                  "Cheapest total cost of any loan type for eligible vets",
-                  "Rate typically 0.25–0.50% below conventional",
-                ]
-              : [
-                  "5% down minimum (some programs offer 1%–3%)",
-                  downPct < 20 ? `PMI applies at ~${pmiRate}%/yr until 20% equity` : "No PMI — 20%+ down",
-                  "Best rates for 700+ credit; 660+ required",
-                  "No upfront mortgage insurance fee",
-                ];
-            const t = loanMode === "fha"
-              ? { border: "#BFDBFE", label: "#1D4ED8", value: "#1E3A8A", bg: "#EFF6FF", title: "FHA Details" }
-              : loanMode === "va"
-              ? { border: "#BBF7D0", label: "#15803D", value: "#14532D", bg: "#F0FDF4", title: "VA Details" }
-              : { border: "#FECACA", label: "#B91C1C", value: "#7F1D1D", bg: "#FEF2F2", title: "Conventional Details" };
-            return (
-              <div style={{ padding: "14px 28px 0" }}>
-                <div style={{ background: t.bg, border: `1px solid ${t.border}`, borderRadius: 10, padding: "10px 12px" }}>
-                  <div style={{ fontWeight: 700, color: t.value, fontSize: 11, marginBottom: 4 }}>{t.title}</div>
-                  <ul style={{ fontSize: 10, color: t.label, margin: 0, paddingLeft: 14, lineHeight: 1.5 }}>
-                    {bullets.map((b, i) => <li key={i}>{b}</li>)}
-                  </ul>
-                </div>
-              </div>
-            );
-          })()}
 
           {/* Footer */}
           <div style={{ padding: "14px 28px 16px", marginTop: 12, borderTop: "1px solid #E8E8E8", textAlign: "center" as const, fontSize: 9, color: "#999" }}>

@@ -114,22 +114,10 @@ function showPreviewModal(blob: Blob, filename: string): void {
 }
 
 async function deliverBlob(blob: Blob, filename: string): Promise<void> {
-  const file = new File([blob], filename, { type: "image/jpeg" });
-  const nav = typeof navigator !== "undefined" ? (navigator as Navigator & { canShare?: (data: ShareData) => boolean }) : null;
-
-  if (nav && typeof nav.share === "function" && typeof nav.canShare === "function") {
-    let canShare = false;
-    try { canShare = nav.canShare({ files: [file] }); } catch { canShare = false; }
-    if (canShare) {
-      try {
-        await nav.share({ files: [file], title: filename });
-        return;
-      } catch (err) {
-        if (err instanceof DOMException && err.name === "AbortError") return;
-        // Any other error → fall through to modal
-      }
-    }
-  }
+  // Always show the preview modal. navigator.share opens the OS share sheet
+  // which on iOS defaults to "Send" targets — users don't easily see the
+  // Save-to-Photos option. The modal gives them a clear Save Image (long-press
+  // on mobile) or Download (desktop) path.
   showPreviewModal(blob, filename);
 }
 
