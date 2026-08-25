@@ -134,41 +134,47 @@ export async function saveCanvasAsJpg(canvas: HTMLCanvasElement, filename: strin
 
 /**
  * Capture a DOM element with html2canvas and save it as a JPEG.
- * Handles temporarily showing print-only elements, mobile scale tuning, and
- * user-visible error messages.
+ *
+ * Clones the source into an off-screen sandbox before rendering rather than
+ * showing/hiding the live element. Two reasons:
+ *   1. The live element is `display: none` (print-only). Toggling that on
+ *      the real node caused mobile Safari to briefly repaint the page as
+ *      blank while the huge card laid out — really jarring.
+ *   2. Any half-visible flash of a summary card layered on top of the app
+ *      looks like a page-crash to the user.
+ * The clone lives in a fixed, off-screen container that never enters the
+ * user's viewport, so the visible page never changes.
  */
 export async function captureAndSave(el: HTMLElement, filename: string): Promise<void> {
-  // Temporarily reveal print-only content — position off-screen but rendered
-  const prev = {
-    display: el.style.display,
-    position: el.style.position,
-    left: el.style.left,
-    top: el.style.top,
-    zIndex: el.style.zIndex,
-    opacity: el.style.opacity,
-  };
-  el.style.display = "block";
-  el.style.position = "fixed";
-  el.style.left = "0";
-  el.style.top = "0";
-  el.style.zIndex = "-1";
-  el.style.opacity = "0";
+  const sandbox = document.createElement("div");
+  sandbox.style.cssText = "position:fixed;top:0;left:-100000px;pointer-events:none;background:#fff;";
+  const clone = el.cloneNode(true) as HTMLElement;
+  clone.style.display = "block";
+  clone.style.visibility = "visible";
+  // Explicit width so print-only styles that were sized against a parent
+  // container still render at a sensible size in the sandbox.
+  const naturalWidth = el.scrollWidth || 680;
+  clone.style.width = `${naturalWidth}px`;
+  sandbox.appendChild(clone);
+  document.body.appendChild(sandbox);
 
   try {
-    // Give the browser a paint tick so html2canvas measures real dimensions
+    // Wait two paint frames so the clone has been laid out and measured
     await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
 
     // Lower scale on mobile — high-DPR + tall summary cards can blow past
     // Safari's canvas memory limit and return an all-white image or fail.
     const scale = isMobile() ? 1.5 : 2;
 
-    const canvas = await html2canvas(el, {
+    const canvas = await html2canvas(clone, {
       scale,
       backgroundColor: "#ffffff",
       useCORS: true,
       logging: false,
-      windowWidth: el.scrollWidth,
-      windowHeight: el.scrollHeight,
+      width: clone.scrollWidth,
+      height: clone.scrollHeight,
+      windowWidth: clone.scrollWidth,
+      windowHeight: clone.scrollHeight,
     });
 
     const blob = await new Promise<Blob | null>((res) => canvas.toBlob(res, "image/jpeg", 0.92));
@@ -178,11 +184,6 @@ export async function captureAndSave(el: HTMLElement, filename: string): Promise
     const msg = err instanceof Error ? err.message : String(err);
     showErrorModal(`${msg}\n\nIf this keeps happening, use Save PDF and open it in Photos to save the image.`);
   } finally {
-    el.style.display = prev.display;
-    el.style.position = prev.position;
-    el.style.left = prev.left;
-    el.style.top = prev.top;
-    el.style.zIndex = prev.zIndex;
-    el.style.opacity = prev.opacity;
+    sandbox.remove();
   }
 }
